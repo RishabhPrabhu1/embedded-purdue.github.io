@@ -149,156 +149,361 @@
 /* Landing page PCB hero */
 .pcb-hero {
   background:
-    radial-gradient(circle at 50% 45%, rgba(218, 160, 0, 0.075), transparent 34%),
-    radial-gradient(circle at 18% 20%, rgba(218, 160, 0, 0.035), transparent 24%),
-    radial-gradient(circle at 82% 72%, rgba(218, 160, 0, 0.035), transparent 22%),
+    radial-gradient(circle at 50% 43%, rgba(218, 160, 0, 0.09), transparent 31%),
+    radial-gradient(circle at 12% 24%, rgba(218, 160, 0, 0.04), transparent 22%),
+    radial-gradient(circle at 88% 67%, rgba(218, 160, 0, 0.04), transparent 22%),
     var(--background);
 }
 
 .pcb-hero-grid {
   background-image:
-    linear-gradient(rgba(218, 160, 0, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(218, 160, 0, 0.045) 1px, transparent 1px),
-    radial-gradient(circle, rgba(218, 160, 0, 0.2) 1px, transparent 1.5px);
+    linear-gradient(rgba(218, 160, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(218, 160, 0, 0.04) 1px, transparent 1px),
+    radial-gradient(circle, rgba(218, 160, 0, 0.18) 1px, transparent 1.45px);
   background-position: center;
   background-size: 42px 42px, 42px 42px, 84px 84px;
-  mask-image: radial-gradient(ellipse at center, black 20%, rgba(0, 0, 0, 0.72) 58%, transparent 92%);
-  opacity: 0.55;
+  mask-image: radial-gradient(ellipse at center, black 22%, rgba(0, 0, 0, 0.74) 60%, transparent 94%);
+  opacity: 0.56;
 }
 
 .pcb-hero-vignette {
   background:
-    linear-gradient(to bottom, color-mix(in oklch, var(--background) 55%, transparent), transparent 16%, transparent 76%, var(--background)),
-    radial-gradient(ellipse at center, transparent 38%, color-mix(in oklch, var(--background) 72%, transparent) 100%);
+    linear-gradient(to bottom, color-mix(in oklch, var(--background) 58%, transparent), transparent 14%, transparent 78%, var(--background)),
+    radial-gradient(ellipse at center, transparent 38%, color-mix(in oklch, var(--background) 70%, transparent) 100%);
+}
+
+.pcb-circuit-stage {
+  height: clamp(20rem, 45vw, 36rem);
+  overflow: visible;
 }
 
 .pcb-trace-base,
-.pcb-trace-energy {
+.pcb-trace-energy,
+.pcb-trace-packet,
+.pcb-logo-current,
+.pcb-logo-mask-channel {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.pcb-trace-base,
+.pcb-trace-energy,
+.pcb-trace-packet {
   vector-effect: non-scaling-stroke;
 }
 
 .pcb-trace-base {
-  stroke: rgba(218, 160, 0, 0.16);
-  stroke-width: 1.6;
+  stroke: rgba(218, 160, 0, 0.15);
+  stroke-width: 1.45;
 }
 
 .pcb-trace-energy {
   stroke: #daa000;
-  stroke-width: 2.1;
-  stroke-dasharray: 1;
+  stroke-width: 2.35;
+  stroke-dasharray: 1 1;
   stroke-dashoffset: 1;
-  opacity: 0.82;
-  filter: drop-shadow(0 0 5px rgba(218, 160, 0, 0.5));
-  animation: pcb-trace-draw 1.25s cubic-bezier(0.22, 0.74, 0.2, 1) forwards;
+  opacity: 0;
+  filter: drop-shadow(0 0 5px rgba(218, 160, 0, 0.55));
+  animation: pcb-trace-draw 1.18s cubic-bezier(0.18, 0.72, 0.2, 1) forwards;
+}
+
+.pcb-trace-packet {
+  stroke: #ffd96a;
+  stroke-width: 4.2;
+  stroke-dasharray: 0.025 0.975;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  filter: drop-shadow(0 0 7px rgba(255, 215, 92, 0.9));
+  animation: pcb-packet-run 4.8s linear infinite;
 }
 
 .pcb-port-ring,
-.pcb-via-ring {
+.pcb-via-ring,
+.pcb-ingress-ring {
   fill: color-mix(in oklch, var(--background) 82%, #daa000 18%);
-  stroke: rgba(218, 160, 0, 0.38);
-  stroke-width: 1.5;
+  stroke: rgba(218, 160, 0, 0.4);
+  stroke-width: 1.45;
   vector-effect: non-scaling-stroke;
 }
 
 .pcb-port-core,
-.pcb-via-core {
+.pcb-via-core,
+.pcb-ingress-core {
   fill: #daa000;
   opacity: 0;
   transform-box: fill-box;
   transform-origin: center;
+}
+
+.pcb-port-core {
   animation: pcb-port-wake 0.52s ease-out forwards;
 }
 
 .pcb-via-core {
-  animation-duration: 0.4s;
+  animation: pcb-via-hit 0.38s ease-out forwards;
+}
+
+.pcb-ingress-ring {
+  opacity: 0;
+  animation: pcb-ingress-ring-hit 0.68s ease-out 0.92s forwards;
+}
+
+.pcb-ingress-core {
+  animation: pcb-ingress-hit 0.64s cubic-bezier(0.2, 0.75, 0.2, 1) forwards;
+}
+
+.pcb-logo-board-shadow {
+  fill: color-mix(in oklch, var(--background) 92%, #daa000 8%);
+  fill-opacity: 0.08;
+  stroke: rgba(218, 160, 0, 0.1);
+  stroke-width: 1;
+  stroke-dasharray: 5 15;
+  opacity: 0;
+  animation: pcb-board-field-in 0.7s ease-out 1.05s forwards;
+}
+
+.pcb-logo-mask-channel {
+  stroke: white;
+  stroke-width: 88;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  animation: pcb-logo-mask-draw 1.15s cubic-bezier(0.18, 0.72, 0.2, 1) forwards;
+}
+
+.pcb-logo-mask-fill {
+  fill: white;
+  opacity: 0;
+  animation: pcb-logo-mask-resolve 0.7s ease-out 2.05s forwards;
+}
+
+.pcb-logo-built {
+  opacity: 0.9;
+  filter: drop-shadow(0 0 10px rgba(218, 160, 0, 0.28));
+}
+
+.pcb-logo-current {
+  stroke: #ffe8a3;
+  stroke-width: 12;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  animation: pcb-logo-current-run 1.1s cubic-bezier(0.18, 0.75, 0.2, 1) forwards;
+}
+
+.pcb-logo-final {
+  opacity: 0;
+  filter: drop-shadow(0 0 24px rgba(218, 160, 0, 0.2));
+  animation: pcb-logo-final-lock 0.72s ease-out 2.15s forwards;
 }
 
 .pcb-logo-halo {
-  background: rgba(218, 160, 0, 0.1);
-  filter: blur(60px);
+  background: rgba(218, 160, 0, 0.13);
+  filter: blur(72px);
   opacity: 0;
-  animation: pcb-halo-in 1s ease-out 1.2s forwards;
-}
-
-.pcb-logo-reveal {
-  clip-path: inset(0 49% 0 49% round 999px);
-  opacity: 0;
-  transform: scale(0.82);
-  animation: pcb-logo-build 1.08s cubic-bezier(0.2, 0.76, 0.2, 1) 1.08s forwards;
+  transform: translate(-50%, -50%) scale(0.72);
+  animation: pcb-halo-in 1.25s ease-out 1.25s forwards, pcb-halo-breathe 4.6s ease-in-out 3s infinite;
 }
 
 .pcb-hero-copy {
   opacity: 0;
-  transform: translateY(14px);
-  animation: pcb-copy-in 0.7s ease-out 2.05s forwards;
+  transform: translateY(13px);
+  animation: pcb-copy-in 0.72s ease-out 2.62s forwards;
 }
 
 .pcb-scroll-cue {
   opacity: 0;
-  animation: pcb-scroll-in 0.55s ease-out 2.55s forwards, pcb-scroll-float 2.2s ease-in-out 3.2s infinite;
+  animation: pcb-scroll-in 0.55s ease-out 3.08s forwards, pcb-scroll-float 2.2s ease-in-out 3.65s infinite;
 }
 
 @keyframes pcb-trace-draw {
   0% {
     stroke-dashoffset: 1;
-    opacity: 0.12;
+    opacity: 0;
   }
-  26% {
+  12% {
+    opacity: 1;
+  }
+  72% {
     opacity: 1;
   }
   100% {
     stroke-dashoffset: 0;
-    opacity: 0.68;
+    opacity: 0.67;
+  }
+}
+
+@keyframes pcb-packet-run {
+  0%, 8% {
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  34% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  39%, 100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
   }
 }
 
 @keyframes pcb-port-wake {
   0% {
     opacity: 0;
-    transform: scale(0.25);
+    transform: scale(0.18);
   }
-  55% {
+  42% {
     opacity: 1;
-    transform: scale(1.75);
+    transform: scale(1.9);
+  }
+  70% {
+    transform: scale(0.78);
   }
   100% {
-    opacity: 0.9;
+    opacity: 0.92;
     transform: scale(1);
   }
 }
 
-@keyframes pcb-logo-build {
+@keyframes pcb-via-hit {
   0% {
-    clip-path: inset(0 49% 0 49% round 999px);
     opacity: 0;
-    transform: scale(0.82);
-    filter: brightness(1.7);
+    transform: scale(0.3);
   }
-  40% {
+  54% {
     opacity: 1;
-  }
-  72% {
-    filter: brightness(1.35);
+    transform: scale(1.55);
   }
   100% {
-    clip-path: inset(0 0 0 0 round 0);
+    opacity: 0.82;
+    transform: scale(1);
+  }
+}
+
+@keyframes pcb-ingress-hit {
+  0% {
+    opacity: 0;
+    transform: scale(0.15);
+  }
+  42% {
+    opacity: 1;
+    transform: scale(2.4);
+  }
+  68% {
+    transform: scale(0.75);
+  }
+  100% {
     opacity: 1;
     transform: scale(1);
-    filter: brightness(1);
+  }
+}
+
+@keyframes pcb-ingress-ring-hit {
+  0% {
+    opacity: 0;
+    stroke-width: 1.4;
+  }
+  34% {
+    opacity: 0.92;
+    stroke-width: 5;
+  }
+  100% {
+    opacity: 0.36;
+    stroke-width: 1.4;
+  }
+}
+
+@keyframes pcb-board-field-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.8;
+  }
+}
+
+@keyframes pcb-logo-mask-draw {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes pcb-logo-mask-resolve {
+  0% {
+    opacity: 0;
+  }
+  45% {
+    opacity: 0.45;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes pcb-logo-current-run {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.98;
+  }
+  78% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.16;
+  }
+}
+
+@keyframes pcb-logo-final-lock {
+  0% {
+    opacity: 0;
+    filter: brightness(2) drop-shadow(0 0 32px rgba(255, 220, 105, 0.82));
+  }
+  48% {
+    opacity: 0.92;
+    filter: brightness(1.45) drop-shadow(0 0 36px rgba(255, 220, 105, 0.62));
+  }
+  100% {
+    opacity: 1;
+    filter: brightness(1) drop-shadow(0 0 24px rgba(218, 160, 0, 0.2));
   }
 }
 
 @keyframes pcb-halo-in {
   from {
     opacity: 0;
-    transform: scale(0.6);
+    transform: translate(-50%, -50%) scale(0.72);
   }
   to {
     opacity: 0.62;
-    transform: scale(1);
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes pcb-halo-breathe {
+  0%, 100% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(0.98);
+  }
+  50% {
+    opacity: 0.68;
+    transform: translate(-50%, -50%) scale(1.04);
   }
 }
 
@@ -316,8 +521,7 @@
 }
 
 @keyframes pcb-scroll-float {
-  0%,
-  100% {
+  0%, 100% {
     transform: translate(-50%, 0);
   }
   50% {
@@ -330,21 +534,36 @@
     background-size: 32px 32px, 32px 32px, 64px 64px;
   }
 
+  .pcb-circuit-stage {
+    height: clamp(18rem, 78vw, 23rem);
+  }
+
   .pcb-trace-base {
-    stroke-width: 1.2;
+    stroke-width: 1.1;
   }
 
   .pcb-trace-energy {
-    stroke-width: 1.55;
+    stroke-width: 1.7;
+  }
+
+  .pcb-trace-packet {
+    stroke-width: 3.1;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .pcb-trace-energy,
+  .pcb-trace-packet,
   .pcb-port-core,
   .pcb-via-core,
+  .pcb-ingress-ring,
+  .pcb-ingress-core,
+  .pcb-logo-board-shadow,
+  .pcb-logo-mask-channel,
+  .pcb-logo-mask-fill,
+  .pcb-logo-current,
+  .pcb-logo-final,
   .pcb-logo-halo,
-  .pcb-logo-reveal,
   .pcb-hero-copy,
   .pcb-scroll-cue {
     animation: none !important;
@@ -352,22 +571,38 @@
 
   .pcb-trace-energy {
     stroke-dashoffset: 0;
-    opacity: 0.6;
+    opacity: 0.58;
+  }
+
+  .pcb-trace-packet,
+  .pcb-logo-current {
+    display: none;
   }
 
   .pcb-port-core,
-  .pcb-via-core {
+  .pcb-via-core,
+  .pcb-ingress-core {
     opacity: 0.9;
   }
 
-  .pcb-logo-halo {
-    opacity: 0.45;
+  .pcb-ingress-ring,
+  .pcb-logo-board-shadow {
+    opacity: 0.35;
   }
 
-  .pcb-logo-reveal {
-    clip-path: none;
+  .pcb-logo-mask-channel,
+  .pcb-logo-mask-fill {
     opacity: 1;
-    transform: none;
+    stroke-dashoffset: 0;
+  }
+
+  .pcb-logo-final {
+    opacity: 1;
+  }
+
+  .pcb-logo-halo {
+    opacity: 0.46;
+    transform: translate(-50%, -50%);
   }
 
   .pcb-hero-copy,
