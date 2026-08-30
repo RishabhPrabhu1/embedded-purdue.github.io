@@ -13,7 +13,7 @@ const BRIGHT = "#f4c64d"
 const LOGO = { x: 270, y: 248, width: 1060, height: 338 }
 const LOGO_SCALE = LOGO.width / 1920
 const CIRCUIT_SPEED = 1280
-const LOWER_EXTENSION_TIME = 0.48
+const LOWER_EXTENSION_TIME = 0.72
 
 const coreLogoPaths = [
   "M522.61,215.02c-.87,4.61-4.11,7.58-8.32,7.58h-.07l-200.72-1.19-10.87,62.79,220.48,1.31h.46c25.83,0,45.97-18.45,51.36-47.13l13.89-73.71c4.35-23.12-1.83-49.24-16.55-69.86-14.71-20.62-35.95-32.94-56.81-32.94h-204.38c-25.95,0-46.7,19.48-51.62,48.48l-18.77,110.63-10.65,62.78-13.58,80.02c-3.91,23.05,2.54,48.9,17.25,69.16,14.69,20.23,35.75,32.3,56.34,32.3h.09l278.89-.45,1.05-6.06,7-40.35,2.9-16.73-18.71.22v.02l-280.43.45h-.01c-4.6,0-7.66-3.25-9.07-5.2-1.41-1.94-3.65-5.97-2.77-11.13l17.29-101.91,10.65-62.79,15.06-88.74c.79-4.67,4.13-7.81,8.31-7.81h204.38c4.66,0,7.73,3.32,9.14,5.3,1.41,1.98,3.64,6.07,2.66,11.24l-13.89,73.71h.02Z",
@@ -187,17 +187,13 @@ export function PcbHero() {
       const duration = route.total / CIRCUIT_SPEED
       return { spec, route, duration, end: spec.delay + duration }
     })
+    const downwardCircuits = circuits.filter(
+      (circuit) => circuit.route.points[circuit.route.points.length - 1][1] >= VH - 1
+    )
 
     const firstLogoMoment = Math.min(...circuits.map((circuit) => circuit.spec.delay + circuit.duration * .34))
     const lastCircuitEnd = Math.max(...circuits.map((circuit) => circuit.end))
-    const lowerCircuitEnd = Math.max(
-      ...circuits
-        .filter((circuit) => circuit.route.points[circuit.route.points.length - 1][1] >= VH - 1)
-        .map((circuit) => circuit.end + LOWER_EXTENSION_TIME),
-      ...circuits
-        .filter((circuit) => circuit.spec.port[1] >= VH * .84)
-        .map((circuit) => circuit.spec.delay + LOWER_EXTENSION_TIME)
-    )
+    const lowerCircuitEnd = Math.max(...downwardCircuits.map((circuit) => circuit.end + LOWER_EXTENSION_TIME))
     const fillStart = firstLogoMoment + .32
     const copyStart = fillStart + .18
     const animationEnd = Math.max(lastCircuitEnd + .20, lowerCircuitEnd)
@@ -297,47 +293,109 @@ export function PcbHero() {
       context.restore()
     }
 
+    const drawLowerNode = (x: number, y: number, alpha: number) => {
+      if (alpha <= 0) return
+      context.save()
+      context.globalAlpha = alpha
+      context.beginPath()
+      context.arc(x, y, 3.2, 0, Math.PI * 2)
+      context.fillStyle = "rgba(17,17,15,.95)"
+      context.fill()
+      context.strokeStyle = GOLD
+      context.lineWidth = 1.15
+      context.stroke()
+      context.beginPath()
+      context.arc(x, y, 1.05, 0, Math.PI * 2)
+      context.fillStyle = GOLD
+      context.fill()
+      context.restore()
+    }
+
     const drawLowerField = (time: number) => {
       const stageBottom = stageOffsetY + stageHeight
       const lowerDistance = cssHeight - stageBottom
-      if (lowerDistance <= 1) return
+      if (lowerDistance <= 1 || downwardCircuits.length === 0) return
+
+      const strokeWidth = Math.max(1.4, 2.35 * scaleX)
+      const trunkXs = downwardCircuits.map((circuit) => {
+        const last = circuit.route.points[circuit.route.points.length - 1]
+        return last[0] * scaleX
+      })
 
       context.save()
-      context.strokeStyle = GOLD
-      context.lineWidth = Math.max(1.4, 2.35 * scaleX)
       context.lineCap = "round"
       context.lineJoin = "round"
 
-      circuits.forEach((circuit) => {
-        const last = circuit.route.points[circuit.route.points.length - 1]
-        if (last[1] < VH - 1) return
+      downwardCircuits.forEach((circuit, index) => {
+        const rawProgress = clamp01((time - circuit.end) / LOWER_EXTENSION_TIME)
+        if (rawProgress <= 0) return
 
-        const progress = smoothstep((time - circuit.end) / LOWER_EXTENSION_TIME)
-        if (progress <= 0) return
+        const progress = smoothstep(rawProgress)
         const settled = smoothstep((time - circuit.end) / .28)
-        context.globalAlpha = (1 - settled * .64) * .92
-        const x = last[0] * scaleX
-        context.beginPath()
-        context.moveTo(x, stageBottom - 1)
-        context.lineTo(x, stageBottom + lowerDistance * progress + 2)
-        context.stroke()
+        const alpha = (1 - settled * .64) * .88
+        const x = trunkXs[index]
+        const branchY1 = stageBottom + lowerDistance * (.22 + index * .05)
+        const branchY2 = stageBottom + lowerDistance * (.50 + (index % 2) * .06)
+        const outerDirection = index === 0 ? -1 : 1
+        const outerX = Math.max(22, Math.min(cssWidth - 22, x + outerDirection * cssWidth * (index === 1 ? .14 : .12)))
+        const innerX = Math.max(22, Math.min(cssWidth - 22, x - outerDirection * cssWidth * .075))
+        const branchBottom1 = stageBottom + lowerDistance * (.72 + (index % 2) * .08)
+
+        context.globalAlpha = alpha
+        drawPrepared(
+          context,
+          prepareRoute([[x, stageBottom - 1], [x, cssHeight + 2]]),
+          smoothstep(rawProgress / .66),
+          GOLD,
+          strokeWidth
+        )
+
+        const outerProgress = smoothstep((rawProgress - .16) / .58)
+        if (outerProgress > 0) {
+          context.globalAlpha = alpha * .82
+          drawPrepared(
+            context,
+            prepareRoute([[x, branchY1], [outerX, branchY1], [outerX, branchBottom1]]),
+            outerProgress,
+            GOLD,
+            strokeWidth
+          )
+          drawLowerNode(x, branchY1, outerProgress * alpha * .78)
+        }
+
+        const innerProgress = smoothstep((rawProgress - .34) / .58)
+        if (innerProgress > 0) {
+          context.globalAlpha = alpha * .68
+          drawPrepared(
+            context,
+            prepareRoute([[x, branchY2], [innerX, branchY2], [innerX, cssHeight + 2]]),
+            innerProgress,
+            GOLD,
+            strokeWidth
+          )
+          drawLowerNode(x, branchY2, innerProgress * alpha * .66)
+        }
       })
 
-      circuits.forEach((circuit) => {
-        const [portX, portY] = circuit.spec.port
-        if (portY < VH * .84) return
+      for (let index = 0; index < trunkXs.length - 1; index++) {
+        const leftCircuit = downwardCircuits[index]
+        const rightCircuit = downwardCircuits[index + 1]
+        const linkStart = Math.max(leftCircuit.end, rightCircuit.end)
+        const linkProgress = smoothstep((time - linkStart - .18) / LOWER_EXTENSION_TIME)
+        if (linkProgress <= 0) continue
 
-        const progress = smoothstep((time - circuit.spec.delay) / LOWER_EXTENSION_TIME)
-        if (progress <= 0) return
-        const x = portX * scaleX
-        const startY = stageOffsetY + portY * scaleY
-        const distance = cssHeight - startY
-        context.globalAlpha = .30 + progress * .10
-        context.beginPath()
-        context.moveTo(x, startY)
-        context.lineTo(x, startY + distance * progress + 2)
-        context.stroke()
-      })
+        const y = stageBottom + lowerDistance * (.36 + index * .23)
+        context.globalAlpha = .24 + linkProgress * .10
+        drawPrepared(
+          context,
+          prepareRoute([[trunkXs[index], y], [trunkXs[index + 1], y]]),
+          linkProgress,
+          GOLD,
+          Math.max(1.2, strokeWidth * .82)
+        )
+        drawLowerNode(trunkXs[index], y, linkProgress * .34)
+        drawLowerNode(trunkXs[index + 1], y, linkProgress * .34)
+      }
 
       context.restore()
     }
