@@ -209,7 +209,7 @@ export default function HomePage() {
                 <div className="relative aspect-[5/4] overflow-hidden bg-[#1b1a16]">
                   <Image
                     src="/industry_ins.jpg"
-                    alt="Embedded Systems at Purdue workshop"
+                    alt="Embedded Systems @ Purdue workshop"
                     fill
                     sizes="(max-width: 1024px) 100vw, 58vw"
                     className="object-cover"
@@ -246,7 +246,7 @@ export default function HomePage() {
           <div className="relative min-h-[620px] overflow-hidden">
             <Image
               src="/founders.jpeg"
-              alt="Embedded Systems at Purdue community"
+              alt="Embedded Systems @ Purdue community"
               fill
               sizes="100vw"
               className="object-cover object-center opacity-60"
