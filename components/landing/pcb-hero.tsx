@@ -252,12 +252,12 @@ export function PcbHero() {
 
         const settled = smoothstep((time - circuit.end) / .28)
         context.globalAlpha = 1 - settled * .64
-        const head = drawPrepared(context, circuit.route, progress, GOLD, 2.0)
+        const head = drawPrepared(context, circuit.route, progress, GOLD, 2.35)
         context.globalAlpha = 1
 
         if (progress < 1) {
           context.beginPath()
-          context.arc(head[0], head[1], 2.7, 0, Math.PI * 2)
+          context.arc(head[0], head[1], 2.9, 0, Math.PI * 2)
           context.fillStyle = BRIGHT
           context.fill()
         }
@@ -375,7 +375,7 @@ export function PcbHero() {
 
         <a
           href="#landing-content"
-          className={`absolute bottom-5 left-1/2 flex -translate-x-1/2 flex flex-col items-center gap-1 font-mono text-[0.62rem] uppercase tracking-[0.22em] text-muted-foreground transition-opacity duration-300 hover:text-primary ${copyVisible ? "opacity-80" : "opacity-0"}`}
+          className={`absolute bottom-5 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 font-mono text-[0.62rem] uppercase tracking-[0.22em] text-muted-foreground transition-opacity duration-300 hover:text-primary ${copyVisible ? "opacity-80" : "opacity-0"}`}
           aria-label="Scroll to explore Embedded Systems at Purdue"
         >
           Explore
