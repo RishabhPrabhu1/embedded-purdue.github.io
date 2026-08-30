@@ -10,24 +10,47 @@ const VW = 1600
 const VH = 760
 const GOLD = "#daa000"
 const BRIGHT = "#f4c64d"
-const LOGO = { x: 270, y: 248, width: 1060, height: 338 }
+const COPPER = "#8f6718"
+const BOARD = { x: 92, y: 52, width: 1416, height: 656, cut: 28 }
+const MODULE = { x: 612, y: 112, width: 376, height: 188, cut: 16 }
+const SIGNAL_BAY = { x: 218, y: 304, width: 1164, height: 350, cut: 26 }
+const LOGO = { x: 250, y: 332, width: 1100, height: 350 }
 const LOGO_SCALE = LOGO.width / 1920
-const CIRCUIT_SPEED = 1280
+const CIRCUIT_SPEED = 1480
+const CORE_READY = 0.62
+const HEADER_START_X = 300
+const HEADER_END_X = 1300
+const HEADER_COUNT = 22
+const HEADER_TOP_Y = 90
+const HEADER_BOTTOM_Y = 670
 
-const BOARD = { x: 18, y: 18, width: 1564, height: 724, cut: 30 }
-const VOID = { x: 206, y: 116, width: 1188, height: 532, cut: 28 }
+const PIN_LABELS_TOP = ["3V3", "EN", "IO36", "IO39", "IO34", "IO35", "IO32", "IO33", "IO25", "IO26", "IO27", "IO14", "IO12", "GND", "IO13", "SD2", "SD3", "CMD", "5V", "VIN", "RST", "GND"]
+const PIN_LABELS_BOTTOM = ["GND", "TX0", "RX0", "IO22", "IO21", "IO19", "IO18", "IO5", "IO17", "IO16", "IO4", "IO0", "IO2", "IO15", "SD1", "SD0", "CLK", "SDA", "SCL", "3V3", "GND", "5V"]
 
 type Point = readonly [number, number]
 type Route = readonly Point[]
 type PreparedRoute = { points: Route; segments: number[]; total: number }
 
+type SignalSpec = {
+  route: Route
+  delay: number
+}
+
+type SignalRuntime = {
+  route: PreparedRoute
+  delay: number
+  duration: number
+  end: number
+}
+
 type CircuitSpec = {
   pathIndex: number
   from: number
   to: number
-  port: Point
-  inBends: Route
-  outBends: Route
+  source: Point
+  entry: Route
+  exit: Route
+  sink: Point
   delay: number
 }
 
@@ -35,49 +58,9 @@ type CircuitRuntime = {
   spec: CircuitSpec
   route: PreparedRoute
   duration: number
+  start: number
   end: number
 }
-
-const circuitSpecs: CircuitSpec[] = [
-  { pathIndex: 0, from: .02, to: .13, port: [42, 152], inBends: [[130,152],[130,240],[230,240]], outBends: [[1380,150],[1480,150],[1480,105],[1640,105]], delay: .10 },
-  { pathIndex: 0, from: .30, to: .43, port: [42, 304], inBends: [[125,304],[125,380],[225,380]], outBends: [[520,625],[520,760]], delay: .15 },
-  { pathIndex: 0, from: .62, to: .75, port: [320, 42], inBends: [[320,130],[430,130],[430,215]], outBends: [[120,420],[-40,420]], delay: .20 },
-  { pathIndex: 0, from: .79, to: .90, port: [640, 42], inBends: [[640,115],[525,115],[525,210]], outBends: [[1470,620],[1640,620]], delay: .13 },
-
-  { pathIndex: 1, from: .04, to: .18, port: [960, 42], inBends: [[960,125],[760,125],[760,220]], outBends: [[720,620],[720,760]], delay: .12 },
-  { pathIndex: 1, from: .34, to: .50, port: [42, 456], inBends: [[135,456],[135,500],[245,500]], outBends: [[1390,260],[1640,260]], delay: .18 },
-  { pathIndex: 1, from: .52, to: .64, port: [1558, 456], inBends: [[1480,456],[1480,500],[1380,500]], outBends: [[260,620],[-40,620]], delay: .19 },
-  { pathIndex: 1, from: .67, to: .82, port: [320, 718], inBends: [[320,610],[450,610],[450,560]], outBends: [[1080,120],[1080,-40]], delay: .24 },
-
-  { pathIndex: 2, from: .04, to: .13, port: [1558, 152], inBends: [[1470,152],[1470,235],[1370,235]], outBends: [[170,205],[-40,205]], delay: .14 },
-  { pathIndex: 2, from: .27, to: .40, port: [1558, 304], inBends: [[1470,304],[1470,420],[1375,420]], outBends: [[1030,105],[1030,-40]], delay: .20 },
-  { pathIndex: 2, from: .46, to: .58, port: [960, 718], inBends: [[960,610],[1000,610],[1000,555]], outBends: [[1380,90],[1380,-40]], delay: .23 },
-  { pathIndex: 2, from: .66, to: .79, port: [640, 718], inBends: [[640,610],[900,610],[900,560]], outBends: [[1430,465],[1640,465]], delay: .26 },
-
-  { pathIndex: 3, from: .05, to: .18, port: [1280, 42], inBends: [[1280,125],[1200,125],[1200,220]], outBends: [[1240,625],[1240,760]], delay: .16 },
-  { pathIndex: 3, from: .31, to: .47, port: [1558, 608], inBends: [[1460,608],[1460,515],[1360,515]], outBends: [[160,565],[-40,565]], delay: .22 },
-  { pathIndex: 3, from: .61, to: .78, port: [1280, 718], inBends: [[1280,610],[1160,610],[1160,555]], outBends: [[1320,120],[1320,-40]], delay: .28 },
-  { pathIndex: 3, from: .80, to: .91, port: [42, 608], inBends: [[125,608],[125,590],[235,590]], outBends: [[1480,420],[1640,420]], delay: .27 },
-]
-
-const activeRoutes: Route[] = [
-  [[190,170],[266,170],[266,205],[356,205]],
-  [[190,296],[282,296],[282,330],[370,330]],
-  [[190,462],[282,462],[282,430],[370,430]],
-  [[190,590],[266,590],[266,555],[356,555]],
-  [[1410,170],[1334,170],[1334,205],[1244,205]],
-  [[1410,296],[1318,296],[1318,330],[1230,330]],
-  [[1410,462],[1318,462],[1318,430],[1230,430]],
-  [[1410,590],[1334,590],[1334,555],[1244,555]],
-  [[472,105],[472,170],[520,170],[520,220]],
-  [[676,105],[676,174],[708,174],[708,218]],
-  [[924,105],[924,174],[892,174],[892,218]],
-  [[1128,105],[1128,170],[1080,170],[1080,220]],
-  [[472,655],[472,590],[520,590],[520,540]],
-  [[676,655],[676,586],[708,586],[708,542]],
-  [[924,655],[924,586],[892,586],[892,542]],
-  [[1128,655],[1128,590],[1080,590],[1080,540]],
-]
 
 function clamp01(value: number) {
   return Math.max(0, Math.min(1, value))
@@ -88,14 +71,55 @@ function smoothstep(value: number) {
   return x * x * (3 - 2 * x)
 }
 
-function clippedRectPath(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  cut: number
-) {
+function headerPoint(index: number, top: boolean): Point {
+  const t = index / (HEADER_COUNT - 1)
+  return [HEADER_START_X + (HEADER_END_X - HEADER_START_X) * t, top ? HEADER_TOP_Y : HEADER_BOTTOM_Y]
+}
+
+const leftTestPads: Point[] = [[150, 208], [150, 292], [150, 468], [150, 552]]
+const rightTestPads: Point[] = [[1450, 208], [1450, 292], [1450, 468], [1450, 552]]
+
+const inputSignalSpecs: SignalSpec[] = [
+  { route: [headerPoint(2, true), [395, 146], [552, 146], [552, 164], [MODULE.x, 164]], delay: .06 },
+  { route: [headerPoint(6, true), [586, 142], [586, 194], [MODULE.x, 194]], delay: .11 },
+  { route: [headerPoint(15, true), [1086, 142], [1032, 142], [1032, 164], [MODULE.x + MODULE.width, 164]], delay: .08 },
+  { route: [headerPoint(19, true), [1278, 150], [1042, 150], [1042, 194], [MODULE.x + MODULE.width, 194]], delay: .15 },
+  { route: [headerPoint(4, false), [490, 612], [490, 282], [654, 282], [654, MODULE.y + MODULE.height]], delay: .12 },
+  { route: [headerPoint(8, false), [681, 608], [681, MODULE.y + MODULE.height]], delay: .18 },
+  { route: [headerPoint(13, false), [919, 608], [919, MODULE.y + MODULE.height]], delay: .10 },
+  { route: [headerPoint(18, false), [1157, 612], [1157, 282], [946, 282], [946, MODULE.y + MODULE.height]], delay: .16 },
+]
+
+const outputSources: Point[] = [
+  [640, 300], [674, 300], [708, 300], [742, 300],
+  [776, 300], [824, 300], [858, 300], [892, 300],
+  [926, 300], [960, 300], [612, 182], [612, 230],
+  [988, 182], [988, 230], [724, 112], [876, 112],
+]
+
+const circuitSpecs: CircuitSpec[] = [
+  { pathIndex: 0, from: .02, to: .13, source: outputSources[0], entry: [[640, 318], [366, 318]], exit: [[310, 420], [188, 420]], sink: leftTestPads[2], delay: .02 },
+  { pathIndex: 0, from: .30, to: .43, source: outputSources[1], entry: [[674, 322], [438, 322]], exit: [[426, 618], [426, 650]], sink: headerPoint(3, false), delay: .07 },
+  { pathIndex: 0, from: .62, to: .75, source: outputSources[2], entry: [[708, 326], [520, 326]], exit: [[236, 250], [188, 250]], sink: leftTestPads[1], delay: .12 },
+  { pathIndex: 0, from: .79, to: .90, source: outputSources[3], entry: [[742, 330], [612, 330]], exit: [[1382, 418], [1418, 418]], sink: rightTestPads[2], delay: .16 },
+
+  { pathIndex: 1, from: .04, to: .18, source: outputSources[4], entry: [[776, 326]], exit: [[666, 618], [666, 650]], sink: headerPoint(8, false), delay: .05 },
+  { pathIndex: 1, from: .34, to: .50, source: outputSources[5], entry: [[824, 326], [770, 326]], exit: [[1382, 246], [1418, 246]], sink: rightTestPads[1], delay: .10 },
+  { pathIndex: 1, from: .52, to: .64, source: outputSources[6], entry: [[858, 330], [918, 330]], exit: [[264, 530], [188, 530]], sink: leftTestPads[3], delay: .14 },
+  { pathIndex: 1, from: .67, to: .82, source: outputSources[7], entry: [[892, 326], [1000, 326]], exit: [[1038, 148], [1038, 110]], sink: headerPoint(15, true), delay: .19 },
+
+  { pathIndex: 2, from: .04, to: .13, source: outputSources[8], entry: [[926, 326], [1088, 326]], exit: [[312, 188], [188, 188]], sink: leftTestPads[0], delay: .06 },
+  { pathIndex: 2, from: .27, to: .40, source: outputSources[9], entry: [[960, 322], [1164, 322]], exit: [[974, 150], [974, 110]], sink: headerPoint(14, true), delay: .11 },
+  { pathIndex: 2, from: .46, to: .58, source: outputSources[10], entry: [[586, 182], [586, 314]], exit: [[1172, 618], [1172, 650]], sink: headerPoint(18, false), delay: .15 },
+  { pathIndex: 2, from: .66, to: .79, source: outputSources[11], entry: [[568, 230], [568, 318]], exit: [[1378, 500], [1418, 500]], sink: rightTestPads[3], delay: .20 },
+
+  { pathIndex: 3, from: .05, to: .18, source: outputSources[12], entry: [[1012, 182], [1012, 314]], exit: [[1208, 618], [1208, 650]], sink: headerPoint(19, false), delay: .08 },
+  { pathIndex: 3, from: .31, to: .47, source: outputSources[13], entry: [[1032, 230], [1032, 318]], exit: [[1384, 332], [1418, 332]], sink: rightTestPads[2], delay: .13 },
+  { pathIndex: 3, from: .61, to: .78, source: outputSources[14], entry: [[724, 132], [724, 318]], exit: [[1258, 150], [1258, 110]], sink: headerPoint(20, true), delay: .18 },
+  { pathIndex: 3, from: .80, to: .91, source: outputSources[15], entry: [[876, 132], [876, 318]], exit: [[1382, 206], [1418, 206]], sink: rightTestPads[0], delay: .23 },
+]
+
+function clippedRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, cut: number) {
   ctx.beginPath()
   ctx.moveTo(x + cut, y)
   ctx.lineTo(x + width - cut, y)
@@ -113,10 +137,7 @@ function prepareRoute(points: Route): PreparedRoute {
   let total = 0
 
   for (let index = 1; index < points.length; index++) {
-    const length = Math.hypot(
-      points[index][0] - points[index - 1][0],
-      points[index][1] - points[index - 1][1]
-    )
+    const length = Math.hypot(points[index][0] - points[index - 1][0], points[index][1] - points[index - 1][1])
     segments.push(length)
     total += length
   }
@@ -124,13 +145,7 @@ function prepareRoute(points: Route): PreparedRoute {
   return { points, segments, total }
 }
 
-function drawPrepared(
-  ctx: CanvasRenderingContext2D,
-  route: PreparedRoute,
-  progress: number,
-  stroke: string,
-  width: number
-): Point {
+function drawPrepared(ctx: CanvasRenderingContext2D, route: PreparedRoute, progress: number, stroke: string, width: number): Point {
   if (progress <= 0) return route.points[0]
 
   let remaining = route.total * clamp01(progress)
@@ -167,18 +182,11 @@ function drawPrepared(
   return head
 }
 
-function strokeRoute(
-  ctx: CanvasRenderingContext2D,
-  route: Route,
-  stroke: string,
-  width = 1
-) {
+function strokeRoute(ctx: CanvasRenderingContext2D, route: Route, stroke: string, width = 1) {
   if (route.length < 2) return
   ctx.beginPath()
   ctx.moveTo(route[0][0], route[0][1])
-  for (let index = 1; index < route.length; index++) {
-    ctx.lineTo(route[index][0], route[index][1])
-  }
+  for (let index = 1; index < route.length; index++) ctx.lineTo(route[index][0], route[index][1])
   ctx.strokeStyle = stroke
   ctx.lineWidth = width
   ctx.lineCap = "round"
@@ -186,309 +194,247 @@ function strokeRoute(
   ctx.stroke()
 }
 
-function drawPadRail(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  length: number,
-  count: number,
-  horizontal: boolean,
-  alpha: number
-) {
-  const gap = length / Math.max(1, count - 1)
-  ctx.save()
-  ctx.fillStyle = `rgba(218,160,0,${alpha})`
-  for (let index = 0; index < count; index++) {
-    if (horizontal) {
-      const px = x + gap * index
-      ctx.fillRect(px - 3, y - 6, 6, 12)
-    } else {
-      const py = y + gap * index
-      ctx.fillRect(x - 6, py - 3, 12, 6)
-    }
-  }
-  ctx.restore()
-}
-
-function drawViaCluster(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  columns: number,
-  rows: number,
-  alpha: number
-) {
-  ctx.save()
-  ctx.lineWidth = 1
-  ctx.strokeStyle = `rgba(218,160,0,${alpha})`
-  ctx.fillStyle = `rgba(218,160,0,${alpha * .7})`
-  for (let row = 0; row < rows; row++) {
-    for (let column = 0; column < columns; column++) {
-      const px = x + column * 15
-      const py = y + row * 15
-      ctx.beginPath()
-      ctx.arc(px, py, 2.8, 0, Math.PI * 2)
-      ctx.stroke()
-      ctx.beginPath()
-      ctx.arc(px, py, .9, 0, Math.PI * 2)
-      ctx.fill()
-    }
-  }
-  ctx.restore()
-}
-
-function drawModule(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  title: string,
-  detail: string
-) {
-  ctx.save()
-  clippedRectPath(ctx, x, y, width, height, 12)
-  const fill = ctx.createLinearGradient(x, y, x + width, y + height)
-  fill.addColorStop(0, "#0a0c08")
-  fill.addColorStop(1, "#030403")
-  ctx.fillStyle = fill
-  ctx.fill()
-  ctx.strokeStyle = "rgba(218,160,0,.50)"
-  ctx.lineWidth = 1.4
-  ctx.stroke()
-
-  drawPadRail(ctx, x + 20, y - 1, width - 40, 10, true, .42)
-  drawPadRail(ctx, x + 20, y + height + 1, width - 40, 10, true, .42)
-
-  ctx.fillStyle = "rgba(218,160,0,.16)"
-  ctx.fillRect(x + 14, y + 14, width - 28, 2)
-  ctx.fillRect(x + 14, y + height - 16, width * .36, 2)
-  ctx.fillRect(x + width * .60, y + height - 16, width * .22, 2)
-
-  ctx.font = "600 11px ui-monospace, SFMono-Regular, Menlo, monospace"
-  ctx.fillStyle = "rgba(239,231,202,.78)"
-  ctx.fillText(title, x + 14, y + 38)
-  ctx.font = "9px ui-monospace, SFMono-Regular, Menlo, monospace"
-  ctx.fillStyle = "rgba(218,160,0,.62)"
-  ctx.fillText(detail, x + 14, y + 58)
-  ctx.restore()
-}
-
-function drawSmdBank(ctx: CanvasRenderingContext2D, x: number, y: number, columns: number, rows: number) {
-  ctx.save()
-  for (let row = 0; row < rows; row++) {
-    for (let column = 0; column < columns; column++) {
-      const px = x + column * 24
-      const py = y + row * 17
-      ctx.fillStyle = "#060706"
-      ctx.fillRect(px, py, 14, 7)
-      ctx.fillStyle = "rgba(218,160,0,.38)"
-      ctx.fillRect(px - 3, py + 1, 2, 5)
-      ctx.fillRect(px + 15, py + 1, 2, 5)
-    }
-  }
-  ctx.restore()
-}
-
-function drawMountingHole(ctx: CanvasRenderingContext2D, x: number, y: number) {
-  ctx.save()
+function drawThroughHole(ctx: CanvasRenderingContext2D, x: number, y: number, active = false, radius = 6.4) {
   ctx.beginPath()
-  ctx.arc(x, y, 11, 0, Math.PI * 2)
-  ctx.fillStyle = "#000"
+  ctx.arc(x, y, radius, 0, Math.PI * 2)
+  ctx.fillStyle = active ? "rgba(218,160,0,.92)" : "rgba(182,132,31,.72)"
+  ctx.fill()
+  ctx.beginPath()
+  ctx.arc(x, y, radius * .52, 0, Math.PI * 2)
+  ctx.fillStyle = "#05100c"
+  ctx.fill()
+  ctx.beginPath()
+  ctx.arc(x, y, radius, 0, Math.PI * 2)
+  ctx.strokeStyle = active ? "rgba(244,198,77,.95)" : "rgba(234,195,99,.34)"
+  ctx.lineWidth = 1
+  ctx.stroke()
+}
+
+function drawHeaderRows(ctx: CanvasRenderingContext2D) {
+  ctx.save()
+  ctx.font = "8px ui-monospace, SFMono-Regular, Menlo, monospace"
+  ctx.textAlign = "center"
+
+  for (let index = 0; index < HEADER_COUNT; index++) {
+    const [xTop, yTop] = headerPoint(index, true)
+    const [xBottom, yBottom] = headerPoint(index, false)
+    drawThroughHole(ctx, xTop, yTop)
+    drawThroughHole(ctx, xBottom, yBottom)
+
+    if (index % 2 === 0) {
+      ctx.fillStyle = "rgba(225,229,214,.55)"
+      ctx.fillText(PIN_LABELS_TOP[index], xTop, yTop + 24)
+      ctx.fillText(PIN_LABELS_BOTTOM[index], xBottom, yBottom - 18)
+    }
+  }
+  ctx.restore()
+}
+
+function drawProtoGrid(ctx: CanvasRenderingContext2D, x: number, y: number, columns: number, rows: number) {
+  ctx.save()
+  for (let row = 0; row < rows; row++) {
+    for (let column = 0; column < columns; column++) {
+      drawThroughHole(ctx, x + column * 21, y + row * 21, false, 4.2)
+    }
+  }
+  ctx.restore()
+}
+
+function drawSmd(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number) {
+  ctx.fillStyle = "rgba(7,9,7,.96)"
+  ctx.fillRect(x, y, width, height)
+  ctx.fillStyle = "rgba(200,148,42,.55)"
+  ctx.fillRect(x - 3, y + 2, 2, Math.max(2, height - 4))
+  ctx.fillRect(x + width + 1, y + 2, 2, Math.max(2, height - 4))
+}
+
+function drawBoardModule(ctx: CanvasRenderingContext2D) {
+  ctx.save()
+  clippedRectPath(ctx, MODULE.x, MODULE.y, MODULE.width, MODULE.height, MODULE.cut)
+  ctx.fillStyle = "#07110e"
   ctx.fill()
   ctx.strokeStyle = "rgba(218,160,0,.48)"
-  ctx.lineWidth = 1.4
+  ctx.lineWidth = 1.2
   ctx.stroke()
+
+  for (let x = MODULE.x + 18; x <= MODULE.x + MODULE.width - 18; x += 20) {
+    ctx.fillStyle = "rgba(196,143,34,.68)"
+    ctx.fillRect(x, MODULE.y - 5, 9, 6)
+    ctx.fillRect(x, MODULE.y + MODULE.height - 1, 9, 6)
+  }
+
+  const shieldX = MODULE.x + 26
+  const shieldY = MODULE.y + 28
+  const shieldW = 224
+  const shieldH = 116
+  const shield = ctx.createLinearGradient(shieldX, shieldY, shieldX + shieldW, shieldY + shieldH)
+  shield.addColorStop(0, "#a9aca5")
+  shield.addColorStop(.5, "#737970")
+  shield.addColorStop(1, "#b9bbb3")
+  ctx.fillStyle = shield
+  ctx.fillRect(shieldX, shieldY, shieldW, shieldH)
+  ctx.strokeStyle = "rgba(255,255,255,.28)"
+  ctx.strokeRect(shieldX + .5, shieldY + .5, shieldW - 1, shieldH - 1)
+
+  ctx.font = "11px ui-monospace, SFMono-Regular, Menlo, monospace"
+  ctx.fillStyle = "rgba(15,18,16,.76)"
+  ctx.fillText("ES@P CORE", shieldX + 18, shieldY + 34)
+  ctx.font = "8px ui-monospace, SFMono-Regular, Menlo, monospace"
+  ctx.fillText("ESP32-STYLE MODULE", shieldX + 18, shieldY + 54)
+  ctx.fillText("2.4 GHz / MCU", shieldX + 18, shieldY + 72)
+
+  const antennaX = MODULE.x + 275
+  const antennaY = MODULE.y + 26
+  ctx.strokeStyle = "rgba(218,160,0,.72)"
+  ctx.lineWidth = 2
   ctx.beginPath()
-  ctx.arc(x, y, 4.5, 0, Math.PI * 2)
-  ctx.strokeStyle = "rgba(239,231,202,.30)"
+  ctx.moveTo(antennaX, antennaY + 18)
+  ctx.lineTo(antennaX + 62, antennaY + 18)
+  ctx.lineTo(antennaX + 62, antennaY + 34)
+  ctx.lineTo(antennaX + 12, antennaY + 34)
+  ctx.lineTo(antennaX + 12, antennaY + 50)
+  ctx.lineTo(antennaX + 62, antennaY + 50)
+  ctx.lineTo(antennaX + 62, antennaY + 66)
+  ctx.lineTo(antennaX + 12, antennaY + 66)
+  ctx.lineTo(antennaX + 12, antennaY + 82)
+  ctx.lineTo(antennaX + 62, antennaY + 82)
   ctx.stroke()
+  ctx.font = "7px ui-monospace, SFMono-Regular, Menlo, monospace"
+  ctx.fillStyle = "rgba(222,226,211,.48)"
+  ctx.fillText("RF", antennaX + 74, antennaY + 54)
+
   ctx.restore()
 }
 
-function drawSideRouting(ctx: CanvasRenderingContext2D) {
+function drawUsbAndControls(ctx: CanvasRenderingContext2D) {
   ctx.save()
-  for (let index = 0; index < 8; index++) {
-    const y = 96 + index * 76
-    const leftEnd = 178 + (index % 3) * 26
-    const rightEnd = VW - leftEnd
-    const offset = index % 2 === 0 ? 32 : 54
+  const usbX = BOARD.x - 24
+  const usbY = 318
+  const usbW = 94
+  const usbH = 72
+  const metal = ctx.createLinearGradient(usbX, usbY, usbX + usbW, usbY + usbH)
+  metal.addColorStop(0, "#9ea4a0")
+  metal.addColorStop(.48, "#555c59")
+  metal.addColorStop(1, "#b7bbb7")
+  ctx.fillStyle = metal
+  ctx.fillRect(usbX, usbY, usbW, usbH)
+  ctx.fillStyle = "#111816"
+  ctx.fillRect(usbX + 10, usbY + 14, usbW - 20, usbH - 28)
+  ctx.fillStyle = "rgba(218,160,0,.60)"
+  for (let index = 0; index < 6; index++) ctx.fillRect(usbX + 24 + index * 8, usbY + 26, 4, 16)
+  ctx.font = "8px ui-monospace, SFMono-Regular, Menlo, monospace"
+  ctx.fillStyle = "rgba(226,229,215,.58)"
+  ctx.fillText("USB-C / PWR", BOARD.x + 82, usbY + 32)
 
-    strokeRoute(ctx, [[32,y],[94,y],[94,y + offset],[leftEnd,y + offset],[leftEnd + 34,y + offset + 26]], "rgba(218,160,0,.28)", index % 3 === 0 ? 1.7 : 1.2)
-    strokeRoute(ctx, [[1568,y],[1506,y],[1506,y + offset],[rightEnd,y + offset],[rightEnd - 34,y + offset + 26]], "rgba(218,160,0,.28)", index % 3 === 0 ? 1.7 : 1.2)
-  }
-
-  for (let index = 0; index < 7; index++) {
-    const x = 232 + index * 190
-    const turn = index % 2 === 0 ? 70 : 92
-    strokeRoute(ctx, [[x,30],[x,72],[x + turn,72],[x + turn,112]], "rgba(218,160,0,.22)", 1.2)
-    strokeRoute(ctx, [[x,730],[x,688],[x + turn,688],[x + turn,648]], "rgba(218,160,0,.22)", 1.2)
-  }
+  const buttons = [
+    { x: BOARD.x + 118, y: 250, label: "EN" },
+    { x: BOARD.x + 118, y: 456, label: "BOOT" },
+  ]
+  buttons.forEach((button) => {
+    ctx.fillStyle = "#151915"
+    ctx.fillRect(button.x, button.y, 42, 28)
+    ctx.strokeStyle = "rgba(210,215,198,.25)"
+    ctx.strokeRect(button.x + .5, button.y + .5, 41, 27)
+    ctx.fillStyle = "rgba(222,226,211,.55)"
+    ctx.fillText(button.label, button.x + 52, button.y + 18)
+  })
   ctx.restore()
 }
 
-function drawCoreVoid(ctx: CanvasRenderingContext2D, active: boolean) {
-  ctx.save()
-
-  clippedRectPath(ctx, VOID.x - 14, VOID.y - 14, VOID.width + 28, VOID.height + 28, VOID.cut + 7)
-  ctx.fillStyle = active ? "rgba(218,160,0,.075)" : "rgba(218,160,0,.045)"
-  ctx.fill()
-  ctx.strokeStyle = active ? "rgba(218,160,0,.48)" : "rgba(218,160,0,.34)"
-  ctx.lineWidth = active ? 2 : 1.5
-  ctx.stroke()
-
-  clippedRectPath(ctx, VOID.x, VOID.y, VOID.width, VOID.height, VOID.cut)
-  const voidFill = ctx.createRadialGradient(800, 382, 60, 800, 382, 640)
-  voidFill.addColorStop(0, "#000000")
-  voidFill.addColorStop(.44, "#010201")
-  voidFill.addColorStop(.78, active ? "#090704" : "#050604")
-  voidFill.addColorStop(1, active ? "#171007" : "#0c0d08")
-  ctx.fillStyle = voidFill
-  ctx.fill()
-  ctx.strokeStyle = active ? "rgba(218,160,0,.58)" : "rgba(218,160,0,.42)"
-  ctx.lineWidth = active ? 1.8 : 1.4
-  ctx.stroke()
-
-  clippedRectPath(ctx, VOID.x + 24, VOID.y + 24, VOID.width - 48, VOID.height - 48, 20)
-  ctx.strokeStyle = active ? "rgba(218,160,0,.24)" : "rgba(218,160,0,.15)"
-  ctx.lineWidth = 1
-  ctx.stroke()
-
-  drawPadRail(ctx, VOID.x + 82, VOID.y - 6, VOID.width - 164, 28, true, active ? .38 : .26)
-  drawPadRail(ctx, VOID.x + 82, VOID.y + VOID.height + 6, VOID.width - 164, 28, true, active ? .38 : .26)
-  drawPadRail(ctx, VOID.x - 6, VOID.y + 76, VOID.height - 152, 12, false, active ? .34 : .22)
-  drawPadRail(ctx, VOID.x + VOID.width + 6, VOID.y + 76, VOID.height - 152, 12, false, active ? .34 : .22)
-
-  ctx.font = "10px ui-monospace, SFMono-Regular, Menlo, monospace"
-  ctx.fillStyle = active ? "rgba(218,160,0,.50)" : "rgba(218,160,0,.30)"
-  ctx.fillText("CORE SOCKET / SIGNAL FABRIC", VOID.x + 36, VOID.y + 48)
-  ctx.fillText("REV 01 · EMBEDDED BACKPLANE", VOID.x + VOID.width - 214, VOID.y + VOID.height - 34)
-  ctx.restore()
-}
-
-function renderBaseEnvironment(ctx: CanvasRenderingContext2D) {
+function renderBoardBase(ctx: CanvasRenderingContext2D) {
   ctx.clearRect(0, 0, VW, VH)
-  ctx.fillStyle = "#000100"
+  ctx.fillStyle = "#010302"
+  ctx.fillRect(0, 0, VW, VH)
+
+  const halo = ctx.createRadialGradient(800, 380, 100, 800, 380, 860)
+  halo.addColorStop(0, "rgba(16,28,20,.18)")
+  halo.addColorStop(.55, "rgba(5,10,7,.56)")
+  halo.addColorStop(1, "rgba(0,0,0,1)")
+  ctx.fillStyle = halo
   ctx.fillRect(0, 0, VW, VH)
 
   ctx.save()
   clippedRectPath(ctx, BOARD.x, BOARD.y, BOARD.width, BOARD.height, BOARD.cut)
-  const boardFill = ctx.createLinearGradient(0, 0, VW, VH)
-  boardFill.addColorStop(0, "#1b2114")
-  boardFill.addColorStop(.30, "#11170d")
-  boardFill.addColorStop(.62, "#17190e")
-  boardFill.addColorStop(1, "#090c08")
+  const boardFill = ctx.createLinearGradient(BOARD.x, BOARD.y, BOARD.x + BOARD.width, BOARD.y + BOARD.height)
+  boardFill.addColorStop(0, "#183329")
+  boardFill.addColorStop(.38, "#0f271f")
+  boardFill.addColorStop(.72, "#112c23")
+  boardFill.addColorStop(1, "#0a1d17")
   ctx.fillStyle = boardFill
   ctx.fill()
-  ctx.strokeStyle = "rgba(218,160,0,.52)"
-  ctx.lineWidth = 2
+  ctx.strokeStyle = "rgba(218,160,0,.55)"
+  ctx.lineWidth = 1.7
   ctx.stroke()
   ctx.clip()
 
-  ctx.fillStyle = "rgba(218,160,0,.055)"
-  ctx.fillRect(38, 76, 188, 608)
-  ctx.fillRect(1374, 76, 188, 608)
-  ctx.fillRect(238, 30, 1124, 82)
-  ctx.fillRect(238, 648, 1124, 82)
-
-  ctx.strokeStyle = "rgba(236,228,197,.055)"
+  ctx.strokeStyle = "rgba(224,231,217,.045)"
   ctx.lineWidth = .8
-  for (let x = 52; x < 1560; x += 40) {
+  for (let x = BOARD.x + 24; x < BOARD.x + BOARD.width - 20; x += 32) {
     ctx.beginPath()
-    ctx.moveTo(x, 34)
-    ctx.lineTo(x, 726)
-    ctx.stroke()
-  }
-  for (let y = 42; y < 724; y += 38) {
-    ctx.beginPath()
-    ctx.moveTo(34, y)
-    ctx.lineTo(1566, y)
+    ctx.moveTo(x, BOARD.y + 16)
+    ctx.lineTo(x, BOARD.y + BOARD.height - 16)
     ctx.stroke()
   }
 
-  drawSideRouting(ctx)
-
-  drawModule(ctx, 62, 92, 166, 104, "MCU / CTRL", "SWD · 3V3 · CLK")
-  drawModule(ctx, 1372, 92, 166, 104, "IO / GPIO", "SPI · UART · PWM")
-  drawModule(ctx, 62, 564, 166, 104, "PWR / REG", "3V3 · 5V · GND")
-  drawModule(ctx, 1372, 564, 166, 104, "BUS / COMM", "I2C · CAN · USB")
-
-  drawSmdBank(ctx, 70, 246, 5, 3)
-  drawSmdBank(ctx, 1410, 246, 5, 3)
-  drawSmdBank(ctx, 70, 442, 5, 3)
-  drawSmdBank(ctx, 1410, 442, 5, 3)
-
-  drawViaCluster(ctx, 250, 74, 6, 2, .30)
-  drawViaCluster(ctx, 1265, 74, 6, 2, .30)
-  drawViaCluster(ctx, 250, 660, 6, 2, .26)
-  drawViaCluster(ctx, 1265, 660, 6, 2, .26)
-  drawViaCluster(ctx, 78, 342, 4, 4, .27)
-  drawViaCluster(ctx, 1472, 342, 4, 4, .27)
+  const staticTraces: Route[] = [
+    [[190,150],[266,150],[266,205],[430,205],[430,266],[558,266]],
+    [[190,610],[278,610],[278,548],[430,548],[430,510],[554,510]],
+    [[1410,150],[1328,150],[1328,205],[1166,205],[1166,266],[1038,266]],
+    [[1410,610],[1322,610],[1322,548],[1170,548],[1170,510],[1042,510]],
+    [[362,112],[362,152],[492,152],[492,184],[574,184]],
+    [[1238,112],[1238,152],[1108,152],[1108,184],[1026,184]],
+    [[362,646],[362,600],[512,600],[512,566],[604,566]],
+    [[1238,646],[1238,600],[1088,600],[1088,566],[996,566]],
+  ]
+  staticTraces.forEach((route, index) => strokeRoute(ctx, route, index % 2 === 0 ? "rgba(206,151,38,.32)" : "rgba(206,151,38,.22)", index % 3 === 0 ? 2 : 1.2))
 
   ctx.restore()
 
-  drawMountingHole(ctx, 54, 54)
-  drawMountingHole(ctx, 1546, 54)
-  drawMountingHole(ctx, 54, 706)
-  drawMountingHole(ctx, 1546, 706)
+  drawHeaderRows(ctx)
+  drawUsbAndControls(ctx)
+  drawBoardModule(ctx)
 
-  drawCoreVoid(ctx, false)
+  drawProtoGrid(ctx, 164, 150, 4, 6)
+  drawProtoGrid(ctx, 1373, 150, 4, 6)
+  drawProtoGrid(ctx, 164, 480, 4, 6)
+  drawProtoGrid(ctx, 1373, 480, 4, 6)
 
-  ctx.save()
-  ctx.font = "10px ui-monospace, SFMono-Regular, Menlo, monospace"
-  ctx.fillStyle = "rgba(237,227,194,.42)"
-  ctx.fillText("JTAG", 70, 228)
-  ctx.fillText("ADC", 70, 424)
-  ctx.fillText("GPIO", 1480, 228)
-  ctx.fillText("PWM", 1480, 424)
-  ctx.fillText("SPI0", 326, 700)
-  ctx.fillText("I2C0", 1218, 700)
-  ctx.fillText("CLK / 48MHz", 758, 72)
-  ctx.fillStyle = "rgba(218,160,0,.55)"
-  ctx.fillText("ES@P / EMBEDDED SYSTEMS", 710, 708)
-  ctx.restore()
-
-  ctx.save()
-  ctx.fillStyle = "rgba(240,232,204,.040)"
-  for (let index = 0; index < 760; index++) {
-    const px = (index * 83 + 29) % VW
-    const py = (index * 137 + 47) % VH
-    ctx.fillRect(px, py, index % 13 === 0 ? 1.2 : .7, index % 13 === 0 ? 1.2 : .7)
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 6; col++) {
+      drawSmd(ctx, 382 + col * 28, 214 + row * 18, 14, 7)
+      drawSmd(ctx, 1050 + col * 28, 214 + row * 18, 14, 7)
+    }
   }
-  ctx.restore()
-}
-
-function renderActiveEnvironment(ctx: CanvasRenderingContext2D) {
-  ctx.clearRect(0, 0, VW, VH)
-
-  const activation = ctx.createRadialGradient(800, 380, 80, 800, 380, 660)
-  activation.addColorStop(0, "rgba(218,160,0,.10)")
-  activation.addColorStop(.34, "rgba(218,160,0,.065)")
-  activation.addColorStop(.72, "rgba(218,160,0,.020)")
-  activation.addColorStop(1, "rgba(218,160,0,0)")
-  ctx.fillStyle = activation
-  ctx.fillRect(0, 0, VW, VH)
-
-  drawCoreVoid(ctx, true)
 
   ctx.save()
-  activeRoutes.forEach((route, index) => {
-    strokeRoute(ctx, route, index % 3 === 0 ? "rgba(244,198,77,.46)" : "rgba(218,160,0,.34)", index % 4 === 0 ? 1.9 : 1.45)
-  })
+  clippedRectPath(ctx, SIGNAL_BAY.x, SIGNAL_BAY.y, SIGNAL_BAY.width, SIGNAL_BAY.height, SIGNAL_BAY.cut)
+  const bay = ctx.createRadialGradient(800, 485, 70, 800, 485, 640)
+  bay.addColorStop(0, "rgba(0,1,1,.995)")
+  bay.addColorStop(.48, "rgba(3,8,6,.985)")
+  bay.addColorStop(1, "rgba(7,18,14,.92)")
+  ctx.fillStyle = bay
+  ctx.fill()
+  ctx.strokeStyle = "rgba(218,160,0,.48)"
+  ctx.lineWidth = 1.4
+  ctx.stroke()
 
-  drawViaCluster(ctx, 238, 204, 4, 3, .42)
-  drawViaCluster(ctx, 1317, 204, 4, 3, .42)
-  drawViaCluster(ctx, 238, 512, 4, 3, .34)
-  drawViaCluster(ctx, 1317, 512, 4, 3, .34)
+  clippedRectPath(ctx, SIGNAL_BAY.x + 18, SIGNAL_BAY.y + 18, SIGNAL_BAY.width - 36, SIGNAL_BAY.height - 36, 18)
+  ctx.strokeStyle = "rgba(212,223,205,.09)"
+  ctx.lineWidth = 1
+  ctx.stroke()
 
-  ctx.fillStyle = "rgba(244,198,77,.72)"
-  const leds: Point[] = [[192,138],[1408,138],[192,622],[1408,622]]
-  leds.forEach(([x, y]) => {
-    ctx.beginPath()
-    ctx.arc(x, y, 3.5, 0, Math.PI * 2)
-    ctx.fill()
-  })
+  ctx.font = "9px ui-monospace, SFMono-Regular, Menlo, monospace"
+  ctx.fillStyle = "rgba(218,160,0,.58)"
+  ctx.fillText("SIGNAL FABRIC / OUTPUT PLANE", SIGNAL_BAY.x + 28, SIGNAL_BAY.y + 28)
+  ctx.fillStyle = "rgba(220,225,210,.30)"
+  ctx.fillText("ES@P DEV BOARD  ·  REV 01", 118, 690)
+  ctx.fillText("3V3", 236, 136)
+  ctx.fillText("GND", 1334, 136)
+  ctx.fillText("UART", 236, 628)
+  ctx.fillText("I2C", 1328, 628)
   ctx.restore()
+
+  ;[...leftTestPads, ...rightTestPads].forEach(([x, y]) => drawThroughHole(ctx, x, y, false, 6.2))
 }
 
 function logoPoint([x, y]: Point): Point {
@@ -499,7 +445,6 @@ function sampleLogoSegment(d: string, from: number, to: number): Point[] {
   const namespace = "http://www.w3.org/2000/svg"
   const path = document.createElementNS(namespace, "path")
   path.setAttribute("d", d)
-
   const total = path.getTotalLength()
   const span = Math.abs(to - from) * total
   const samples = Math.max(16, Math.min(80, Math.ceil(span / 11)))
@@ -522,17 +467,17 @@ function orthogonalJoin(from: Point, to: Point, horizontalFirst = true): Point[]
 
 function buildCircuit(spec: CircuitSpec, logoPaths: readonly string[]): PreparedRoute {
   const logoSegment = sampleLogoSegment(logoPaths[spec.pathIndex], spec.from, spec.to)
-  const start: Point[] = [spec.port, ...spec.inBends]
+  const start: Point[] = [spec.source, ...spec.entry]
   const firstLogo = logoSegment[0]
   const lastStart = start[start.length - 1]
   start.push(...orthogonalJoin(lastStart, firstLogo, spec.pathIndex % 2 === 0))
 
-  const end: Point[] = [...spec.outBends]
-  const firstEnd = end[0]
+  const exit = [...spec.exit, spec.sink]
+  const firstExit = exit[0]
   const lastLogo = logoSegment[logoSegment.length - 1]
-  const bridge = orthogonalJoin(lastLogo, firstEnd, spec.pathIndex % 2 !== 0)
+  const bridge = orthogonalJoin(lastLogo, firstExit, spec.pathIndex % 2 !== 0)
 
-  return prepareRoute([...start, ...logoSegment.slice(1), ...bridge, ...end.slice(1)])
+  return prepareRoute([...start, ...logoSegment.slice(1), ...bridge, ...exit.slice(1)])
 }
 
 async function loadLogoPaths() {
@@ -561,18 +506,11 @@ export function PcbHero() {
     const context = canvas.getContext("2d", { alpha: true })
     if (!context) return
 
-    const baseLayer = document.createElement("canvas")
-    baseLayer.width = VW
-    baseLayer.height = VH
-    const baseContext = baseLayer.getContext("2d", { alpha: false })
-
-    const activeLayer = document.createElement("canvas")
-    activeLayer.width = VW
-    activeLayer.height = VH
-    const activeContext = activeLayer.getContext("2d", { alpha: true })
-
-    if (baseContext) renderBaseEnvironment(baseContext)
-    if (activeContext) renderActiveEnvironment(activeContext)
+    const boardLayer = document.createElement("canvas")
+    boardLayer.width = VW
+    boardLayer.height = VH
+    const boardContext = boardLayer.getContext("2d", { alpha: false })
+    if (boardContext) renderBoardBase(boardContext)
 
     let frame = 0
     let cancelled = false
@@ -585,6 +523,7 @@ export function PcbHero() {
     let scaleX = 1
     let scaleY = 1
     let logoImage: HTMLImageElement | null = null
+    let inputSignals: SignalRuntime[] = []
     let circuits: CircuitRuntime[] = []
     let fillStart = 0
     let copyStart = 0
@@ -604,44 +543,74 @@ export function PcbHero() {
       if (complete) draw(animationEnd)
     }
 
-    const drawEnvironment = (time: number) => {
-      context.drawImage(baseLayer, 0, 0, VW, VH)
-      const wake = reducedMotion ? 1 : smoothstep((time - .04) / 1.05)
+    const drawDormantFabric = () => {
       context.save()
-      context.globalAlpha = .10 + wake * .90
-      context.drawImage(activeLayer, 0, 0, VW, VH)
+      context.globalAlpha = .34
+      inputSignals.forEach((signal) => drawPrepared(context, signal.route, 1, "rgba(143,103,24,.46)", 2.1))
+      context.globalAlpha = .20
+      circuits.forEach((circuit) => drawPrepared(context, circuit.route, 1, "rgba(143,103,24,.36)", 2.55))
       context.restore()
     }
 
-    const drawPorts = (time: number) => {
-      circuitSpecs.forEach((spec, index) => {
-        const [x, y] = spec.port
-        const activation = smoothstep((time - (circuits[index].spec.delay - .08)) / .12)
+    const drawInputSignals = (time: number) => {
+      inputSignals.forEach((signal) => {
+        const progress = smoothstep((time - signal.delay) / signal.duration)
+        if (progress <= 0) return
 
-        context.beginPath()
-        context.arc(x, y, 10.5, 0, Math.PI * 2)
-        context.fillStyle = "rgba(2,3,2,.98)"
-        context.fill()
-        context.strokeStyle = `rgba(218,160,0,${.64 + activation * .28})`
-        context.lineWidth = 1.6
-        context.stroke()
-
-        context.beginPath()
-        context.arc(x, y, 3.8 + activation * .45, 0, Math.PI * 2)
-        context.fillStyle = GOLD
-        context.globalAlpha = .76 + activation * .24
-        context.fill()
-        context.globalAlpha = 1
+        const head = drawPrepared(context, signal.route, progress, progress < 1 ? BRIGHT : GOLD, 2.55)
+        if (progress < 1) {
+          context.beginPath()
+          context.arc(head[0], head[1], 3.2, 0, Math.PI * 2)
+          context.fillStyle = "#fff0a8"
+          context.fill()
+        }
       })
     }
 
-    const drawCircuits = (time: number) => {
+    const drawCoreActivity = (time: number) => {
+      const power = smoothstep((time - .24) / .42)
+      if (power <= 0) return
+
+      context.save()
+      context.strokeStyle = `rgba(244,198,77,${.18 + power * .62})`
+      context.lineWidth = 1.5 + power * .8
+      clippedRectPath(context, MODULE.x - 5, MODULE.y - 5, MODULE.width + 10, MODULE.height + 10, MODULE.cut + 2)
+      context.stroke()
+
+      const coreGlow = context.createRadialGradient(800, 206, 8, 800, 206, 170)
+      coreGlow.addColorStop(0, `rgba(244,198,77,${.10 + power * .16})`)
+      coreGlow.addColorStop(1, "rgba(218,160,0,0)")
+      context.fillStyle = coreGlow
+      context.fillRect(MODULE.x - 90, MODULE.y - 60, MODULE.width + 180, MODULE.height + 120)
+
+      context.beginPath()
+      context.arc(MODULE.x + 278, MODULE.y + 145, 4.6, 0, Math.PI * 2)
+      context.fillStyle = power > .72 ? "#9de68a" : `rgba(218,160,0,${power})`
+      context.fill()
+
+      context.font = "8px ui-monospace, SFMono-Regular, Menlo, monospace"
+      context.fillStyle = `rgba(228,230,218,${.22 + power * .46})`
+      context.fillText(power > .72 ? "CORE READY" : "BOOTING", MODULE.x + 292, MODULE.y + 148)
+
+      outputSources.forEach(([x, y], index) => {
+        const active = smoothstep((time - CORE_READY - circuitSpecs[index].delay + .04) / .12)
+        if (active <= 0) return
+        context.beginPath()
+        context.arc(x, y, 2.2 + active * 1.1, 0, Math.PI * 2)
+        context.fillStyle = `rgba(244,198,77,${.42 + active * .58})`
+        context.fill()
+      })
+      context.restore()
+    }
+
+    const drawLogoCircuits = (time: number) => {
       circuits.forEach((circuit) => {
-        const progress = clamp01((time - circuit.spec.delay) / circuit.duration)
+        const progress = clamp01((time - circuit.start) / circuit.duration)
         if (progress <= 0) return
 
-        const settled = smoothstep((time - circuit.end) / .28)
-        context.globalAlpha = 1 - settled * .54
+        const settled = smoothstep((time - circuit.end) / .30)
+        context.globalAlpha = 1 - settled * .38
+        drawPrepared(context, circuit.route, progress, "rgba(92,64,12,.94)", 4.1)
         const head = drawPrepared(context, circuit.route, progress, GOLD, 2.55)
         context.globalAlpha = 1
 
@@ -656,7 +625,7 @@ export function PcbHero() {
 
     const drawLogo = (time: number) => {
       if (!logoImage) return
-      const fill = smoothstep((time - fillStart) / .82)
+      const fill = smoothstep((time - fillStart) / .72)
       if (fill <= 0) return
 
       context.save()
@@ -671,9 +640,11 @@ export function PcbHero() {
 
       context.save()
       context.scale(scaleX, scaleY)
-      drawEnvironment(time)
-      drawPorts(time)
-      drawCircuits(time)
+      context.drawImage(boardLayer, 0, 0, VW, VH)
+      drawDormantFabric()
+      drawInputSignals(time)
+      drawCoreActivity(time)
+      drawLogoCircuits(time)
       drawLogo(time)
       context.restore()
     }
@@ -707,24 +678,30 @@ export function PcbHero() {
         const logoPaths = await loadLogoPaths()
         if (cancelled) return
 
-        circuits = circuitSpecs.map((spec) => {
-          const route = buildCircuit(spec, logoPaths)
-          const duration = route.total / CIRCUIT_SPEED
-          return { spec, route, duration, end: spec.delay + duration }
+        inputSignals = inputSignalSpecs.map((spec) => {
+          const route = prepareRoute(spec.route)
+          const duration = Math.max(.28, route.total / 920)
+          return { route, delay: spec.delay, duration, end: spec.delay + duration }
         })
 
-        const firstLogoMoment = Math.min(...circuits.map((circuit) => circuit.spec.delay + circuit.duration * .34))
+        circuits = circuitSpecs.map((spec) => {
+          const route = buildCircuit(spec, logoPaths)
+          const duration = Math.max(.42, route.total / CIRCUIT_SPEED)
+          const startTime = CORE_READY + spec.delay
+          return { spec, route, duration, start: startTime, end: startTime + duration }
+        })
+
+        const firstLogoMoment = Math.min(...circuits.map((circuit) => circuit.start + circuit.duration * .34))
         const lastCircuitEnd = Math.max(...circuits.map((circuit) => circuit.end))
-        fillStart = firstLogoMoment + .32
+        fillStart = firstLogoMoment + .18
         copyStart = fillStart + .12
-        animationEnd = lastCircuitEnd + .20
+        animationEnd = lastCircuitEnd + .24
 
         const image = new Image()
         logoImage = image
         image.onload = () => {
           if (cancelled) return
           resize()
-
           if (reducedMotion) {
             draw(animationEnd)
             complete = true
@@ -760,7 +737,7 @@ export function PcbHero() {
     <>
       <section
         ref={heroRef}
-        className="relative isolate h-[min(78svh,760px)] min-h-[600px] overflow-hidden border-b border-[#daa000]/35 bg-black"
+        className="relative isolate h-[min(78svh,760px)] min-h-[600px] overflow-hidden border-b border-[#daa000]/25 bg-[#010302]"
       >
         <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 z-[1] h-full w-full" aria-hidden="true" />
       </section>
