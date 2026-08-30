@@ -57,6 +57,40 @@ const circuitSpecs: CircuitSpec[] = [
   { pathIndex: 3, from: .80, to: .91, port: [42, 608], inBends: [[125,608],[125,590],[235,590]], outBends: [[1480,420],[1640,420]], delay: .27 },
 ]
 
+const substrateRoutes: Route[] = [
+  [[0,94],[92,94],[92,132],[196,132],[196,176],[304,176]],
+  [[0,212],[68,212],[68,258],[176,258],[176,294],[258,294]],
+  [[0,548],[96,548],[96,514],[204,514],[204,472],[298,472]],
+  [[0,676],[126,676],[126,636],[238,636],[238,604],[352,604]],
+  [[1600,96],[1516,96],[1516,138],[1414,138],[1414,184],[1320,184]],
+  [[1600,222],[1528,222],[1528,270],[1436,270],[1436,312],[1346,312]],
+  [[1600,538],[1504,538],[1504,498],[1418,498],[1418,452],[1322,452]],
+  [[1600,674],[1478,674],[1478,628],[1388,628],[1388,596],[1280,596]],
+  [[132,0],[132,72],[190,72],[190,116]],
+  [[468,0],[468,82],[426,82],[426,146]],
+  [[1132,0],[1132,76],[1184,76],[1184,136]],
+  [[1466,0],[1466,68],[1408,68],[1408,124]],
+  [[146,760],[146,690],[210,690],[210,642]],
+  [[466,760],[466,696],[416,696],[416,634]],
+  [[1130,760],[1130,700],[1184,700],[1184,642]],
+  [[1464,760],[1464,690],[1400,690],[1400,640]],
+]
+
+const activeRoutes: Route[] = [
+  [[318,204],[388,204],[388,236],[470,236]],
+  [[280,390],[376,390],[376,354],[464,354]],
+  [[322,578],[398,578],[398,540],[480,540]],
+  [[1282,206],[1212,206],[1212,238],[1130,238]],
+  [[1320,390],[1224,390],[1224,352],[1136,352]],
+  [[1278,578],[1202,578],[1202,540],[1120,540]],
+  [[548,122],[548,188],[586,188],[586,232]],
+  [[800,116],[800,184],[800,218]],
+  [[1052,122],[1052,188],[1014,188],[1014,232]],
+  [[548,638],[548,590],[586,590],[586,548]],
+  [[800,644],[800,590],[800,554]],
+  [[1052,638],[1052,590],[1014,590],[1014,548]],
+]
+
 function clamp01(value: number) {
   return Math.max(0, Math.min(1, value))
 }
@@ -123,6 +157,208 @@ function drawPrepared(
   ctx.lineJoin = "round"
   ctx.stroke()
   return head
+}
+
+function strokeRoute(
+  ctx: CanvasRenderingContext2D,
+  route: Route,
+  stroke: string,
+  width = 1
+) {
+  if (route.length < 2) return
+  ctx.beginPath()
+  ctx.moveTo(route[0][0], route[0][1])
+  for (let index = 1; index < route.length; index++) {
+    ctx.lineTo(route[index][0], route[index][1])
+  }
+  ctx.strokeStyle = stroke
+  ctx.lineWidth = width
+  ctx.lineCap = "round"
+  ctx.lineJoin = "round"
+  ctx.stroke()
+}
+
+function drawViaCluster(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  columns: number,
+  rows: number,
+  spacingX: number,
+  spacingY: number,
+  alpha: number
+) {
+  ctx.save()
+  ctx.strokeStyle = `rgba(218,160,0,${alpha})`
+  ctx.fillStyle = `rgba(218,160,0,${alpha * .48})`
+  ctx.lineWidth = .8
+
+  for (let row = 0; row < rows; row++) {
+    for (let column = 0; column < columns; column++) {
+      const px = x + column * spacingX
+      const py = y + row * spacingY
+      ctx.beginPath()
+      ctx.arc(px, py, 2.2, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.arc(px, py, .75, 0, Math.PI * 2)
+      ctx.fill()
+    }
+  }
+
+  ctx.restore()
+}
+
+function drawChipFootprint(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  pins: number,
+  label: string,
+  alpha: number
+) {
+  ctx.save()
+  ctx.strokeStyle = `rgba(218,160,0,${alpha})`
+  ctx.fillStyle = `rgba(218,160,0,${alpha * .72})`
+  ctx.lineWidth = 1
+  ctx.strokeRect(x, y, width, height)
+
+  const horizontalGap = width / (pins + 1)
+  const verticalGap = height / (Math.max(4, Math.round(pins * .55)) + 1)
+
+  for (let index = 1; index <= pins; index++) {
+    const px = x + horizontalGap * index
+    ctx.fillRect(px - 1.8, y - 8, 3.6, 6)
+    ctx.fillRect(px - 1.8, y + height + 2, 3.6, 6)
+  }
+
+  const verticalPins = Math.max(4, Math.round(pins * .55))
+  for (let index = 1; index <= verticalPins; index++) {
+    const py = y + verticalGap * index
+    ctx.fillRect(x - 8, py - 1.8, 6, 3.6)
+    ctx.fillRect(x + width + 2, py - 1.8, 6, 3.6)
+  }
+
+  ctx.font = "9px ui-monospace, SFMono-Regular, Menlo, monospace"
+  ctx.fillStyle = `rgba(218,160,0,${alpha * 1.12})`
+  ctx.fillText(label, x + 8, y + 14)
+  ctx.restore()
+}
+
+function renderBaseEnvironment(ctx: CanvasRenderingContext2D) {
+  ctx.clearRect(0, 0, VW, VH)
+  ctx.fillStyle = "#040504"
+  ctx.fillRect(0, 0, VW, VH)
+
+  const voidField = ctx.createRadialGradient(800, 382, 30, 800, 382, 760)
+  voidField.addColorStop(0, "rgba(1,2,1,1)")
+  voidField.addColorStop(.20, "rgba(5,5,4,1)")
+  voidField.addColorStop(.43, "rgba(35,27,12,.42)")
+  voidField.addColorStop(.72, "rgba(12,12,9,.9)")
+  voidField.addColorStop(1, "rgba(3,4,3,1)")
+  ctx.fillStyle = voidField
+  ctx.fillRect(0, 0, VW, VH)
+
+  const vignette = ctx.createRadialGradient(800, 380, 220, 800, 380, 930)
+  vignette.addColorStop(0, "rgba(0,0,0,0)")
+  vignette.addColorStop(.55, "rgba(0,0,0,.08)")
+  vignette.addColorStop(.80, "rgba(0,0,0,.46)")
+  vignette.addColorStop(1, "rgba(0,0,0,.88)")
+  ctx.fillStyle = vignette
+  ctx.fillRect(0, 0, VW, VH)
+
+  ctx.save()
+  substrateRoutes.forEach((route, index) => {
+    strokeRoute(
+      ctx,
+      route,
+      index % 3 === 0 ? "rgba(218,160,0,.075)" : "rgba(218,160,0,.048)",
+      index % 4 === 0 ? 1.15 : .9
+    )
+  })
+  ctx.restore()
+
+  drawChipFootprint(ctx, 118, 70, 156, 88, 10, "U3 / MCU", .075)
+  drawChipFootprint(ctx, 1328, 82, 144, 82, 9, "U7 / IO", .065)
+  drawChipFootprint(ctx, 116, 590, 136, 76, 8, "J2", .055)
+  drawChipFootprint(ctx, 1340, 582, 132, 78, 8, "U9", .055)
+
+  drawViaCluster(ctx, 58, 338, 4, 4, 15, 15, .08)
+  drawViaCluster(ctx, 1482, 334, 4, 4, 15, 15, .08)
+  drawViaCluster(ctx, 354, 86, 5, 2, 14, 14, .055)
+  drawViaCluster(ctx, 1186, 650, 5, 2, 14, 14, .055)
+
+  ctx.save()
+  ctx.font = "9px ui-monospace, SFMono-Regular, Menlo, monospace"
+  ctx.fillStyle = "rgba(218,160,0,.09)"
+  ctx.fillText("3V3", 74, 188)
+  ctx.fillText("GND", 1450, 194)
+  ctx.fillText("SPI0", 120, 530)
+  ctx.fillText("CLK", 1436, 526)
+  ctx.fillText("R14", 330, 102)
+  ctx.fillText("C08", 1228, 664)
+  ctx.restore()
+
+  ctx.save()
+  ctx.fillStyle = "rgba(235,228,208,.018)"
+  for (let index = 0; index < 460; index++) {
+    const px = (index * 83 + 29) % VW
+    const py = (index * 137 + 47) % VH
+    const size = index % 7 === 0 ? 1.1 : .65
+    ctx.fillRect(px, py, size, size)
+  }
+  ctx.restore()
+}
+
+function renderActiveEnvironment(ctx: CanvasRenderingContext2D) {
+  ctx.clearRect(0, 0, VW, VH)
+
+  const activation = ctx.createRadialGradient(800, 382, 64, 800, 382, 560)
+  activation.addColorStop(0, "rgba(218,160,0,.055)")
+  activation.addColorStop(.26, "rgba(218,160,0,.044)")
+  activation.addColorStop(.62, "rgba(218,160,0,.016)")
+  activation.addColorStop(1, "rgba(218,160,0,0)")
+  ctx.fillStyle = activation
+  ctx.fillRect(0, 0, VW, VH)
+
+  ctx.save()
+  ctx.strokeStyle = "rgba(218,160,0,.075)"
+  ctx.lineWidth = 1
+  ctx.strokeRect(418, 176, 764, 414)
+  ctx.strokeStyle = "rgba(218,160,0,.04)"
+  ctx.strokeRect(444, 202, 712, 362)
+
+  ctx.fillStyle = "rgba(218,160,0,.07)"
+  for (let x = 472; x <= 1128; x += 41) {
+    ctx.fillRect(x, 166, 3, 8)
+    ctx.fillRect(x, 592, 3, 8)
+  }
+  for (let y = 214; y <= 552; y += 36) {
+    ctx.fillRect(408, y, 8, 3)
+    ctx.fillRect(1184, y, 8, 3)
+  }
+
+  activeRoutes.forEach((route, index) => {
+    strokeRoute(
+      ctx,
+      route,
+      index % 4 === 0 ? "rgba(218,160,0,.10)" : "rgba(218,160,0,.065)",
+      index % 3 === 0 ? 1.2 : .9
+    )
+  })
+
+  drawViaCluster(ctx, 390, 224, 3, 3, 13, 13, .095)
+  drawViaCluster(ctx, 1184, 224, 3, 3, 13, 13, .095)
+  drawViaCluster(ctx, 390, 514, 3, 3, 13, 13, .075)
+  drawViaCluster(ctx, 1184, 514, 3, 3, 13, 13, .075)
+
+  ctx.font = "9px ui-monospace, SFMono-Regular, Menlo, monospace"
+  ctx.fillStyle = "rgba(218,160,0,.10)"
+  ctx.fillText("CORE / 01", 438, 194)
+  ctx.fillText("EMBEDDED BUS", 1062, 578)
+  ctx.restore()
 }
 
 function logoPoint([x, y]: Point): Point {
@@ -195,6 +431,19 @@ export function PcbHero() {
     const context = canvas.getContext("2d", { alpha: true })
     if (!context) return
 
+    const baseLayer = document.createElement("canvas")
+    baseLayer.width = VW
+    baseLayer.height = VH
+    const baseContext = baseLayer.getContext("2d", { alpha: false })
+
+    const activeLayer = document.createElement("canvas")
+    activeLayer.width = VW
+    activeLayer.height = VH
+    const activeContext = activeLayer.getContext("2d", { alpha: true })
+
+    if (baseContext) renderBaseEnvironment(baseContext)
+    if (activeContext) renderActiveEnvironment(activeContext)
+
     let frame = 0
     let cancelled = false
     let complete = false
@@ -225,6 +474,16 @@ export function PcbHero() {
       if (complete) draw(animationEnd)
     }
 
+    const drawEnvironment = (time: number) => {
+      context.drawImage(baseLayer, 0, 0, VW, VH)
+
+      const wake = reducedMotion ? 1 : smoothstep((time - .04) / 1.15)
+      context.save()
+      context.globalAlpha = .14 + wake * .86
+      context.drawImage(activeLayer, 0, 0, VW, VH)
+      context.restore()
+    }
+
     const drawPorts = (time: number) => {
       circuitSpecs.forEach((spec, index) => {
         const [x, y] = spec.port
@@ -232,7 +491,7 @@ export function PcbHero() {
 
         context.beginPath()
         context.arc(x, y, 10.5, 0, Math.PI * 2)
-        context.fillStyle = "rgba(15,15,15,.96)"
+        context.fillStyle = "rgba(9,10,8,.98)"
         context.fill()
         context.strokeStyle = `rgba(218,160,0,${.42 + activation * .34})`
         context.lineWidth = 1.4
@@ -283,6 +542,7 @@ export function PcbHero() {
 
       context.save()
       context.scale(scaleX, scaleY)
+      drawEnvironment(time)
       drawPorts(time)
       drawCircuits(time)
       drawLogo(time)
@@ -371,9 +631,8 @@ export function PcbHero() {
     <>
       <section
         ref={heroRef}
-        className="relative isolate h-[min(78svh,760px)] min-h-[600px] overflow-hidden border-b border-[#daa000]/20 bg-background"
+        className="relative isolate h-[min(78svh,760px)] min-h-[600px] overflow-hidden border-b border-[#daa000]/20 bg-[#040504]"
       >
-        <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_48%,rgba(218,160,0,0.06),transparent_42%)]" />
         <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 z-[1] h-full w-full" aria-hidden="true" />
       </section>
 
