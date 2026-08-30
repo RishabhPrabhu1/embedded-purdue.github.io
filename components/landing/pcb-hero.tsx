@@ -25,6 +25,14 @@ const coreLogoPaths = [
 type Point = readonly [number, number]
 type Route = readonly Point[]
 type PreparedRoute = { points: Route; segments: number[]; total: number }
+type LowerNetworkRoute = {
+  route: PreparedRoute
+  start: number
+  duration: number
+  alpha: number
+  widthScale: number
+  junctions?: readonly Point[]
+}
 
 type CircuitSpec = {
   pathIndex: number
@@ -180,6 +188,7 @@ export function PcbHero() {
     let scaleX = 1
     let scaleY = 1
     let logoImage: HTMLImageElement | null = null
+    let lowerNetwork: LowerNetworkRoute[] = []
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
     const circuits = circuitSpecs.map((spec) => {
@@ -193,10 +202,103 @@ export function PcbHero() {
 
     const firstLogoMoment = Math.min(...circuits.map((circuit) => circuit.spec.delay + circuit.duration * .34))
     const lastCircuitEnd = Math.max(...circuits.map((circuit) => circuit.end))
-    const lowerCircuitEnd = Math.max(...downwardCircuits.map((circuit) => circuit.end + LOWER_EXTENSION_TIME))
+    const lowerCircuitEnd = downwardCircuits.length
+      ? Math.max(...downwardCircuits.map((circuit) => circuit.end + LOWER_EXTENSION_TIME * 1.55))
+      : lastCircuitEnd
     const fillStart = firstLogoMoment + .32
     const copyStart = fillStart + .18
     const animationEnd = Math.max(lastCircuitEnd + .20, lowerCircuitEnd)
+
+    const rebuildLowerNetwork = () => {
+      const stageBottom = stageOffsetY + stageHeight
+      const lowerDistance = cssHeight - stageBottom
+      if (lowerDistance <= 1 || downwardCircuits.length === 0) {
+        lowerNetwork = []
+        return
+      }
+
+      const trunkXs = downwardCircuits.map((circuit) => {
+        const last = circuit.route.points[circuit.route.points.length - 1]
+        return last[0] * scaleX
+      })
+      const laneFractions = [
+        [.04, .13, .22, .31],
+        [.36, .45, .55, .64],
+        [.69, .78, .87, .96],
+      ] as const
+      const levelFractions = [.12, .31, .52, .73] as const
+      const verticalEnds = [.30, .50, .72, 1.02] as const
+      const routes: LowerNetworkRoute[] = []
+
+      downwardCircuits.forEach((circuit, index) => {
+        const x = trunkXs[index]
+        const laneSet = laneFractions[Math.min(index, laneFractions.length - 1)]
+
+        routes.push({
+          route: prepareRoute([[x, stageBottom - 1], [x, cssHeight + 2]]),
+          start: circuit.end,
+          duration: LOWER_EXTENSION_TIME * .62,
+          alpha: .54,
+          widthScale: 1,
+        })
+
+        laneSet.forEach((laneFraction, branchIndex) => {
+          const y = stageBottom + lowerDistance * (levelFractions[branchIndex] + (index - 1) * .012)
+          const targetX = cssWidth * laneFraction
+          const endY = stageBottom + lowerDistance * verticalEnds[branchIndex]
+          routes.push({
+            route: prepareRoute([[x, y], [targetX, y], [targetX, endY]]),
+            start: circuit.end + LOWER_EXTENSION_TIME * (.08 + branchIndex * .13),
+            duration: LOWER_EXTENSION_TIME * (.48 + branchIndex * .05),
+            alpha: .42 - branchIndex * .035,
+            widthScale: branchIndex < 2 ? .96 : .86,
+            junctions: [[x, y]],
+          })
+        })
+      })
+
+      if (downwardCircuits.length >= 3) {
+        const leftStart = Math.max(downwardCircuits[0].end, downwardCircuits[1].end)
+        const rightStart = Math.max(downwardCircuits[1].end, downwardCircuits[2].end)
+        const allStart = Math.max(...downwardCircuits.map((circuit) => circuit.end))
+        const bus1Y = stageBottom + lowerDistance * .24
+        const bus2Y = stageBottom + lowerDistance * .46
+        const bus3Y = stageBottom + lowerDistance * .67
+        const xA = cssWidth * .13
+        const xB = cssWidth * .45
+        const xC = cssWidth * .55
+        const xD = cssWidth * .87
+        const xE = cssWidth * .22
+        const xF = cssWidth * .78
+
+        routes.push({
+          route: prepareRoute([[xA, bus1Y], [xB, bus1Y]]),
+          start: leftStart + LOWER_EXTENSION_TIME * .24,
+          duration: LOWER_EXTENSION_TIME * .48,
+          alpha: .25,
+          widthScale: .78,
+          junctions: [[xA, bus1Y], [xB, bus1Y]],
+        })
+        routes.push({
+          route: prepareRoute([[xC, bus2Y], [xD, bus2Y]]),
+          start: rightStart + LOWER_EXTENSION_TIME * .34,
+          duration: LOWER_EXTENSION_TIME * .50,
+          alpha: .23,
+          widthScale: .76,
+          junctions: [[xC, bus2Y], [xD, bus2Y]],
+        })
+        routes.push({
+          route: prepareRoute([[xE, bus3Y], [xF, bus3Y]]),
+          start: allStart + LOWER_EXTENSION_TIME * .48,
+          duration: LOWER_EXTENSION_TIME * .54,
+          alpha: .20,
+          widthScale: .72,
+          junctions: [[xE, bus3Y], [xF, bus3Y]],
+        })
+      }
+
+      lowerNetwork = routes
+    }
 
     const resize = () => {
       const heroRect = hero.getBoundingClientRect()
@@ -210,6 +312,7 @@ export function PcbHero() {
       dpr = Math.min(window.devicePixelRatio || 1, 1.1)
       canvas.width = Math.round(cssWidth * dpr)
       canvas.height = Math.round(cssHeight * dpr)
+      rebuildLowerNetwork()
       if (complete) draw(animationEnd)
     }
 
@@ -283,121 +386,32 @@ export function PcbHero() {
     }
 
     const drawLowerField = (time: number) => {
-      const stageBottom = stageOffsetY + stageHeight
-      const lowerDistance = cssHeight - stageBottom
-      if (lowerDistance <= 1 || downwardCircuits.length === 0) return
-
-      const strokeWidth = Math.max(1.4, 2.35 * scaleX)
-      const trunkXs = downwardCircuits.map((circuit) => {
-        const last = circuit.route.points[circuit.route.points.length - 1]
-        return last[0] * scaleX
-      })
+      if (lowerNetwork.length === 0) return
+      const strokeWidth = Math.max(1.4, 2.35 * Math.min(1.15, Math.max(.82, scaleX)))
 
       context.save()
       context.lineCap = "round"
       context.lineJoin = "round"
 
-      downwardCircuits.forEach((circuit, index) => {
-        const rawProgress = clamp01((time - circuit.end) / LOWER_EXTENSION_TIME)
-        if (rawProgress <= 0) return
+      lowerNetwork.forEach((networkRoute) => {
+        const progress = smoothstep((time - networkRoute.start) / networkRoute.duration)
+        if (progress <= 0) return
 
-        const settled = smoothstep((time - circuit.end) / .28)
-        const alpha = (1 - settled * .64) * .9
-        const x = trunkXs[index]
-        const leftEdge = Math.max(22, cssWidth * .035)
-        const rightEdge = Math.min(cssWidth - 22, cssWidth * .965)
-        const towardEdge = index === 0 ? leftEdge : index === trunkXs.length - 1 ? rightEdge : cssWidth * .42
-        const awayFromEdge = index === 0 ? cssWidth * .42 : index === trunkXs.length - 1 ? cssWidth * .58 : cssWidth * .73
-        const lowTarget = index === 0 ? cssWidth * .23 : index === trunkXs.length - 1 ? cssWidth * .84 : cssWidth * .53
-
-        context.globalAlpha = alpha
+        context.globalAlpha = networkRoute.alpha
         drawPrepared(
           context,
-          prepareRoute([[x, stageBottom - 1], [x, cssHeight + 2]]),
-          smoothstep(rawProgress / .60),
+          networkRoute.route,
+          progress,
           GOLD,
-          strokeWidth
+          Math.max(1.1, strokeWidth * networkRoute.widthScale)
         )
 
-        const branch1Y = stageBottom + lowerDistance * (.15 + index * .035)
-        const branch1Progress = smoothstep((rawProgress - .10) / .52)
-        if (branch1Progress > 0) {
-          context.globalAlpha = alpha * .78
-          drawPrepared(
-            context,
-            prepareRoute([[x, branch1Y], [towardEdge, branch1Y], [towardEdge, stageBottom + lowerDistance * (.42 + index * .05)]]),
-            branch1Progress,
-            GOLD,
-            strokeWidth
-          )
-          drawJunction(x, branch1Y, branch1Progress * alpha * .82)
-        }
-
-        const branch2Y = stageBottom + lowerDistance * (.36 + index * .025)
-        const branch2Progress = smoothstep((rawProgress - .25) / .56)
-        if (branch2Progress > 0) {
-          context.globalAlpha = alpha * .64
-          drawPrepared(
-            context,
-            prepareRoute([[x, branch2Y], [awayFromEdge, branch2Y], [awayFromEdge, stageBottom + lowerDistance * (.68 + (index % 2) * .08)]]),
-            branch2Progress,
-            GOLD,
-            strokeWidth
-          )
-          drawJunction(x, branch2Y, branch2Progress * alpha * .68)
-        }
-
-        const branch3Y = stageBottom + lowerDistance * (.61 - index * .025)
-        const branch3Progress = smoothstep((rawProgress - .42) / .54)
-        if (branch3Progress > 0) {
-          context.globalAlpha = alpha * .55
-          drawPrepared(
-            context,
-            prepareRoute([[x, branch3Y], [lowTarget, branch3Y], [lowTarget, cssHeight + 2]]),
-            branch3Progress,
-            GOLD,
-            Math.max(1.25, strokeWidth * .9)
-          )
-          drawJunction(x, branch3Y, branch3Progress * alpha * .56)
+        if (networkRoute.junctions && progress > .08) {
+          networkRoute.junctions.forEach(([x, y]) => {
+            drawJunction(x, y, networkRoute.alpha * Math.min(1, progress * 1.3))
+          })
         }
       })
-
-      for (let index = 0; index < trunkXs.length - 1; index++) {
-        const leftCircuit = downwardCircuits[index]
-        const rightCircuit = downwardCircuits[index + 1]
-        const linkStart = Math.max(leftCircuit.end, rightCircuit.end)
-
-        const upperLinkProgress = smoothstep((time - linkStart - .16) / LOWER_EXTENSION_TIME)
-        if (upperLinkProgress > 0) {
-          const y = stageBottom + lowerDistance * (.28 + index * .08)
-          context.globalAlpha = .22 + upperLinkProgress * .10
-          drawPrepared(
-            context,
-            prepareRoute([[trunkXs[index], y], [trunkXs[index + 1], y]]),
-            upperLinkProgress,
-            GOLD,
-            Math.max(1.2, strokeWidth * .82)
-          )
-          drawJunction(trunkXs[index], y, upperLinkProgress * .32)
-          drawJunction(trunkXs[index + 1], y, upperLinkProgress * .32)
-        }
-
-        const lowerLinkProgress = smoothstep((time - linkStart - .38) / LOWER_EXTENSION_TIME)
-        if (lowerLinkProgress > 0) {
-          const y = stageBottom + lowerDistance * (.72 - index * .07)
-          const inset = cssWidth * .035
-          const fromX = trunkXs[index] + inset
-          const toX = trunkXs[index + 1] - inset
-          context.globalAlpha = .18 + lowerLinkProgress * .08
-          drawPrepared(
-            context,
-            prepareRoute([[fromX, y], [toX, y]]),
-            lowerLinkProgress,
-            GOLD,
-            Math.max(1.15, strokeWidth * .76)
-          )
-        }
-      }
 
       context.restore()
     }
@@ -478,15 +492,15 @@ export function PcbHero() {
         <div ref={stageRef} className="relative h-[min(70svh,700px)] min-h-[500px] w-full sm:min-h-[540px]" aria-hidden="true" />
 
         <div
-          className={`mt-6 flex max-w-3xl flex-col items-center px-5 transition-all duration-300 sm:mt-8 sm:px-8 ${
+          className={`relative z-20 mt-6 flex w-[calc(100%-2.5rem)] max-w-3xl flex-col items-center border border-white/[0.11] border-t-[#daa000]/45 bg-[#10100e]/90 px-6 py-7 shadow-[0_18px_70px_rgba(0,0,0,0.38)] backdrop-blur-md transition-all duration-300 sm:mt-8 sm:px-9 sm:py-8 ${
             copyVisible ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
           }`}
         >
-          <p className="font-mono text-[0.67rem] uppercase tracking-[0.28em] text-primary/80 sm:text-xs">
-            Hardware × software × people who build
+          <p className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-primary/85 sm:text-[0.68rem]">
+            Embedded Systems @ Purdue / Hardware × software × people who build
           </p>
           <h1 className="mt-4 text-balance text-2xl font-semibold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
-            Purdue&apos;s home for embedded systems.
+            A home for people who build embedded systems.
           </h1>
           <p className="mt-3 max-w-2xl text-balance text-sm leading-6 text-muted-foreground sm:text-base lg:text-lg">
             Design boards, program microcontrollers, work with FPGAs, and ship real systems with a community built around making.
@@ -505,7 +519,7 @@ export function PcbHero() {
         <a
           href="#landing-content"
           className={`absolute bottom-5 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 font-mono text-[0.62rem] uppercase tracking-[0.22em] text-muted-foreground transition-opacity duration-300 hover:text-primary ${copyVisible ? "opacity-80" : "opacity-0"}`}
-          aria-label="Scroll to explore Embedded Systems at Purdue"
+          aria-label="Scroll to explore Embedded Systems @ Purdue"
         >
           Explore
           <ArrowDown className="h-4 w-4" aria-hidden="true" />
