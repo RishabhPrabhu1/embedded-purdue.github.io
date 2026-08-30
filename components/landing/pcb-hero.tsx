@@ -5,7 +5,6 @@ import { ArrowDown, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const GOLD = "#daa000"
-const SIGNAL = "#f2c24f"
 const LOGO_X = 270
 const LOGO_Y = 250
 const LOGO_SCALE = 1060 / 1920
@@ -153,8 +152,7 @@ export function PcbHero() {
         }
         .pcb4-port-core { fill: ${GOLD}; }
         .pcb4-feeder,
-        .pcb4-reveal,
-        .pcb4-signal {
+        .pcb4-reveal {
           fill: none;
           stroke-linecap: round;
           stroke-linejoin: round;
@@ -165,40 +163,34 @@ export function PcbHero() {
           stroke: ${GOLD};
           stroke-width: 2;
           vector-effect: non-scaling-stroke;
-          animation: pcb4Draw var(--dur) cubic-bezier(.4,0,.2,1) var(--delay) forwards;
+          animation: pcb4Draw var(--dur) linear var(--delay) forwards;
         }
         .pcb4-reveal {
           stroke: ${GOLD};
           stroke-width: 88;
-          animation: pcb4Draw var(--build-dur) cubic-bezier(.4,0,.2,1) var(--build-delay) forwards;
-        }
-        .pcb4-signal {
-          stroke: ${SIGNAL};
-          stroke-width: 2.3;
-          vector-effect: non-scaling-stroke;
-          animation: pcb4Draw var(--build-dur) cubic-bezier(.4,0,.2,1) var(--build-delay) forwards;
+          animation: pcb4Draw var(--build-dur) linear var(--build-delay) forwards;
         }
         .pcb4-logo-fill {
           opacity: 0;
-          animation: pcb4Resolve .16s linear 1.58s forwards;
+          animation: pcb4Resolve .12s linear 1.66s forwards;
         }
         .pcb4-copy {
           opacity: 0;
           transform: translateY(7px);
-          animation: pcb4Copy .38s cubic-bezier(.2,.7,.2,1) 1.70s forwards;
+          animation: pcb4Copy .34s cubic-bezier(.2,.7,.2,1) 1.78s forwards;
         }
-        .pcb4-scroll { opacity: 0; animation: pcb4Resolve .25s linear 2.02s forwards; }
+        .pcb4-scroll { opacity: 0; animation: pcb4Resolve .22s linear 2.08s forwards; }
         @keyframes pcb4Draw { to { stroke-dashoffset: 0; } }
         @keyframes pcb4Resolve { to { opacity: 1; } }
         @keyframes pcb4Copy { to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 640px) {
           .pcb4-stage { height: 56svh; min-height: 420px; }
-          .pcb4-feeder, .pcb4-signal { stroke-width: 1.65; }
+          .pcb4-feeder { stroke-width: 1.65; }
           .pcb4-reveal { stroke-width: 72; }
         }
         @media (prefers-reduced-motion: reduce) {
-          .pcb4-feeder, .pcb4-reveal, .pcb4-signal, .pcb4-logo-fill, .pcb4-copy, .pcb4-scroll { animation: none !important; }
-          .pcb4-feeder, .pcb4-reveal, .pcb4-signal { stroke-dashoffset: 0; }
+          .pcb4-feeder, .pcb4-reveal, .pcb4-logo-fill, .pcb4-copy, .pcb4-scroll { animation: none !important; }
+          .pcb4-feeder, .pcb4-reveal { stroke-dashoffset: 0; }
           .pcb4-logo-fill, .pcb4-copy, .pcb4-scroll { opacity: 1; transform: none; }
         }
       `}</style>
@@ -227,7 +219,7 @@ export function PcbHero() {
             ))}
 
             {routes.map(({ feeder, build, delay, feederDuration, buildDuration }) => {
-              const buildDelay = delay + feederDuration - 0.045
+              const buildDelay = delay + feederDuration - 0.012
               const style = {
                 "--delay": `${delay}s`,
                 "--dur": `${feederDuration}s`,
@@ -240,7 +232,6 @@ export function PcbHero() {
                   <path d={feeder} pathLength="1" className="pcb4-feeder" />
                   <g clipPath="url(#pcb4LogoClip)">
                     <path d={build} pathLength="1" className="pcb4-reveal" />
-                    <path d={build} pathLength="1" className="pcb4-signal" />
                   </g>
                 </g>
               )
