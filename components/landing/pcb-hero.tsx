@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { ArrowDown, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 
@@ -36,25 +36,25 @@ type CircuitRuntime = {
 }
 
 const circuitSpecs: CircuitSpec[] = [
-  { pathIndex: 0, from: .02, to: .13, port: [42, 120], inBends: [[130,120],[130,240],[230,240]], outBends: [[1380,150],[1480,150],[1480,105],[1640,105]], delay: .10 },
-  { pathIndex: 0, from: .30, to: .43, port: [42, 300], inBends: [[125,300],[125,380],[225,380]], outBends: [[520,625],[520,760]], delay: .15 },
+  { pathIndex: 0, from: .02, to: .13, port: [42, 152], inBends: [[130,152],[130,240],[230,240]], outBends: [[1380,150],[1480,150],[1480,105],[1640,105]], delay: .10 },
+  { pathIndex: 0, from: .30, to: .43, port: [42, 304], inBends: [[125,304],[125,380],[225,380]], outBends: [[520,625],[520,760]], delay: .15 },
   { pathIndex: 0, from: .62, to: .75, port: [320, 42], inBends: [[320,130],[430,130],[430,215]], outBends: [[120,420],[-40,420]], delay: .20 },
-  { pathIndex: 0, from: .79, to: .90, port: [560, 42], inBends: [[560,115],[525,115],[525,210]], outBends: [[1470,620],[1640,620]], delay: .13 },
+  { pathIndex: 0, from: .79, to: .90, port: [640, 42], inBends: [[640,115],[525,115],[525,210]], outBends: [[1470,620],[1640,620]], delay: .13 },
 
-  { pathIndex: 1, from: .04, to: .18, port: [800, 42], inBends: [[800,125],[760,125],[760,220]], outBends: [[720,620],[720,760]], delay: .12 },
-  { pathIndex: 1, from: .34, to: .50, port: [42, 520], inBends: [[135,520],[135,465],[245,465]], outBends: [[1390,260],[1640,260]], delay: .18 },
-  { pathIndex: 1, from: .52, to: .64, port: [1558, 465], inBends: [[1480,465],[1480,500],[1380,500]], outBends: [[260,620],[-40,620]], delay: .19 },
-  { pathIndex: 1, from: .67, to: .82, port: [350, 678], inBends: [[350,610],[450,610],[450,560]], outBends: [[1080,120],[1080,-40]], delay: .24 },
+  { pathIndex: 1, from: .04, to: .18, port: [960, 42], inBends: [[960,125],[760,125],[760,220]], outBends: [[720,620],[720,760]], delay: .12 },
+  { pathIndex: 1, from: .34, to: .50, port: [42, 456], inBends: [[135,456],[135,500],[245,500]], outBends: [[1390,260],[1640,260]], delay: .18 },
+  { pathIndex: 1, from: .52, to: .64, port: [1558, 456], inBends: [[1480,456],[1480,500],[1380,500]], outBends: [[260,620],[-40,620]], delay: .19 },
+  { pathIndex: 1, from: .67, to: .82, port: [320, 718], inBends: [[320,610],[450,610],[450,560]], outBends: [[1080,120],[1080,-40]], delay: .24 },
 
-  { pathIndex: 2, from: .04, to: .13, port: [1558, 150], inBends: [[1470,150],[1470,235],[1370,235]], outBends: [[170,205],[-40,205]], delay: .14 },
-  { pathIndex: 2, from: .27, to: .40, port: [1558, 350], inBends: [[1470,350],[1470,420],[1375,420]], outBends: [[1030,105],[1030,-40]], delay: .20 },
-  { pathIndex: 2, from: .46, to: .58, port: [1050, 678], inBends: [[1050,610],[1000,610],[1000,555]], outBends: [[1380,90],[1380,-40]], delay: .23 },
-  { pathIndex: 2, from: .66, to: .79, port: [800, 678], inBends: [[800,610],[900,610],[900,560]], outBends: [[1430,465],[1640,465]], delay: .26 },
+  { pathIndex: 2, from: .04, to: .13, port: [1558, 152], inBends: [[1470,152],[1470,235],[1370,235]], outBends: [[170,205],[-40,205]], delay: .14 },
+  { pathIndex: 2, from: .27, to: .40, port: [1558, 304], inBends: [[1470,304],[1470,420],[1375,420]], outBends: [[1030,105],[1030,-40]], delay: .20 },
+  { pathIndex: 2, from: .46, to: .58, port: [960, 718], inBends: [[960,610],[1000,610],[1000,555]], outBends: [[1380,90],[1380,-40]], delay: .23 },
+  { pathIndex: 2, from: .66, to: .79, port: [640, 718], inBends: [[640,610],[900,610],[900,560]], outBends: [[1430,465],[1640,465]], delay: .26 },
 
   { pathIndex: 3, from: .05, to: .18, port: [1280, 42], inBends: [[1280,125],[1200,125],[1200,220]], outBends: [[1240,625],[1240,760]], delay: .16 },
-  { pathIndex: 3, from: .31, to: .47, port: [1558, 560], inBends: [[1460,560],[1460,515],[1360,515]], outBends: [[160,565],[-40,565]], delay: .22 },
-  { pathIndex: 3, from: .61, to: .78, port: [1250, 678], inBends: [[1250,610],[1160,610],[1160,555]], outBends: [[1320,120],[1320,-40]], delay: .28 },
-  { pathIndex: 3, from: .80, to: .91, port: [42, 650], inBends: [[125,650],[125,590],[235,590]], outBends: [[1480,420],[1640,420]], delay: .27 },
+  { pathIndex: 3, from: .31, to: .47, port: [1558, 608], inBends: [[1460,608],[1460,515],[1360,515]], outBends: [[160,565],[-40,565]], delay: .22 },
+  { pathIndex: 3, from: .61, to: .78, port: [1280, 718], inBends: [[1280,610],[1160,610],[1160,555]], outBends: [[1320,120],[1320,-40]], delay: .28 },
+  { pathIndex: 3, from: .80, to: .91, port: [42, 608], inBends: [[125,608],[125,590],[235,590]], outBends: [[1480,420],[1640,420]], delay: .27 },
 ]
 
 function clamp01(value: number) {
@@ -375,15 +375,6 @@ export function PcbHero() {
       >
         <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_48%,rgba(218,160,0,0.06),transparent_42%)]" />
         <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 z-[1] h-full w-full" aria-hidden="true" />
-
-        <a
-          href="#hero-intro"
-          className={`absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 font-mono text-[0.62rem] uppercase tracking-[0.22em] text-muted-foreground transition-opacity duration-300 hover:text-primary ${copyVisible ? "opacity-80" : "opacity-0"}`}
-          aria-label="Continue to Embedded Systems @ Purdue introduction"
-        >
-          Continue
-          <ArrowDown className="h-4 w-4" aria-hidden="true" />
-        </a>
       </section>
 
       <section id="hero-intro" className="relative border-b border-white/[0.09] bg-[#0d0d0c]">
