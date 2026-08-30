@@ -145,3 +145,234 @@
     @apply bg-secondary text-secondary-foreground;
   }
 }
+
+/* Landing page PCB hero */
+.pcb-hero {
+  background:
+    radial-gradient(circle at 50% 45%, rgba(218, 160, 0, 0.075), transparent 34%),
+    radial-gradient(circle at 18% 20%, rgba(218, 160, 0, 0.035), transparent 24%),
+    radial-gradient(circle at 82% 72%, rgba(218, 160, 0, 0.035), transparent 22%),
+    var(--background);
+}
+
+.pcb-hero-grid {
+  background-image:
+    linear-gradient(rgba(218, 160, 0, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(218, 160, 0, 0.045) 1px, transparent 1px),
+    radial-gradient(circle, rgba(218, 160, 0, 0.2) 1px, transparent 1.5px);
+  background-position: center;
+  background-size: 42px 42px, 42px 42px, 84px 84px;
+  mask-image: radial-gradient(ellipse at center, black 20%, rgba(0, 0, 0, 0.72) 58%, transparent 92%);
+  opacity: 0.55;
+}
+
+.pcb-hero-vignette {
+  background:
+    linear-gradient(to bottom, color-mix(in oklch, var(--background) 55%, transparent), transparent 16%, transparent 76%, var(--background)),
+    radial-gradient(ellipse at center, transparent 38%, color-mix(in oklch, var(--background) 72%, transparent) 100%);
+}
+
+.pcb-trace-base,
+.pcb-trace-energy {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.pcb-trace-base {
+  stroke: rgba(218, 160, 0, 0.16);
+  stroke-width: 1.6;
+}
+
+.pcb-trace-energy {
+  stroke: #daa000;
+  stroke-width: 2.1;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0.82;
+  filter: drop-shadow(0 0 5px rgba(218, 160, 0, 0.5));
+  animation: pcb-trace-draw 1.25s cubic-bezier(0.22, 0.74, 0.2, 1) forwards;
+}
+
+.pcb-port-ring,
+.pcb-via-ring {
+  fill: color-mix(in oklch, var(--background) 82%, #daa000 18%);
+  stroke: rgba(218, 160, 0, 0.38);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.pcb-port-core,
+.pcb-via-core {
+  fill: #daa000;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pcb-port-wake 0.52s ease-out forwards;
+}
+
+.pcb-via-core {
+  animation-duration: 0.4s;
+}
+
+.pcb-logo-halo {
+  background: rgba(218, 160, 0, 0.1);
+  filter: blur(60px);
+  opacity: 0;
+  animation: pcb-halo-in 1s ease-out 1.2s forwards;
+}
+
+.pcb-logo-reveal {
+  clip-path: inset(0 49% 0 49% round 999px);
+  opacity: 0;
+  transform: scale(0.82);
+  animation: pcb-logo-build 1.08s cubic-bezier(0.2, 0.76, 0.2, 1) 1.08s forwards;
+}
+
+.pcb-hero-copy {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: pcb-copy-in 0.7s ease-out 2.05s forwards;
+}
+
+.pcb-scroll-cue {
+  opacity: 0;
+  animation: pcb-scroll-in 0.55s ease-out 2.55s forwards, pcb-scroll-float 2.2s ease-in-out 3.2s infinite;
+}
+
+@keyframes pcb-trace-draw {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 0.12;
+  }
+  26% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.68;
+  }
+}
+
+@keyframes pcb-port-wake {
+  0% {
+    opacity: 0;
+    transform: scale(0.25);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.75);
+  }
+  100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+}
+
+@keyframes pcb-logo-build {
+  0% {
+    clip-path: inset(0 49% 0 49% round 999px);
+    opacity: 0;
+    transform: scale(0.82);
+    filter: brightness(1.7);
+  }
+  40% {
+    opacity: 1;
+  }
+  72% {
+    filter: brightness(1.35);
+  }
+  100% {
+    clip-path: inset(0 0 0 0 round 0);
+    opacity: 1;
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+@keyframes pcb-halo-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 0.62;
+    transform: scale(1);
+  }
+}
+
+@keyframes pcb-copy-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pcb-scroll-in {
+  to {
+    opacity: 0.8;
+  }
+}
+
+@keyframes pcb-scroll-float {
+  0%,
+  100% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, 5px);
+  }
+}
+
+@media (max-width: 640px) {
+  .pcb-hero-grid {
+    background-size: 32px 32px, 32px 32px, 64px 64px;
+  }
+
+  .pcb-trace-base {
+    stroke-width: 1.2;
+  }
+
+  .pcb-trace-energy {
+    stroke-width: 1.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pcb-trace-energy,
+  .pcb-port-core,
+  .pcb-via-core,
+  .pcb-logo-halo,
+  .pcb-logo-reveal,
+  .pcb-hero-copy,
+  .pcb-scroll-cue {
+    animation: none !important;
+  }
+
+  .pcb-trace-energy {
+    stroke-dashoffset: 0;
+    opacity: 0.6;
+  }
+
+  .pcb-port-core,
+  .pcb-via-core {
+    opacity: 0.9;
+  }
+
+  .pcb-logo-halo {
+    opacity: 0.45;
+  }
+
+  .pcb-logo-reveal {
+    clip-path: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .pcb-hero-copy,
+  .pcb-scroll-cue {
+    opacity: 1;
+    transform: none;
+  }
+}
