@@ -13,6 +13,7 @@ const BRIGHT = "#f4c64d"
 const LOGO = { x: 270, y: 248, width: 1060, height: 338 }
 const LOGO_SCALE = LOGO.width / 1920
 const CIRCUIT_SPEED = 1280
+const LOWER_EXTENSION_TIME = 0.48
 
 const coreLogoPaths = [
   "M522.61,215.02c-.87,4.61-4.11,7.58-8.32,7.58h-.07l-200.72-1.19-10.87,62.79,220.48,1.31h.46c25.83,0,45.97-18.45,51.36-47.13l13.89-73.71c4.35-23.12-1.83-49.24-16.55-69.86-14.71-20.62-35.95-32.94-56.81-32.94h-204.38c-25.95,0-46.7,19.48-51.62,48.48l-18.77,110.63-10.65,62.78-13.58,80.02c-3.91,23.05,2.54,48.9,17.25,69.16,14.69,20.23,35.75,32.3,56.34,32.3h.09l278.89-.45,1.05-6.06,7-40.35,2.9-16.73-18.71.22v.02l-280.43.45h-.01c-4.6,0-7.66-3.25-9.07-5.2-1.41-1.94-3.65-5.97-2.77-11.13l17.29-101.91,10.65-62.79,15.06-88.74c.79-4.67,4.13-7.81,8.31-7.81h204.38c4.66,0,7.73,3.32,9.14,5.3,1.41,1.98,3.64,6.07,2.66,11.24l-13.89,73.71h.02Z",
@@ -153,12 +154,16 @@ function buildCircuit(spec: CircuitSpec): PreparedRoute {
 }
 
 export function PcbHero() {
+  const heroRef = useRef<HTMLElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [copyVisible, setCopyVisible] = useState(false)
 
   useEffect(() => {
+    const hero = heroRef.current
+    const stage = stageRef.current
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!hero || !stage || !canvas) return
     const context = canvas.getContext("2d", { alpha: true })
     if (!context) return
 
@@ -170,6 +175,10 @@ export function PcbHero() {
     let dpr = 1
     let cssWidth = 1
     let cssHeight = 1
+    let stageHeight = 1
+    let stageOffsetY = 0
+    let scaleX = 1
+    let scaleY = 1
     let logoImage: HTMLImageElement | null = null
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -181,14 +190,27 @@ export function PcbHero() {
 
     const firstLogoMoment = Math.min(...circuits.map((circuit) => circuit.spec.delay + circuit.duration * .34))
     const lastCircuitEnd = Math.max(...circuits.map((circuit) => circuit.end))
+    const lowerCircuitEnd = Math.max(
+      ...circuits
+        .filter((circuit) => circuit.route.points[circuit.route.points.length - 1][1] >= VH - 1)
+        .map((circuit) => circuit.end + LOWER_EXTENSION_TIME),
+      ...circuits
+        .filter((circuit) => circuit.spec.port[1] >= VH * .84)
+        .map((circuit) => circuit.spec.delay + LOWER_EXTENSION_TIME)
+    )
     const fillStart = firstLogoMoment + .32
     const copyStart = fillStart + .18
-    const animationEnd = lastCircuitEnd + .20
+    const animationEnd = Math.max(lastCircuitEnd + .20, lowerCircuitEnd)
 
     const resize = () => {
-      const rect = canvas.getBoundingClientRect()
-      cssWidth = Math.max(1, rect.width)
-      cssHeight = Math.max(1, rect.height)
+      const heroRect = hero.getBoundingClientRect()
+      const stageRect = stage.getBoundingClientRect()
+      cssWidth = Math.max(1, heroRect.width)
+      cssHeight = Math.max(1, heroRect.height)
+      stageOffsetY = Math.max(0, stageRect.top - heroRect.top)
+      stageHeight = Math.max(1, Math.min(cssHeight - stageOffsetY, stageRect.height))
+      scaleX = cssWidth / VW
+      scaleY = stageHeight / VH
       dpr = Math.min(window.devicePixelRatio || 1, 1.1)
       canvas.width = Math.round(cssWidth * dpr)
       canvas.height = Math.round(cssHeight * dpr)
@@ -275,11 +297,60 @@ export function PcbHero() {
       context.restore()
     }
 
+    const drawLowerField = (time: number) => {
+      const stageBottom = stageOffsetY + stageHeight
+      const lowerDistance = cssHeight - stageBottom
+      if (lowerDistance <= 1) return
+
+      context.save()
+      context.strokeStyle = GOLD
+      context.lineWidth = Math.max(1.4, 2.35 * scaleX)
+      context.lineCap = "round"
+      context.lineJoin = "round"
+
+      circuits.forEach((circuit) => {
+        const last = circuit.route.points[circuit.route.points.length - 1]
+        if (last[1] < VH - 1) return
+
+        const progress = smoothstep((time - circuit.end) / LOWER_EXTENSION_TIME)
+        if (progress <= 0) return
+        const settled = smoothstep((time - circuit.end) / .28)
+        context.globalAlpha = (1 - settled * .64) * .92
+        const x = last[0] * scaleX
+        context.beginPath()
+        context.moveTo(x, stageBottom - 1)
+        context.lineTo(x, stageBottom + lowerDistance * progress + 2)
+        context.stroke()
+      })
+
+      circuits.forEach((circuit) => {
+        const [portX, portY] = circuit.spec.port
+        if (portY < VH * .84) return
+
+        const progress = smoothstep((time - circuit.spec.delay) / LOWER_EXTENSION_TIME)
+        if (progress <= 0) return
+        const x = portX * scaleX
+        const startY = stageOffsetY + portY * scaleY
+        const distance = cssHeight - startY
+        context.globalAlpha = .30 + progress * .10
+        context.beginPath()
+        context.moveTo(x, startY)
+        context.lineTo(x, startY + distance * progress + 2)
+        context.stroke()
+      })
+
+      context.restore()
+    }
+
     const draw = (time: number) => {
       context.setTransform(dpr, 0, 0, dpr, 0, 0)
       context.clearRect(0, 0, cssWidth, cssHeight)
+
+      drawLowerField(time)
+
       context.save()
-      context.scale(cssWidth / VW, cssHeight / VH)
+      context.translate(0, stageOffsetY)
+      context.scale(scaleX, scaleY)
       drawPorts(time)
       drawVias(time)
       drawCircuits(time)
@@ -340,13 +411,12 @@ export function PcbHero() {
   }, [])
 
   return (
-    <section className="relative isolate min-h-[calc(100svh-4rem)] overflow-hidden border-b border-primary/15 bg-background">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_44%,rgba(218,160,0,0.055),transparent_38%)]" />
+    <section ref={heroRef} className="relative isolate min-h-[calc(100svh-4rem)] overflow-hidden border-b border-primary/15 bg-background">
+      <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_44%,rgba(218,160,0,0.055),transparent_38%)]" />
+      <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 z-[1] h-full w-full" aria-hidden="true" />
 
       <div className="relative z-10 mx-auto flex min-h-[calc(100svh-4rem)] w-full flex-col items-center justify-center pb-16 text-center">
-        <div className="relative h-[min(70svh,700px)] min-h-[500px] w-full sm:min-h-[540px]" aria-hidden="true">
-          <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
-        </div>
+        <div ref={stageRef} className="relative h-[min(70svh,700px)] min-h-[500px] w-full sm:min-h-[540px]" aria-hidden="true" />
 
         <div
           className={`mt-6 flex max-w-3xl flex-col items-center px-5 transition-all duration-300 sm:mt-8 sm:px-8 ${
