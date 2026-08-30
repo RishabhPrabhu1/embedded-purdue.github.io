@@ -15,11 +15,11 @@ export const metadata: Metadata = {
     template: "%s • Embedded Systems @ Purdue",
   },
   description:
-    "Join Purdue's premier embedded systems club. Learn microcontroller programming, FPGA design, and build innovative hardware projects with fellow students.",
+    "Join Embedded Systems @ Purdue to learn microcontroller programming, FPGA design, and build innovative hardware projects with fellow students.",
   openGraph: {
     title: "Embedded Systems @ Purdue",
     description:
-      "Purdue’s community for embedded systems, hardware, and software innovation.",
+      "Embedded Systems @ Purdue is a community for embedded systems, hardware, and software innovation.",
     url: process.env.NEXT_PUBLIC_SITE_URL || "https://embedded-purdue.github.io",
     siteName: "Embedded Systems @ Purdue",
     type: "website",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Embedded Systems @ Purdue",
     description:
-      "Join Purdue’s embedded systems club to learn, build, and innovate.",
+      "Join Embedded Systems @ Purdue to learn, build, and innovate.",
     creator: "@embedded_purdue",
   },
   generator: "esap-web",
