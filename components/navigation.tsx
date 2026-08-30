@@ -39,18 +39,18 @@ export function Navigation() {
       } z-50 w-full`}
     >
       <div className="relative mx-auto flex h-[68px] max-w-[1440px] items-center justify-between px-5 sm:px-8 lg:px-12 xl:px-16">
-        <Link href="/" className="group flex items-center gap-4" aria-label="Embedded Systems at Purdue home">
+        <Link href="/" className="group flex items-center gap-4" aria-label="Embedded Systems @ Purdue home">
           <Image
             src="/logo.svg"
-            alt="Embedded Systems at Purdue"
+            alt="Embedded Systems @ Purdue"
             width={76}
             height={25}
             className="h-auto w-[76px] object-contain"
             priority
           />
           <div className="hidden border-l border-white/10 pl-4 sm:block">
-            <div className="font-mono text-[0.58rem] uppercase tracking-[0.19em] text-[#8d887f]">Purdue University</div>
-            <div className="mt-0.5 text-[0.72rem] font-medium tracking-[-0.01em] text-[#d9d3c8]">Embedded Systems</div>
+            <div className="font-mono text-[0.58rem] uppercase tracking-[0.19em] text-[#8d887f]">Embedded Systems @ Purdue</div>
+            <div className="mt-0.5 text-[0.72rem] font-medium tracking-[-0.01em] text-[#d9d3c8]">Hardware / Firmware / Systems</div>
           </div>
         </Link>
 
@@ -95,7 +95,7 @@ export function Navigation() {
             </SheetTrigger>
             <SheetContent side="right" className="w-[88vw] max-w-[360px] border-l border-white/10 bg-[#151512] p-0 text-[#f3efe6]">
               <div className="border-b border-white/10 px-6 py-6">
-                <span className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-[#daa000]">ES@P / Navigation</span>
+                <span className="font-mono text-[0.58rem] uppercase tracking-[0.17em] text-[#daa000]">Embedded Systems @ Purdue / Navigation</span>
               </div>
               <div className="flex flex-col">
                 {navigation.map((item, index) => {
