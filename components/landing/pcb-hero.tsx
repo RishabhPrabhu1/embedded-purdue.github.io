@@ -15,13 +15,6 @@ const LOGO_SCALE = LOGO.width / 1920
 const CIRCUIT_SPEED = 1280
 const LOWER_EXTENSION_TIME = 0.92
 
-const coreLogoPaths = [
-  "M522.61,215.02c-.87,4.61-4.11,7.58-8.32,7.58h-.07l-200.72-1.19-10.87,62.79,220.48,1.31h.46c25.83,0,45.97-18.45,51.36-47.13l13.89-73.71c4.35-23.12-1.83-49.24-16.55-69.86-14.71-20.62-35.95-32.94-56.81-32.94h-204.38c-25.95,0-46.7,19.48-51.62,48.48l-18.77,110.63-10.65,62.78-13.58,80.02c-3.91,23.05,2.54,48.9,17.25,69.16,14.69,20.23,35.75,32.3,56.34,32.3h.09l278.89-.45,1.05-6.06,7-40.35,2.9-16.73-18.71.22v.02l-280.43.45h-.01c-4.6,0-7.66-3.25-9.07-5.2-1.41-1.94-3.65-5.97-2.77-11.13l17.29-101.91,10.65-62.79,15.06-88.74c.79-4.67,4.13-7.81,8.31-7.81h204.38c4.66,0,7.73,3.32,9.14,5.3,1.41,1.98,3.64,6.07,2.66,11.24l-13.89,73.71h.02Z",
-  "M1031.87,61.73h-331.67c-25.06,0-45.08,17.75-51,45.23l-16.36,75.96c-4.91,22.81.78,48.83,15.23,69.61,14.45,20.78,35.5,33.22,56.34,33.29l156.26.37c4.82.02,7.91,3.51,9.32,5.6,1.41,2.09,3.59,6.36,2.31,11.58l-22.15,90.17c-1.03,4.22-4.22,6.94-8.17,6.94h-.06l-118.79-.55-126.99,1.52-10.95,63.15,147.32-1.77,118.38.55h.36c24.27,0,45.08-16.91,50.52-43.17l22.15-90.17c5.73-23.31.35-50.2-14.37-71.94-14.73-21.74-36.39-34.75-57.97-34.82l-156.26-.37c-4.23-.01-6.98-3.06-8.24-4.87s-3.22-5.54-2.23-10.18l16.35-75.95c.95-4.42,4.18-7.28,8.21-7.28h282.74l5.21-23.3c7.3-24.23,11.23-39.6,34.49-39.6h.02Z",
-  "M1388.94,402.37c-4.66,0-7.72-3.31-9.13-5.29s-3.64-6.06-2.67-11.23l41.21-221.48c4.3-23.11-1.91-49.2-16.63-69.78-14.71-20.58-35.92-32.86-56.75-32.86h-275.46c-23.26,0-42.24,15.37-49.54,39.6l-5.21,23.3-7.68,34.33-.14-.07-44.74,200.54c-5.22,23.4.56,50.12,15.46,71.48,14.77,21.18,36.18,33.76,57.38,33.76h1.01l74.25-2.3,119.92-.4c-4.25-4.15-7.85-8.44-10.83-12.55-10.37-14.26-17.15-31.14-20.34-50.23l-102.67.4-70.6,2.18c-4.7-.03-7.76-3.4-9.17-5.43-1.43-2.05-3.65-6.27-2.49-11.5l56.46-253.01c.97-4.37,4.19-7.19,8.18-7.19h275.46c4.66,0,7.72,3.31,9.13,5.29,1.41,1.97,3.64,6.06,2.67,11.23l-39.19,210.66-2.27,12.45c-2.16,13.18-.96,27.24,3.24,40.66l-45.11.22h-.06c-7.5,0-13.41-1.73-15.44-4.51-2.05-2.82-3.56-9.48-3.72-17.54-.08-4.1.17-8.54.93-13.07l2.71-16.16,4.91-29.23,3.3-19.15,2.02-12.55,13.67-81.92c1.04-6.26.09-13.03-2.5-19.23-1.13-2.7-2.53-5.3-4.27-7.69-5.72-7.85-13.91-12.53-21.91-12.53h-.07l-124.28.41c-9.56.03-17.24,6.72-19.68,17.11l-26.96,114.96c-2.12,9.06.07,19.59,5.81,27.94,5.73,8.33,14.2,13.36,22.5,13.36h.08l80.45-.3,3.45-20.21,6.53-38.28-67.1-1.98,17-56.45,75.54,1.97-7.09,42.49.11.05-.38,2.25-.35,2.08c-.12,1.25-.2,2.51-.17,3.79.02.82-.32,1.66-.9,2.45l-5.38,31.54-1.69,10.04-3.39,20.19-.76,4.52c-.2,1.2-.43,2.76-.65,4.52l-.63,29.22c1.34,15.93,5.82,34.54,17.56,50.68,9.84,13.53,25.42,29.59,56.69,29.59.04,0,82.52,1.77,82.52,1.77h51.28l9.53-62.9h-42.96Z",
-  "M1422.94,525.75l10.93,4.56,41.66,17.37,8.07-49s-.01-.02-.02-.03l36.62-202.86,2.49-12.66,2.95-17.97,2.95-17.97,2.06-14.73.53-3.25,16.06-97.49c.77-4.69,3.96-7.77,8.14-7.86l177.55-3.72,38.76-.81h.21c.13,0,.24.03.37.03.98.76,2,1.54,3.11,2.4,3.2,2.46,4.9,6.94,4.09,10.79l-19.89,94.96-16.43.35h0s-61.41,1.34-61.41,1.34l-134.62,2.9-2.47,15.09-2.95,17.97-2.95,17.97-2.02,12.31,233.53-5.04c25.35-.55,45.1-19.16,50.31-47.41l15.49-84.05c4.3-23.35-2.09-49.61-17.08-70.25-15-20.63-36.44-32.64-57.42-32.25l-216.3,4.53c-7.73.16-14.91,2.01-21.33,5.26-7.87,3.98-14.56,10.12-19.65,17.97-4.67,7.2-8.01,15.82-9.62,25.6l-31.09,188.63-17.13,103.94-10.37,62.9-4.17,26.05",
-] as const
-
 type Point = readonly [number, number]
 type Route = readonly Point[]
 type PreparedRoute = { points: Route; segments: number[]; total: number }
@@ -86,8 +79,15 @@ function prepareRoute(points: Route): PreparedRoute {
   return { points, segments, total }
 }
 
-function drawPrepared(ctx: CanvasRenderingContext2D, route: PreparedRoute, progress: number, stroke: string, width: number): Point {
+function drawPrepared(
+  ctx: CanvasRenderingContext2D,
+  route: PreparedRoute,
+  progress: number,
+  stroke: string,
+  width: number
+): Point {
   if (progress <= 0) return route.points[0]
+
   let remaining = route.total * clamp01(progress)
   let head: Point = route.points[0]
 
@@ -97,12 +97,14 @@ function drawPrepared(ctx: CanvasRenderingContext2D, route: PreparedRoute, progr
     const [x0, y0] = route.points[index - 1]
     const [x1, y1] = route.points[index]
     const segment = route.segments[index - 1]
+
     if (remaining >= segment) {
       ctx.lineTo(x1, y1)
       remaining -= segment
       head = route.points[index]
       continue
     }
+
     const ratio = segment === 0 ? 0 : remaining / segment
     const x = x0 + (x1 - x0) * ratio
     const y = y0 + (y1 - y0) * ratio
@@ -146,8 +148,8 @@ function orthogonalJoin(from: Point, to: Point, horizontalFirst = true): Point[]
   return [[from[0], to[1]], to]
 }
 
-function buildCircuit(spec: CircuitSpec): PreparedRoute {
-  const logoSegment = sampleLogoSegment(coreLogoPaths[spec.pathIndex], spec.from, spec.to)
+function buildCircuit(spec: CircuitSpec, logoPaths: readonly string[]): PreparedRoute {
+  const logoSegment = sampleLogoSegment(logoPaths[spec.pathIndex], spec.from, spec.to)
   const start: Point[] = [spec.port, ...spec.inBends]
   const firstLogo = logoSegment[0]
   const lastStart = start[start.length - 1]
@@ -161,6 +163,18 @@ function buildCircuit(spec: CircuitSpec): PreparedRoute {
   return prepareRoute([...start, ...logoSegment.slice(1), ...bridge, ...end.slice(1)])
 }
 
+async function loadLogoPaths() {
+  const response = await fetch("/logo.svg")
+  if (!response.ok) throw new Error("Unable to load logo geometry")
+  const svg = new DOMParser().parseFromString(await response.text(), "image/svg+xml")
+  const paths = Array.from(svg.querySelectorAll("path"))
+    .map((path) => path.getAttribute("d"))
+    .filter((d): d is string => Boolean(d))
+
+  if (paths.length < 4) throw new Error("Logo geometry is incomplete")
+  return paths.slice(0, 4)
+}
+
 export function PcbHero() {
   const heroRef = useRef<HTMLElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
@@ -172,6 +186,7 @@ export function PcbHero() {
     const stage = stageRef.current
     const canvas = canvasRef.current
     if (!hero || !stage || !canvas) return
+
     const context = canvas.getContext("2d", { alpha: true })
     if (!context) return
 
@@ -189,25 +204,13 @@ export function PcbHero() {
     let scaleY = 1
     let logoImage: HTMLImageElement | null = null
     let lowerNetwork: LowerNetworkRoute[] = []
+    let circuits: Array<{ spec: CircuitSpec; route: PreparedRoute; duration: number; end: number }> = []
+    let downwardCircuits: typeof circuits = []
+    let fillStart = 0
+    let copyStart = 0
+    let animationEnd = 0
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    const circuits = circuitSpecs.map((spec) => {
-      const route = buildCircuit(spec)
-      const duration = route.total / CIRCUIT_SPEED
-      return { spec, route, duration, end: spec.delay + duration }
-    })
-    const downwardCircuits = circuits.filter(
-      (circuit) => circuit.route.points[circuit.route.points.length - 1][1] >= VH - 1
-    )
-
-    const firstLogoMoment = Math.min(...circuits.map((circuit) => circuit.spec.delay + circuit.duration * .34))
-    const lastCircuitEnd = Math.max(...circuits.map((circuit) => circuit.end))
-    const lowerCircuitEnd = downwardCircuits.length
-      ? Math.max(...downwardCircuits.map((circuit) => circuit.end + LOWER_EXTENSION_TIME * 1.7))
-      : lastCircuitEnd
-    const fillStart = firstLogoMoment + .32
-    const copyStart = fillStart + .18
-    const animationEnd = Math.max(lastCircuitEnd + .20, lowerCircuitEnd)
 
     const rebuildLowerNetwork = () => {
       const stageBottom = stageOffsetY + stageHeight
@@ -217,106 +220,139 @@ export function PcbHero() {
         return
       }
 
+      const routes: LowerNetworkRoute[] = []
       const trunkXs = downwardCircuits.map((circuit) => {
         const last = circuit.route.points[circuit.route.points.length - 1]
         return last[0] * scaleX
       })
-      const laneFractions = [
-        [.035, .085, .14, .20, .27],
-        [.34, .42, .50, .58, .66],
-        [.73, .80, .86, .915, .965],
-      ] as const
-      const branchLevels = [
-        [.09, .22, .36, .51, .67],
-        [.11, .25, .40, .56, .72],
-        [.08, .20, .34, .49, .65],
-      ] as const
-      const verticalEnds = [1.02, .69, 1.02, .84, 1.02] as const
-      const routes: LowerNetworkRoute[] = []
+      const allStart = Math.max(...downwardCircuits.map((circuit) => circuit.end))
+      const x = (fraction: number) => cssWidth * fraction
+      const y = (fraction: number) => stageBottom + lowerDistance * fraction
 
       downwardCircuits.forEach((circuit, index) => {
-        const x = trunkXs[index]
-        const laneSet = laneFractions[Math.min(index, laneFractions.length - 1)]
-        const levelSet = branchLevels[Math.min(index, branchLevels.length - 1)]
-
         routes.push({
-          route: prepareRoute([[x, stageBottom - 1], [x, cssHeight + 2]]),
+          route: prepareRoute([[trunkXs[index], stageBottom - 2], [trunkXs[index], cssHeight + 3]]),
           start: circuit.end,
-          duration: LOWER_EXTENSION_TIME * .60,
-          alpha: .56,
+          duration: LOWER_EXTENSION_TIME * .58,
+          alpha: .55,
           widthScale: 1,
         })
-
-        laneSet.forEach((laneFraction, branchIndex) => {
-          const y = stageBottom + lowerDistance * levelSet[branchIndex]
-          const targetX = cssWidth * laneFraction
-          const endY = stageBottom + lowerDistance * verticalEnds[branchIndex]
-          routes.push({
-            route: prepareRoute([[x, y], [targetX, y], [targetX, endY]]),
-            start: circuit.end + LOWER_EXTENSION_TIME * (.06 + branchIndex * .10),
-            duration: LOWER_EXTENSION_TIME * (.44 + branchIndex * .045),
-            alpha: .46 - branchIndex * .025,
-            widthScale: branchIndex < 3 ? .96 : .88,
-            junctions: [[x, y]],
-          })
-        })
       })
 
-      const allStart = Math.max(...downwardCircuits.map((circuit) => circuit.end))
-      const laneX = (fraction: number) => cssWidth * fraction
-      const fieldY = (fraction: number) => stageBottom + lowerDistance * fraction
+      const transitionPlans = [
+        { source: 0, level: .012, target: -.025, drop: .23 },
+        { source: 0, level: .048, target: .105, drop: .36 },
+        { source: 0, level: .095, target: .245, drop: .56 },
+        { source: 1, level: .020, target: .36, drop: .30 },
+        { source: 1, level: .066, target: .50, drop: .44 },
+        { source: 1, level: .118, target: .66, drop: .59 },
+        { source: 2, level: .014, target: 1.025, drop: .24 },
+        { source: 2, level: .052, target: .895, drop: .38 },
+        { source: 2, level: .102, target: .755, drop: .55 },
+      ] as const
 
-      const connectedRuns: Array<{
-        points: Point[]
-        delay: number
-        duration: number
-        alpha: number
-        widthScale: number
-        junctions: Point[]
-      }> = [
-        { points: [[laneX(.035), fieldY(.17)], [laneX(.14), fieldY(.17)]], delay: .18, duration: .38, alpha: .35, widthScale: .82, junctions: [[laneX(.035), fieldY(.17)], [laneX(.14), fieldY(.17)]] },
-        { points: [[laneX(.085), fieldY(.30)], [laneX(.27), fieldY(.30)]], delay: .26, duration: .44, alpha: .33, widthScale: .82, junctions: [[laneX(.085), fieldY(.30)], [laneX(.27), fieldY(.30)]] },
-        { points: [[laneX(.035), fieldY(.45)], [laneX(.20), fieldY(.45)]], delay: .34, duration: .42, alpha: .31, widthScale: .79, junctions: [[laneX(.035), fieldY(.45)], [laneX(.20), fieldY(.45)]] },
-        { points: [[laneX(.14), fieldY(.61)], [laneX(.34), fieldY(.61)]], delay: .42, duration: .46, alpha: .29, widthScale: .77, junctions: [[laneX(.14), fieldY(.61)], [laneX(.34), fieldY(.61)]] },
-        { points: [[laneX(.73), fieldY(.16)], [laneX(.915), fieldY(.16)]], delay: .20, duration: .42, alpha: .35, widthScale: .82, junctions: [[laneX(.73), fieldY(.16)], [laneX(.915), fieldY(.16)]] },
-        { points: [[laneX(.80), fieldY(.29)], [laneX(.965), fieldY(.29)]], delay: .28, duration: .40, alpha: .33, widthScale: .82, junctions: [[laneX(.80), fieldY(.29)], [laneX(.965), fieldY(.29)]] },
-        { points: [[laneX(.73), fieldY(.44)], [laneX(.86), fieldY(.44)]], delay: .36, duration: .38, alpha: .31, widthScale: .79, junctions: [[laneX(.73), fieldY(.44)], [laneX(.86), fieldY(.44)]] },
-        { points: [[laneX(.66), fieldY(.60)], [laneX(.915), fieldY(.60)]], delay: .44, duration: .48, alpha: .29, widthScale: .77, junctions: [[laneX(.66), fieldY(.60)], [laneX(.915), fieldY(.60)]] },
-        { points: [[laneX(.20), fieldY(.76)], [laneX(.42), fieldY(.76)]], delay: .50, duration: .46, alpha: .27, widthScale: .74, junctions: [[laneX(.20), fieldY(.76)], [laneX(.42), fieldY(.76)]] },
-        { points: [[laneX(.58), fieldY(.76)], [laneX(.80), fieldY(.76)]], delay: .52, duration: .46, alpha: .27, widthScale: .74, junctions: [[laneX(.58), fieldY(.76)], [laneX(.80), fieldY(.76)]] },
-        { points: [[laneX(.085), fieldY(.88)], [laneX(.34), fieldY(.88)]], delay: .58, duration: .48, alpha: .24, widthScale: .70, junctions: [[laneX(.085), fieldY(.88)], [laneX(.34), fieldY(.88)]] },
-        { points: [[laneX(.66), fieldY(.88)], [laneX(.915), fieldY(.88)]], delay: .60, duration: .48, alpha: .24, widthScale: .70, junctions: [[laneX(.66), fieldY(.88)], [laneX(.915), fieldY(.88)]] },
-        { points: [[laneX(.27), fieldY(.95)], [laneX(.73), fieldY(.95)]], delay: .66, duration: .58, alpha: .20, widthScale: .67, junctions: [[laneX(.27), fieldY(.95)], [laneX(.73), fieldY(.95)]] },
-      ]
-
-      connectedRuns.forEach((run) => {
+      transitionPlans.forEach((plan, index) => {
+        const sx = trunkXs[plan.source]
+        const sy = y(plan.level)
+        const tx = x(plan.target)
         routes.push({
-          route: prepareRoute(run.points),
-          start: allStart + LOWER_EXTENSION_TIME * run.delay,
-          duration: LOWER_EXTENSION_TIME * run.duration,
-          alpha: run.alpha,
-          widthScale: run.widthScale,
-          junctions: run.junctions,
+          route: prepareRoute([[sx, sy], [tx, sy], [tx, y(plan.drop)]]),
+          start: downwardCircuits[plan.source].end + LOWER_EXTENSION_TIME * (.025 + index * .022),
+          duration: LOWER_EXTENSION_TIME * (.38 + (index % 3) * .035),
+          alpha: .45 - (index % 3) * .025,
+          widthScale: .94,
+          junctions: [[sx, sy]],
         })
       })
 
-      const sideSteps: Array<{ points: Point[]; delay: number; alpha: number }> = [
-        { points: [[laneX(.035), fieldY(.37)], [laneX(.085), fieldY(.37)], [laneX(.085), fieldY(.54)]], delay: .32, alpha: .29 },
-        { points: [[laneX(.20), fieldY(.41)], [laneX(.27), fieldY(.41)], [laneX(.27), fieldY(.68)]], delay: .38, alpha: .27 },
-        { points: [[laneX(.915), fieldY(.36)], [laneX(.965), fieldY(.36)], [laneX(.965), fieldY(.53)]], delay: .34, alpha: .29 },
-        { points: [[laneX(.73), fieldY(.40)], [laneX(.80), fieldY(.40)], [laneX(.80), fieldY(.69)]], delay: .40, alpha: .27 },
-        { points: [[laneX(.34), fieldY(.69)], [laneX(.42), fieldY(.69)], [laneX(.42), fieldY(.91)]], delay: .50, alpha: .23 },
-        { points: [[laneX(.58), fieldY(.68)], [laneX(.66), fieldY(.68)], [laneX(.66), fieldY(.92)]], delay: .52, alpha: .23 },
+      const secondaryPlans = [
+        { source: 0, level: .20, target: .035, end: .52 },
+        { source: 0, level: .31, target: .155, end: .77 },
+        { source: 0, level: .47, target: .295, end: 1.02 },
+        { source: 0, level: .68, target: -.02, end: .91 },
+        { source: 1, level: .24, target: .405, end: .64 },
+        { source: 1, level: .39, target: .575, end: .83 },
+        { source: 1, level: .63, target: .47, end: 1.02 },
+        { source: 2, level: .19, target: .965, end: .49 },
+        { source: 2, level: .34, target: .835, end: .73 },
+        { source: 2, level: .50, target: .705, end: 1.02 },
+        { source: 2, level: .71, target: 1.02, end: .94 },
+      ] as const
+
+      secondaryPlans.forEach((plan, index) => {
+        const sx = trunkXs[plan.source]
+        const sy = y(plan.level)
+        const tx = x(plan.target)
+        routes.push({
+          route: prepareRoute([[sx, sy], [tx, sy], [tx, y(plan.end)]]),
+          start: downwardCircuits[plan.source].end + LOWER_EXTENSION_TIME * (.22 + index * .045),
+          duration: LOWER_EXTENSION_TIME * (.48 + (index % 4) * .035),
+          alpha: .34 - (index % 4) * .018,
+          widthScale: index % 3 === 0 ? .88 : .78,
+          junctions: [[sx, sy]],
+        })
+      })
+
+      const sideExits: Array<{ points: Point[]; delay: number; alpha: number }> = [
+        { points: [[x(.155), y(.27)], [x(.055), y(.27)], [-24, y(.27)]], delay: .24, alpha: .32 },
+        { points: [[x(.295), y(.43)], [x(.12), y(.43)], [-24, y(.43)]], delay: .36, alpha: .29 },
+        { points: [[x(.245), y(.60)], [x(.07), y(.60)], [-24, y(.60)]], delay: .48, alpha: .26 },
+        { points: [[x(.835), y(.26)], [x(.945), y(.26)], [cssWidth + 24, y(.26)]], delay: .26, alpha: .32 },
+        { points: [[x(.705), y(.42)], [x(.90), y(.42)], [cssWidth + 24, y(.42)]], delay: .38, alpha: .29 },
+        { points: [[x(.755), y(.59)], [x(.94), y(.59)], [cssWidth + 24, y(.59)]], delay: .50, alpha: .26 },
+        { points: [[x(.035), y(.82)], [-24, y(.82)]], delay: .62, alpha: .23 },
+        { points: [[x(.965), y(.80)], [cssWidth + 24, y(.80)]], delay: .64, alpha: .23 },
       ]
 
-      sideSteps.forEach((step) => {
+      sideExits.forEach((exit) => {
+        routes.push({
+          route: prepareRoute(exit.points),
+          start: allStart + LOWER_EXTENSION_TIME * exit.delay,
+          duration: LOWER_EXTENSION_TIME * .42,
+          alpha: exit.alpha,
+          widthScale: .76,
+        })
+      })
+
+      const buses: Array<{ points: Point[]; delay: number; alpha: number; junctions?: Point[] }> = [
+        { points: [[x(.035), y(.15)], [x(.29), y(.15)]], delay: .18, alpha: .29 },
+        { points: [[x(.71), y(.145)], [x(.965), y(.145)]], delay: .20, alpha: .29 },
+        { points: [[x(.08), y(.365)], [x(.32), y(.365)]], delay: .34, alpha: .27 },
+        { points: [[x(.68), y(.35)], [x(.93), y(.35)]], delay: .35, alpha: .27 },
+        { points: [[x(.17), y(.54)], [x(.36), y(.54)]], delay: .46, alpha: .24 },
+        { points: [[x(.64), y(.535)], [x(.85), y(.535)]], delay: .47, alpha: .24 },
+        { points: [[x(.09), y(.705)], [x(.31), y(.705)]], delay: .57, alpha: .22 },
+        { points: [[x(.69), y(.69)], [x(.91), y(.69)]], delay: .58, alpha: .22 },
+        { points: [[x(.24), y(.86)], [x(.43), y(.86)]], delay: .68, alpha: .20 },
+        { points: [[x(.57), y(.845)], [x(.78), y(.845)]], delay: .69, alpha: .20 },
+        { points: [[x(.36), y(.955)], [x(.64), y(.955)]], delay: .76, alpha: .18 },
+      ]
+
+      buses.forEach((bus) => {
+        routes.push({
+          route: prepareRoute(bus.points),
+          start: allStart + LOWER_EXTENSION_TIME * bus.delay,
+          duration: LOWER_EXTENSION_TIME * .40,
+          alpha: bus.alpha,
+          widthScale: .70,
+          junctions: bus.junctions,
+        })
+      })
+
+      const stepped: Array<{ points: Point[]; delay: number; alpha: number }> = [
+        { points: [[x(.035), y(.49)], [x(.095), y(.49)], [x(.095), y(.66)], [x(.18), y(.66)]], delay: .44, alpha: .25 },
+        { points: [[x(.29), y(.57)], [x(.34), y(.57)], [x(.34), y(.78)]], delay: .52, alpha: .23 },
+        { points: [[x(.965), y(.48)], [x(.905), y(.48)], [x(.905), y(.65)], [x(.82), y(.65)]], delay: .45, alpha: .25 },
+        { points: [[x(.71), y(.56)], [x(.66), y(.56)], [x(.66), y(.79)]], delay: .53, alpha: .23 },
+      ]
+
+      stepped.forEach((step) => {
         routes.push({
           route: prepareRoute(step.points),
           start: allStart + LOWER_EXTENSION_TIME * step.delay,
-          duration: LOWER_EXTENSION_TIME * .52,
+          duration: LOWER_EXTENSION_TIME * .48,
           alpha: step.alpha,
-          widthScale: .76,
-          junctions: [step.points[0]],
+          widthScale: .74,
         })
       })
 
@@ -341,10 +377,11 @@ export function PcbHero() {
 
     const drawPorts = (time: number) => {
       circuitSpecs.forEach((spec, index) => {
-        const [x, y] = spec.port
+        const [px, py] = spec.port
         const activation = smoothstep((time - (circuits[index].spec.delay - .08)) / .12)
+
         context.beginPath()
-        context.arc(x, y, 10.5, 0, Math.PI * 2)
+        context.arc(px, py, 10.5, 0, Math.PI * 2)
         context.fillStyle = "rgba(15,15,15,.96)"
         context.fill()
         context.strokeStyle = `rgba(218,160,0,${.42 + activation * .34})`
@@ -352,7 +389,7 @@ export function PcbHero() {
         context.stroke()
 
         context.beginPath()
-        context.arc(x, y, 3.6 + activation * .45, 0, Math.PI * 2)
+        context.arc(px, py, 3.6 + activation * .45, 0, Math.PI * 2)
         context.fillStyle = GOLD
         context.globalAlpha = .64 + activation * .36
         context.fill()
@@ -390,19 +427,19 @@ export function PcbHero() {
       context.restore()
     }
 
-    const drawJunction = (x: number, y: number, alpha: number) => {
+    const drawJunction = (jx: number, jy: number, alpha: number) => {
       if (alpha <= 0) return
       context.save()
       context.globalAlpha = alpha
       context.beginPath()
-      context.arc(x, y, 3.45, 0, Math.PI * 2)
+      context.arc(jx, jy, 3.45, 0, Math.PI * 2)
       context.fillStyle = "rgba(17,17,15,.96)"
       context.fill()
       context.strokeStyle = GOLD
       context.lineWidth = 1.15
       context.stroke()
       context.beginPath()
-      context.arc(x, y, 1.15, 0, Math.PI * 2)
+      context.arc(jx, jy, 1.15, 0, Math.PI * 2)
       context.fillStyle = GOLD
       context.fill()
       context.restore()
@@ -430,8 +467,8 @@ export function PcbHero() {
         )
 
         if (networkRoute.junctions && progress > .08) {
-          networkRoute.junctions.forEach(([x, y]) => {
-            drawJunction(x, y, networkRoute.alpha * Math.min(1, progress * 1.3))
+          networkRoute.junctions.forEach(([jx, jy]) => {
+            drawJunction(jx, jy, networkRoute.alpha * Math.min(1, progress * 1.3))
           })
         }
       })
@@ -476,29 +513,57 @@ export function PcbHero() {
       frame = requestAnimationFrame(tick)
     }
 
-    const image = new Image()
-    logoImage = image
-    image.onload = () => {
-      if (cancelled) return
-      resize()
-      if (reducedMotion) {
-        draw(animationEnd)
-        complete = true
-        copyShown = true
+    const start = async () => {
+      try {
+        const logoPaths = await loadLogoPaths()
+        if (cancelled) return
+
+        circuits = circuitSpecs.map((spec) => {
+          const route = buildCircuit(spec, logoPaths)
+          const duration = route.total / CIRCUIT_SPEED
+          return { spec, route, duration, end: spec.delay + duration }
+        })
+        downwardCircuits = circuits.filter(
+          (circuit) => circuit.route.points[circuit.route.points.length - 1][1] >= VH - 1
+        )
+
+        const firstLogoMoment = Math.min(...circuits.map((circuit) => circuit.spec.delay + circuit.duration * .34))
+        const lastCircuitEnd = Math.max(...circuits.map((circuit) => circuit.end))
+        const lowerCircuitEnd = downwardCircuits.length
+          ? Math.max(...downwardCircuits.map((circuit) => circuit.end + LOWER_EXTENSION_TIME * 1.85))
+          : lastCircuitEnd
+        fillStart = firstLogoMoment + .32
+        copyStart = fillStart + .18
+        animationEnd = Math.max(lastCircuitEnd + .20, lowerCircuitEnd)
+
+        const image = new Image()
+        logoImage = image
+        image.onload = () => {
+          if (cancelled) return
+          resize()
+          if (reducedMotion) {
+            draw(animationEnd)
+            complete = true
+            copyShown = true
+            setCopyVisible(true)
+          } else {
+            frame = requestAnimationFrame(tick)
+          }
+        }
+        image.onerror = () => {
+          if (cancelled) return
+          resize()
+          frame = requestAnimationFrame(tick)
+        }
+        image.src = "/logo.svg"
+      } catch {
         setCopyVisible(true)
-      } else {
-        frame = requestAnimationFrame(tick)
       }
     }
-    image.src = "/logo.svg"
 
-    image.onerror = () => {
-      if (cancelled) return
-      resize()
-      frame = requestAnimationFrame(tick)
-    }
-
+    void start()
     window.addEventListener("resize", resize, { passive: true })
+
     return () => {
       cancelled = true
       cancelAnimationFrame(frame)
