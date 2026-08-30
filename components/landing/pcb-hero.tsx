@@ -14,6 +14,14 @@ const LOGO = { x: 270, y: 248, width: 1060, height: 338 }
 const LOGO_SCALE = LOGO.width / 1920
 const CIRCUIT_SPEED = 1280
 const LOWER_EXTENSION_TIME = 0.92
+const BOTTOM_FEED_TIME = 0.52
+
+const BOTTOM_PORT_LAYOUT = new Map<number, number>([
+  [7, .22],
+  [11, .43],
+  [10, .66],
+  [14, .82],
+])
 
 type Point = readonly [number, number]
 type Route = readonly Point[]
@@ -35,6 +43,21 @@ type CircuitSpec = {
   inBends: Route
   outBends: Route
   delay: number
+}
+
+type CircuitRuntime = {
+  index: number
+  spec: CircuitSpec
+  route: PreparedRoute
+  duration: number
+  start: number
+  end: number
+}
+
+type BottomFeed = {
+  circuit: CircuitRuntime
+  route: PreparedRoute
+  port: Point
 }
 
 const circuitSpecs: CircuitSpec[] = [
@@ -204,8 +227,9 @@ export function PcbHero() {
     let scaleY = 1
     let logoImage: HTMLImageElement | null = null
     let lowerNetwork: LowerNetworkRoute[] = []
-    let circuits: Array<{ spec: CircuitSpec; route: PreparedRoute; duration: number; end: number }> = []
-    let downwardCircuits: typeof circuits = []
+    let bottomFeeds: BottomFeed[] = []
+    let circuits: CircuitRuntime[] = []
+    let downwardCircuits: CircuitRuntime[] = []
     let fillStart = 0
     let copyStart = 0
     let animationEnd = 0
@@ -314,7 +338,7 @@ export function PcbHero() {
         })
       })
 
-      const buses: Array<{ points: Point[]; delay: number; alpha: number; junctions?: Point[] }> = [
+      const buses: Array<{ points: Point[]; delay: number; alpha: number }> = [
         { points: [[x(.035), y(.15)], [x(.29), y(.15)]], delay: .18, alpha: .29 },
         { points: [[x(.71), y(.145)], [x(.965), y(.145)]], delay: .20, alpha: .29 },
         { points: [[x(.08), y(.365)], [x(.32), y(.365)]], delay: .34, alpha: .27 },
@@ -335,7 +359,6 @@ export function PcbHero() {
           duration: LOWER_EXTENSION_TIME * .40,
           alpha: bus.alpha,
           widthScale: .70,
-          junctions: bus.junctions,
         })
       })
 
@@ -359,6 +382,35 @@ export function PcbHero() {
       lowerNetwork = routes
     }
 
+    const rebuildBottomFeeds = () => {
+      const stageBottom = stageOffsetY + stageHeight
+      const lowerDistance = Math.max(1, cssHeight - stageBottom)
+      const orderedIndices = Array.from(BOTTOM_PORT_LAYOUT.keys())
+
+      bottomFeeds = circuits
+        .filter((circuit) => BOTTOM_PORT_LAYOUT.has(circuit.index))
+        .map((circuit) => {
+          const fraction = BOTTOM_PORT_LAYOUT.get(circuit.index) ?? .5
+          const order = Math.max(0, orderedIndices.indexOf(circuit.index))
+          const portX = cssWidth * fraction
+          const portY = cssHeight - 12
+          const entryX = circuit.spec.port[0] * scaleX
+          const entryY = stageOffsetY + circuit.spec.port[1] * scaleY
+          const bendY = stageBottom + lowerDistance * (.28 + order * .11)
+
+          return {
+            circuit,
+            port: [portX, portY] as Point,
+            route: prepareRoute([
+              [portX, portY],
+              [portX, bendY],
+              [entryX, bendY],
+              [entryX, entryY],
+            ]),
+          }
+        })
+    }
+
     const resize = () => {
       const heroRect = hero.getBoundingClientRect()
       const stageRect = stage.getBoundingClientRect()
@@ -372,11 +424,14 @@ export function PcbHero() {
       canvas.width = Math.round(cssWidth * dpr)
       canvas.height = Math.round(cssHeight * dpr)
       rebuildLowerNetwork()
+      rebuildBottomFeeds()
       if (complete) draw(animationEnd)
     }
 
     const drawPorts = (time: number) => {
       circuitSpecs.forEach((spec, index) => {
+        if (BOTTOM_PORT_LAYOUT.has(index)) return
+
         const [px, py] = spec.port
         const activation = smoothstep((time - (circuits[index].spec.delay - .08)) / .12)
 
@@ -397,9 +452,55 @@ export function PcbHero() {
       })
     }
 
+    const drawBottomPort = (port: Point, activation: number) => {
+      context.beginPath()
+      context.arc(port[0], port[1], 9.6, 0, Math.PI * 2)
+      context.fillStyle = "rgba(15,15,15,.96)"
+      context.fill()
+      context.strokeStyle = `rgba(218,160,0,${.48 + activation * .34})`
+      context.lineWidth = 1.35
+      context.stroke()
+
+      context.beginPath()
+      context.arc(port[0], port[1], 3.4 + activation * .4, 0, Math.PI * 2)
+      context.fillStyle = GOLD
+      context.globalAlpha = .68 + activation * .32
+      context.fill()
+      context.globalAlpha = 1
+    }
+
+    const drawBottomFeeds = (time: number) => {
+      if (bottomFeeds.length === 0) return
+      const strokeWidth = Math.max(1.6, 2.35 * Math.min(1.15, Math.max(.82, scaleX)))
+
+      context.save()
+      bottomFeeds.forEach((feed) => {
+        const activation = smoothstep((time - (feed.circuit.spec.delay - .08)) / .12)
+        const progress = clamp01((time - feed.circuit.spec.delay) / BOTTOM_FEED_TIME)
+        const settled = smoothstep((time - feed.circuit.end) / .28)
+        const alpha = 1 - settled * .64
+
+        if (progress > 0) {
+          context.globalAlpha = alpha
+          const head = drawPrepared(context, feed.route, progress, GOLD, strokeWidth)
+          context.globalAlpha = 1
+
+          if (progress < 1) {
+            context.beginPath()
+            context.arc(head[0], head[1], 2.8, 0, Math.PI * 2)
+            context.fillStyle = BRIGHT
+            context.fill()
+          }
+        }
+
+        drawBottomPort(feed.port, activation)
+      })
+      context.restore()
+    }
+
     const drawCircuits = (time: number) => {
       circuits.forEach((circuit) => {
-        const progress = clamp01((time - circuit.spec.delay) / circuit.duration)
+        const progress = clamp01((time - circuit.start) / circuit.duration)
         if (progress <= 0) return
 
         const settled = smoothstep((time - circuit.end) / .28)
@@ -481,6 +582,7 @@ export function PcbHero() {
       context.clearRect(0, 0, cssWidth, cssHeight)
 
       drawLowerField(time)
+      drawBottomFeeds(time)
 
       context.save()
       context.translate(0, stageOffsetY)
@@ -518,16 +620,24 @@ export function PcbHero() {
         const logoPaths = await loadLogoPaths()
         if (cancelled) return
 
-        circuits = circuitSpecs.map((spec) => {
+        circuits = circuitSpecs.map((spec, index) => {
           const route = buildCircuit(spec, logoPaths)
           const duration = route.total / CIRCUIT_SPEED
-          return { spec, route, duration, end: spec.delay + duration }
+          const circuitStart = spec.delay + (BOTTOM_PORT_LAYOUT.has(index) ? BOTTOM_FEED_TIME : 0)
+          return {
+            index,
+            spec,
+            route,
+            duration,
+            start: circuitStart,
+            end: circuitStart + duration,
+          }
         })
         downwardCircuits = circuits.filter(
           (circuit) => circuit.route.points[circuit.route.points.length - 1][1] >= VH - 1
         )
 
-        const firstLogoMoment = Math.min(...circuits.map((circuit) => circuit.spec.delay + circuit.duration * .34))
+        const firstLogoMoment = Math.min(...circuits.map((circuit) => circuit.start + circuit.duration * .34))
         const lastCircuitEnd = Math.max(...circuits.map((circuit) => circuit.end))
         const lowerCircuitEnd = downwardCircuits.length
           ? Math.max(...downwardCircuits.map((circuit) => circuit.end + LOWER_EXTENSION_TIME * 1.85))
