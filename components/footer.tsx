@@ -22,11 +22,11 @@ export function Footer() {
       <div className="mx-auto max-w-[1440px]">
         <div className="grid gap-14 pb-16 lg:grid-cols-[1.3fr_0.7fr_0.7fr_0.9fr]">
           <div>
-            <Link href="/" className="inline-flex items-center gap-4" aria-label="Embedded Systems at Purdue home">
-              <Image src="/logo.svg" alt="Embedded Systems at Purdue" width={112} height={36} className="h-auto w-28" />
+            <Link href="/" className="inline-flex items-center gap-4" aria-label="Embedded Systems @ Purdue home">
+              <Image src="/logo.svg" alt="Embedded Systems @ Purdue" width={112} height={36} className="h-auto w-28" />
             </Link>
             <p className="mt-7 max-w-sm text-sm leading-6 text-[#858179] sm:text-base sm:leading-7">
-              Purdue&apos;s student-run community for embedded hardware, firmware, FPGA, robotics, and systems engineering.
+              Embedded Systems @ Purdue is a student-run community for embedded hardware, firmware, FPGA, robotics, and systems engineering.
             </p>
           </div>
 
