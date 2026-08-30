@@ -39,18 +39,22 @@ const circuitSpecs: CircuitSpec[] = [
   { pathIndex: 0, from: .02, to: .13, port: [42, 120], inBends: [[130,120],[130,240],[230,240]], outBends: [[1380,150],[1480,150],[1480,105],[1640,105]], delay: .10 },
   { pathIndex: 0, from: .30, to: .43, port: [42, 300], inBends: [[125,300],[125,380],[225,380]], outBends: [[520,625],[520,760]], delay: .15 },
   { pathIndex: 0, from: .62, to: .75, port: [320, 42], inBends: [[320,130],[430,130],[430,215]], outBends: [[120,420],[-40,420]], delay: .20 },
+  { pathIndex: 0, from: .79, to: .90, port: [560, 42], inBends: [[560,115],[525,115],[525,210]], outBends: [[1470,620],[1640,620]], delay: .13 },
 
   { pathIndex: 1, from: .04, to: .18, port: [800, 42], inBends: [[800,125],[760,125],[760,220]], outBends: [[720,620],[720,760]], delay: .12 },
   { pathIndex: 1, from: .34, to: .50, port: [42, 520], inBends: [[135,520],[135,465],[245,465]], outBends: [[1390,260],[1640,260]], delay: .18 },
+  { pathIndex: 1, from: .52, to: .64, port: [1558, 465], inBends: [[1480,465],[1480,500],[1380,500]], outBends: [[260,620],[-40,620]], delay: .19 },
   { pathIndex: 1, from: .67, to: .82, port: [350, 678], inBends: [[350,610],[450,610],[450,560]], outBends: [[1080,120],[1080,-40]], delay: .24 },
 
   { pathIndex: 2, from: .04, to: .13, port: [1558, 150], inBends: [[1470,150],[1470,235],[1370,235]], outBends: [[170,205],[-40,205]], delay: .14 },
   { pathIndex: 2, from: .27, to: .40, port: [1558, 350], inBends: [[1470,350],[1470,420],[1375,420]], outBends: [[1030,105],[1030,-40]], delay: .20 },
+  { pathIndex: 2, from: .46, to: .58, port: [1050, 678], inBends: [[1050,610],[1000,610],[1000,555]], outBends: [[1380,90],[1380,-40]], delay: .23 },
   { pathIndex: 2, from: .66, to: .79, port: [800, 678], inBends: [[800,610],[900,610],[900,560]], outBends: [[1430,465],[1640,465]], delay: .26 },
 
   { pathIndex: 3, from: .05, to: .18, port: [1280, 42], inBends: [[1280,125],[1200,125],[1200,220]], outBends: [[1240,625],[1240,760]], delay: .16 },
   { pathIndex: 3, from: .31, to: .47, port: [1558, 560], inBends: [[1460,560],[1460,515],[1360,515]], outBends: [[160,565],[-40,565]], delay: .22 },
   { pathIndex: 3, from: .61, to: .78, port: [1250, 678], inBends: [[1250,610],[1160,610],[1160,555]], outBends: [[1320,120],[1320,-40]], delay: .28 },
+  { pathIndex: 3, from: .80, to: .91, port: [42, 650], inBends: [[125,650],[125,590],[235,590]], outBends: [[1480,420],[1640,420]], delay: .27 },
 ]
 
 function clamp01(value: number) {
@@ -210,6 +214,35 @@ export function PcbHero() {
       })
     }
 
+    const drawVia = (point: Point, alpha: number) => {
+      if (alpha <= 0) return
+      context.save()
+      context.globalAlpha = alpha
+      context.beginPath()
+      context.arc(point[0], point[1], 4.1, 0, Math.PI * 2)
+      context.fillStyle = "rgba(15,15,15,.94)"
+      context.fill()
+      context.strokeStyle = "rgba(218,160,0,.52)"
+      context.lineWidth = 1.1
+      context.stroke()
+      context.beginPath()
+      context.arc(point[0], point[1], 1.35, 0, Math.PI * 2)
+      context.fillStyle = GOLD
+      context.fill()
+      context.restore()
+    }
+
+    const drawVias = (time: number) => {
+      circuits.forEach((circuit, index) => {
+        if (index % 2 !== 0) return
+        const progress = clamp01((time - circuit.spec.delay) / circuit.duration)
+        const inVia = circuit.spec.inBends[Math.min(1, circuit.spec.inBends.length - 1)]
+        const outVia = circuit.spec.outBends[Math.min(1, circuit.spec.outBends.length - 1)]
+        drawVia(inVia, smoothstep((progress - .08) / .10) * .82)
+        drawVia(outVia, smoothstep((progress - .76) / .10) * .74)
+      })
+    }
+
     const drawCircuits = (time: number) => {
       circuits.forEach((circuit) => {
         const progress = clamp01((time - circuit.spec.delay) / circuit.duration)
@@ -246,6 +279,7 @@ export function PcbHero() {
       context.save()
       context.scale(cssWidth / VW, cssHeight / VH)
       drawPorts(time)
+      drawVias(time)
       drawCircuits(time)
       drawLogo(time)
       context.restore()
@@ -297,13 +331,13 @@ export function PcbHero() {
     <section className="relative isolate min-h-[calc(100svh-4rem)] overflow-hidden border-b border-primary/15 bg-background">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_44%,rgba(218,160,0,0.055),transparent_38%)]" />
 
-      <div className="relative z-10 mx-auto flex min-h-[calc(100svh-4rem)] w-full flex-col items-center justify-center pb-12 text-center">
+      <div className="relative z-10 mx-auto flex min-h-[calc(100svh-4rem)] w-full flex-col items-center justify-center pb-16 text-center">
         <div className="relative h-[min(70svh,700px)] min-h-[500px] w-full sm:min-h-[540px]" aria-hidden="true">
           <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
         </div>
 
         <div
-          className={`-mt-10 flex max-w-3xl flex-col items-center px-5 transition-all duration-500 sm:px-8 ${
+          className={`mt-6 flex max-w-3xl flex-col items-center px-5 transition-all duration-500 sm:mt-8 sm:px-8 ${
             copyVisible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
           }`}
         >
