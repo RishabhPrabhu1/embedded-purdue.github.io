@@ -42,26 +42,32 @@ type CircuitRuntime = CircuitGeometry & {
   logoEndTime: number
 }
 
+type MeasuredLogoPath = {
+  d: string
+  length: number
+  centerX: number
+}
+
 const circuitSpecs: CircuitSpec[] = [
-  { pathIndex: 0, from: .02, to: .13, port: [42, 152], inBends: [[150,152],[150,205],[240,205]], outBends: [[1360,140],[1480,140],[1640,140]], delay: .10 },
-  { pathIndex: 0, from: .30, to: .43, port: [42, 304], inBends: [[145,304],[145,350],[235,350]], outBends: [[360,610],[360,760]], delay: .15 },
-  { pathIndex: 0, from: .62, to: .75, port: [320, 42], inBends: [[320,120],[405,120],[405,215]], outBends: [[240,260],[120,260],[-40,260]], delay: .20 },
-  { pathIndex: 0, from: .79, to: .90, port: [640, 42], inBends: [[640,120],[590,120],[590,210]], outBends: [[1040,610],[1040,760]], delay: .13 },
+  { pathIndex: 0, from: .00, to: .29, port: [42, 152], inBends: [[150,152],[150,210],[240,210]], outBends: [[1360,152],[1480,152],[1640,152]], delay: .10 },
+  { pathIndex: 0, from: .24, to: .54, port: [42, 304], inBends: [[150,304],[150,350],[240,350]], outBends: [[320,610],[320,760]], delay: .15 },
+  { pathIndex: 0, from: .49, to: .79, port: [320, 42], inBends: [[320,120],[410,120],[410,215]], outBends: [[240,456],[120,456],[-40,456]], delay: .20 },
+  { pathIndex: 0, from: .74, to: 1.00, port: [640, 42], inBends: [[640,120],[590,120],[590,215]], outBends: [[640,610],[640,760]], delay: .13 },
 
-  { pathIndex: 1, from: .04, to: .18, port: [960, 42], inBends: [[960,120],[1010,120],[1010,210]], outBends: [[720,610],[720,760]], delay: .12 },
-  { pathIndex: 1, from: .34, to: .50, port: [42, 456], inBends: [[145,456],[145,410],[240,410]], outBends: [[1360,280],[1480,280],[1640,280]], delay: .18 },
-  { pathIndex: 1, from: .52, to: .64, port: [1558, 456], inBends: [[1455,456],[1455,410],[1360,410]], outBends: [[240,500],[120,500],[-40,500]], delay: .19 },
-  { pathIndex: 1, from: .67, to: .82, port: [320, 718], inBends: [[320,640],[410,640],[410,560]], outBends: [[480,150],[480,-40]], delay: .24 },
+  { pathIndex: 1, from: .00, to: .29, port: [960, 42], inBends: [[960,120],[1010,120],[1010,215]], outBends: [[960,610],[960,760]], delay: .12 },
+  { pathIndex: 1, from: .24, to: .54, port: [42, 456], inBends: [[150,456],[150,410],[240,410]], outBends: [[1360,304],[1480,304],[1640,304]], delay: .18 },
+  { pathIndex: 1, from: .49, to: .79, port: [1558, 456], inBends: [[1450,456],[1450,410],[1360,410]], outBends: [[240,304],[120,304],[-40,304]], delay: .19 },
+  { pathIndex: 1, from: .74, to: 1.00, port: [320, 718], inBends: [[320,640],[410,640],[410,550]], outBends: [[320,150],[320,-40]], delay: .24 },
 
-  { pathIndex: 2, from: .04, to: .13, port: [1558, 152], inBends: [[1450,152],[1450,215],[1360,215]], outBends: [[240,128],[120,128],[-40,128]], delay: .14 },
-  { pathIndex: 2, from: .27, to: .40, port: [1558, 304], inBends: [[1455,304],[1455,350],[1365,350]], outBends: [[840,150],[840,-40]], delay: .20 },
-  { pathIndex: 2, from: .46, to: .58, port: [960, 718], inBends: [[960,640],[1010,640],[1010,560]], outBends: [[1160,150],[1160,-40]], delay: .23 },
-  { pathIndex: 2, from: .66, to: .79, port: [640, 718], inBends: [[640,640],[590,640],[590,560]], outBends: [[1360,460],[1480,460],[1640,460]], delay: .26 },
+  { pathIndex: 2, from: .00, to: .29, port: [1558, 152], inBends: [[1450,152],[1450,210],[1360,210]], outBends: [[240,152],[120,152],[-40,152]], delay: .14 },
+  { pathIndex: 2, from: .24, to: .54, port: [1558, 304], inBends: [[1450,304],[1450,350],[1360,350]], outBends: [[640,150],[640,-40]], delay: .20 },
+  { pathIndex: 2, from: .49, to: .79, port: [960, 718], inBends: [[960,640],[1010,640],[1010,550]], outBends: [[960,150],[960,-40]], delay: .23 },
+  { pathIndex: 2, from: .74, to: 1.00, port: [640, 718], inBends: [[640,640],[590,640],[590,550]], outBends: [[1360,456],[1480,456],[1640,456]], delay: .26 },
 
-  { pathIndex: 3, from: .05, to: .18, port: [1280, 42], inBends: [[1280,120],[1195,120],[1195,215]], outBends: [[1280,610],[1280,760]], delay: .16 },
-  { pathIndex: 3, from: .31, to: .47, port: [1558, 608], inBends: [[1450,608],[1450,555],[1365,555]], outBends: [[240,620],[120,620],[-40,620]], delay: .22 },
-  { pathIndex: 3, from: .61, to: .78, port: [1280, 718], inBends: [[1280,640],[1190,640],[1190,560]], outBends: [[1440,150],[1440,-40]], delay: .28 },
-  { pathIndex: 3, from: .80, to: .91, port: [42, 608], inBends: [[150,608],[150,555],[235,555]], outBends: [[1360,610],[1480,610],[1640,610]], delay: .27 },
+  { pathIndex: 3, from: .00, to: .29, port: [1280, 42], inBends: [[1280,120],[1190,120],[1190,215]], outBends: [[1280,610],[1280,760]], delay: .16 },
+  { pathIndex: 3, from: .24, to: .54, port: [1558, 608], inBends: [[1450,608],[1450,550],[1360,550]], outBends: [[240,608],[120,608],[-40,608]], delay: .22 },
+  { pathIndex: 3, from: .49, to: .79, port: [1280, 718], inBends: [[1280,640],[1190,640],[1190,550]], outBends: [[1280,150],[1280,-40]], delay: .28 },
+  { pathIndex: 3, from: .74, to: 1.00, port: [42, 608], inBends: [[150,608],[150,550],[240,550]], outBends: [[1360,608],[1480,608],[1640,608]], delay: .27 },
 ]
 
 function clamp01(value: number) {
@@ -136,14 +142,33 @@ function logoPoint([x, y]: Point): Point {
   return [LOGO.x + x * LOGO_SCALE, LOGO.y + y * LOGO_SCALE]
 }
 
-function sampleLogoSegment(d: string, from: number, to: number): Point[] {
+function createSvgPath(d: string) {
   const namespace = "http://www.w3.org/2000/svg"
   const path = document.createElementNS(namespace, "path")
   path.setAttribute("d", d)
+  return path
+}
 
+function measureLogoPath(d: string): MeasuredLogoPath {
+  const path = createSvgPath(d)
+  const length = path.getTotalLength()
+  let minX = Number.POSITIVE_INFINITY
+  let maxX = Number.NEGATIVE_INFINITY
+
+  for (let index = 0; index <= 28; index++) {
+    const point = path.getPointAtLength(length * (index / 28))
+    minX = Math.min(minX, point.x)
+    maxX = Math.max(maxX, point.x)
+  }
+
+  return { d, length, centerX: (minX + maxX) / 2 }
+}
+
+function sampleLogoSegment(d: string, from: number, to: number): Point[] {
+  const path = createSvgPath(d)
   const total = path.getTotalLength()
   const span = Math.abs(to - from) * total
-  const samples = Math.max(16, Math.min(80, Math.ceil(span / 11)))
+  const samples = Math.max(24, Math.min(120, Math.ceil(span / 8)))
   const points: Point[] = []
 
   for (let index = 0; index <= samples; index++) {
@@ -192,9 +217,13 @@ async function loadLogoPaths() {
   const paths = Array.from(svg.querySelectorAll("path"))
     .map((path) => path.getAttribute("d"))
     .filter((d): d is string => Boolean(d))
+    .map(measureLogoPath)
+    .sort((a, b) => b.length - a.length)
+    .slice(0, 4)
+    .sort((a, b) => a.centerX - b.centerX)
 
   if (paths.length < 4) throw new Error("Logo geometry is incomplete")
-  return paths.slice(0, 4)
+  return paths.map((path) => path.d)
 }
 
 export function PcbHero() {
@@ -209,6 +238,11 @@ export function PcbHero() {
 
     const context = canvas.getContext("2d", { alpha: true })
     if (!context) return
+
+    const formationLayer = document.createElement("canvas")
+    formationLayer.width = VW
+    formationLayer.height = VH
+    const formationContext = formationLayer.getContext("2d", { alpha: true })
 
     let frame = 0
     let cancelled = false
@@ -262,13 +296,56 @@ export function PcbHero() {
       })
     }
 
-    const drawLogo = (time: number) => {
+    const getLogoProgress = (circuit: CircuitRuntime, time: number) => {
+      const progress = clamp01((time - circuit.spec.delay) / circuit.duration)
+      const travelled = circuit.route.total * progress
+      return clamp01(
+        (travelled - circuit.logoStartDistance) / Math.max(1, circuit.logoRoute.total)
+      )
+    }
+
+    const drawLogoFormation = (time: number) => {
+      if (!logoImage || !formationContext) return
+
+      formationContext.setTransform(1, 0, 0, 1, 0, 0)
+      formationContext.clearRect(0, 0, VW, VH)
+      formationContext.globalCompositeOperation = "source-over"
+
+      circuits.forEach((circuit) => {
+        const logoProgress = getLogoProgress(circuit, time)
+        if (logoProgress <= 0) return
+
+        const bloomProgress = clamp01(logoProgress + .045)
+        formationContext.save()
+        formationContext.globalAlpha = .24
+        drawPrepared(formationContext, circuit.logoRoute, bloomProgress, "#ffffff", 126)
+        formationContext.globalAlpha = .68
+        drawPrepared(formationContext, circuit.logoRoute, logoProgress, "#ffffff", 86)
+        formationContext.globalAlpha = 1
+        const head = drawPrepared(formationContext, circuit.logoRoute, logoProgress, "#ffffff", 44)
+
+        formationContext.beginPath()
+        formationContext.arc(head[0], head[1], 34, 0, Math.PI * 2)
+        formationContext.fillStyle = "rgba(255,255,255,.96)"
+        formationContext.fill()
+        formationContext.restore()
+      })
+
+      formationContext.globalCompositeOperation = "source-in"
+      formationContext.globalAlpha = 1
+      formationContext.drawImage(logoImage, LOGO.x, LOGO.y, LOGO.width, LOGO.height)
+      formationContext.globalCompositeOperation = "source-over"
+
+      context.drawImage(formationLayer, 0, 0)
+    }
+
+    const drawLogoCleanup = (time: number) => {
       if (!logoImage) return
-      const fill = smoothstep((time - fillStart) / .62)
+      const fill = smoothstep((time - fillStart) / .58)
       if (fill <= 0) return
 
       context.save()
-      context.globalAlpha = fill * .92
+      context.globalAlpha = fill * .96
       context.drawImage(logoImage, LOGO.x, LOGO.y, LOGO.width, LOGO.height)
       context.restore()
     }
@@ -279,23 +356,17 @@ export function PcbHero() {
         if (progress <= 0) return
 
         const settled = smoothstep((time - circuit.end) / .30)
-        context.globalAlpha = 1 - settled * .72
-        const head = drawPrepared(context, circuit.route, progress, GOLD, 2.3)
+        context.globalAlpha = 1 - settled * .74
+        const head = drawPrepared(context, circuit.route, progress, GOLD, 2.35)
         context.globalAlpha = 1
 
-        const travelled = circuit.route.total * progress
-        const logoProgress = clamp01(
-          (travelled - circuit.logoStartDistance) / Math.max(1, circuit.logoRoute.total)
-        )
-
-        if (logoProgress > 0) {
-          const deposited = smoothstep(logoProgress)
-          context.save()
-          context.globalAlpha = .62 + deposited * .28
-          drawPrepared(context, circuit.logoRoute, logoProgress, GOLD, 3.1)
-          context.globalAlpha = .42 + deposited * .28
-          drawPrepared(context, circuit.logoRoute, logoProgress, BRIGHT, 1.05)
-          context.restore()
+        const logoProgress = getLogoProgress(circuit, time)
+        if (logoProgress > 0 && logoProgress < 1) {
+          const logoHead = drawPrepared(context, circuit.logoRoute, logoProgress, BRIGHT, 2.15)
+          context.beginPath()
+          context.arc(logoHead[0], logoHead[1], 4.1, 0, Math.PI * 2)
+          context.fillStyle = BRIGHT
+          context.fill()
         }
 
         if (progress < 1) {
@@ -314,7 +385,8 @@ export function PcbHero() {
       context.save()
       context.scale(scaleX, scaleY)
       drawPorts(time)
-      drawLogo(time)
+      drawLogoFormation(time)
+      drawLogoCleanup(time)
       drawCircuits(time)
       context.restore()
     }
@@ -363,9 +435,9 @@ export function PcbHero() {
 
         const lastLogoDeposit = Math.max(...circuits.map((circuit) => circuit.logoEndTime))
         const lastCircuitEnd = Math.max(...circuits.map((circuit) => circuit.end))
-        fillStart = lastLogoDeposit + .08
-        copyStart = fillStart + .18
-        animationEnd = Math.max(lastCircuitEnd, fillStart + .72) + .10
+        fillStart = lastLogoDeposit + .04
+        copyStart = fillStart + .22
+        animationEnd = Math.max(lastCircuitEnd, fillStart + .68) + .08
 
         const image = new Image()
         logoImage = image
