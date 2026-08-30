@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -20,6 +20,15 @@ export function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
   const onHome = pathname === "/"
+
+  useEffect(() => {
+    if (!onHome) return
+
+    window.scrollTo(0, 0)
+    const frame = window.requestAnimationFrame(() => window.scrollTo(0, 0))
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [onHome])
 
   return (
     <nav
