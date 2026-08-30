@@ -1,22 +1,19 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, Home, Users, FolderOpen, Mail, UserSquare2 } from "lucide-react"
-import { DiscordIcon } from "@/components/icons/discord-icon"
-import Image from "next/image"
-import { FaDiscord } from "react-icons/fa";
+import { ArrowUpRight, Menu, X } from "lucide-react"
 
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 const navigation = [
-  { name: "Home", href: "/", icon: Home },
-  { name: "About", href: "/about", icon: Users },
-  { name: "Projects", href: "/projects", icon: FolderOpen },
-  { name: "Workshops", href: "/workshops", icon: Mail },
-  { name: "Team", href: "/team", icon: UserSquare2 },
+  { name: "About", href: "/about" },
+  { name: "Projects", href: "/projects" },
+  { name: "Workshops", href: "/workshops" },
+  { name: "Team", href: "/team" },
+  { name: "Sponsors", href: "/sponsors" },
 ]
 
 export function Navigation() {
@@ -24,112 +21,97 @@ export function Navigation() {
   const pathname = usePathname()
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* allow height to grow instead of hard-capping at h-16 */}
-        <div className="flex justify-between items-center min-h-16 py-2">
-          {/* Logo + brand */}
-          <Link href="/" className="flex items-center space-x-2">
-            <Image
-              src="/logo.svg"
-              alt="Embedded Systems @ Purdue logo"
-              width={70}
-              height={40}
-              className="object-contain"
-              priority
-            />
-            {/* Short label on xs, full on md+; prevent wrap on small to avoid overlap */}
-            {/* <span className="font-bold text-lg text-foreground lg:hidden">
-              ES@P
-            </span> */}
-            <span className="hidden lg:inline font-bold text-lg text-foreground whitespace-nowrap">
-              Embedded Systems at Purdue
-            </span>
-          </Link>
+    <nav className="sticky top-0 z-50 w-full border-b border-white/[0.08] bg-[#11110f]/90 backdrop-blur-xl">
+      <div className="mx-auto flex h-[68px] max-w-[1440px] items-center justify-between px-5 sm:px-8 lg:px-12 xl:px-16">
+        <Link href="/" className="group flex items-center gap-4" aria-label="Embedded Systems at Purdue home">
+          <Image
+            src="/logo.svg"
+            alt="Embedded Systems at Purdue"
+            width={76}
+            height={25}
+            className="h-auto w-[76px] object-contain"
+            priority
+          />
+          <div className="hidden border-l border-white/10 pl-4 sm:block">
+            <div className="font-mono text-[0.58rem] uppercase tracking-[0.19em] text-[#8d887f]">Purdue University</div>
+            <div className="mt-0.5 text-[0.72rem] font-medium tracking-[-0.01em] text-[#d9d3c8]">Embedded Systems</div>
+          </div>
+        </Link>
 
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navigation.map((item) => {
-              const active = pathname === item.href
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`font-medium transition-colors ${active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                  {item.name}
-                </Link>
-              )
-            })}
-            <Button
-              variant="ghost"
-              size="lg" // larger touch target
-              asChild
-              className="flex items-center justify-start space-x-3 py-3 px-4 text-lg"
-            >
+        <div className="hidden items-center gap-7 md:flex lg:gap-9">
+          {navigation.map((item) => {
+            const active = pathname === item.href
+            return (
               <Link
-                href="https://discord.gg/MkPv9s9cj3"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Discord"
-                className="flex items-center"
+                key={item.name}
+                href={item.href}
+                className={`relative py-2 font-mono text-[0.64rem] uppercase tracking-[0.16em] transition-colors ${
+                  active ? "text-[#f0ece2]" : "text-[#8d887f] hover:text-[#f0ece2]"
+                }`}
               >
-                <span className="font-medium">Discord</span>
-
-                <FaDiscord className="w-6 h-6 mr-3 text-indigo-500" />
+                {item.name}
+                {active && <span className="absolute inset-x-0 -bottom-[17px] h-px bg-[#daa000]" />}
               </Link>
-            </Button>
-          </div>
+            )
+          })}
 
-          {/* Mobile nav */}
-          <div className="flex items-center md:hidden">
-            <Button asChild variant="ghost" size="icon" aria-label="Join our Discord">
-              <Link href="https://discord.gg/MkPv9s9cj3" target="_blank" rel="noopener noreferrer">
-                <FaDiscord className="w-6 h-6 mr-3 text-indigo-500" />
-              </Link>
-            </Button>
+          <Link
+            href="https://discord.gg/MkPv9s9cj3"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex h-9 items-center gap-2 border border-[#daa000]/45 px-4 font-mono text-[0.62rem] uppercase tracking-[0.15em] text-[#e2c267] transition-colors hover:border-[#daa000] hover:bg-[#daa000] hover:text-[#11110f]"
+          >
+            Join Discord
+            <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </Link>
+        </div>
 
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <Menu className="h-5 w-5" />
-                  <span className="sr-only">Toggle menu</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[300px]">
-                <div className="flex flex-col space-y-4 mt-8">
-                  {navigation.map((item) => {
-                    const Icon = item.icon
-                    const active = pathname === item.href
-                    return (
-                      <Link
-                        key={item.name}
-                        href={item.href}
-                        className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${active ? "text-foreground bg-muted" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                          }`}
-                        onClick={() => setIsOpen(false)}
-                      >
-                        <Icon className="h-5 w-5" />
-                        <span className="font-medium">{item.name}</span>
-                      </Link>
-                    )
-                  })}
-                  <Button variant="ghost" size="sm" asChild>
+        <div className="md:hidden">
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                className="grid h-10 w-10 place-items-center border border-white/10 text-[#d6d1c7] transition-colors hover:border-[#daa000]/50 hover:text-[#f2c34f]"
+                aria-label="Open navigation"
+              >
+                {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              </button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[88vw] max-w-[360px] border-l border-white/10 bg-[#151512] p-0 text-[#f3efe6]">
+              <div className="border-b border-white/10 px-6 py-6">
+                <span className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-[#daa000]">ES@P / Navigation</span>
+              </div>
+              <div className="flex flex-col">
+                {navigation.map((item, index) => {
+                  const active = pathname === item.href
+                  return (
                     <Link
-                      href="https://discord.gg/MkPv9s9cj3"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label="Join our Discord"
+                      key={item.name}
+                      href={item.href}
+                      onClick={() => setIsOpen(false)}
+                      className={`flex min-h-16 items-center justify-between border-b border-white/[0.08] px-6 text-xl font-medium tracking-[-0.03em] transition-colors ${
+                        active ? "bg-white/[0.04] text-[#f2c34f]" : "text-[#d4cfc5] hover:bg-white/[0.03] hover:text-white"
+                      }`}
                     >
-                    <FaDiscord className="w-6 h-6 mr-3 text-indigo-500" />
-                      <span>Discord</span>
+                      <span>{item.name}</span>
+                      <span className="font-mono text-[0.58rem] tracking-[0.14em] text-[#69665f]">0{index + 1}</span>
                     </Link>
-                  </Button>
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
+                  )
+                })}
+              </div>
+              <div className="p-6">
+                <Link
+                  href="https://discord.gg/MkPv9s9cj3"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex h-12 w-full items-center justify-between bg-[#daa000] px-4 font-mono text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-[#11110f]"
+                >
+                  Join Discord
+                  <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </nav>
