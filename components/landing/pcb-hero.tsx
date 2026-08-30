@@ -4,31 +4,93 @@ import { ArrowDown, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const GOLD = "#daa000"
+const SIGNAL = "#f2c24f"
 const LOGO_X = 270
 const LOGO_Y = 250
 const LOGO_SCALE = 1060 / 1920
 
-const feederTraces = [
-  { d: "M42 150 H145 V220 H245 V352 H334", delay: 0.34 },
-  { d: "M42 340 H125 V400 H235 V445 H338", delay: 0.42 },
-  { d: "M42 610 H150 V570 H250 V530 H350", delay: 0.50 },
-  { d: "M1558 150 H1460 V220 H1370 V350 H1270", delay: 0.36 },
-  { d: "M1558 350 H1475 V405 H1360 V445 H1265", delay: 0.44 },
-  { d: "M1558 610 H1450 V570 H1355 V525 H1260", delay: 0.52 },
-  { d: "M360 42 V130 H455 V205 H520 V286", delay: 0.38 },
-  { d: "M720 42 V135 H730 V205 H730 V276", delay: 0.46 },
-  { d: "M1060 42 V135 H990 V205 H990 V276", delay: 0.54 },
-  { d: "M370 678 V605 H455 V570 H520 V588", delay: 0.40 },
-  { d: "M790 678 V620 H820 V585 H820 V588", delay: 0.48 },
-  { d: "M1215 678 V605 H1145 V570 H1090 V588", delay: 0.56 },
-]
-
-const ports = [
-  [42, 150], [42, 340], [42, 610],
-  [1558, 150], [1558, 350], [1558, 610],
-  [360, 42], [720, 42], [1060, 42],
-  [370, 678], [790, 678], [1215, 678],
-]
+const routes = [
+  {
+    port: [42, 210],
+    feeder: "M42 210 H120 V300 H210 V389 H332",
+    build: "M332 389 C378 388 404 370 432 338 C466 299 526 308 555 350 C580 386 563 430 522 455 C486 477 452 492 430 506",
+    delay: 0.18,
+    feederDuration: 0.64,
+    buildDuration: 0.70,
+  },
+  {
+    port: [42, 520],
+    feeder: "M42 520 H150 V560 H270 V506 H430",
+    build: "M430 506 C490 505 545 499 604 486 C668 472 716 444 734 405 C752 363 729 316 656 284",
+    delay: 0.22,
+    feederDuration: 0.70,
+    buildDuration: 0.68,
+  },
+  {
+    port: [1558, 210],
+    feeder: "M1558 210 H1480 V300 H1380 V390 H1280",
+    build: "M1280 390 C1240 370 1204 350 1174 322 C1148 298 1136 287 1124 284 C1138 326 1136 370 1118 411 C1103 447 1084 484 1070 548",
+    delay: 0.20,
+    feederDuration: 0.66,
+    buildDuration: 0.72,
+  },
+  {
+    port: [1558, 520],
+    feeder: "M1558 520 H1460 V575 H1320 V548 H1070",
+    build: "M1070 548 C1042 521 1016 500 984 483 C950 465 918 445 900 412 C880 375 874 330 860 284",
+    delay: 0.24,
+    feederDuration: 0.76,
+    buildDuration: 0.68,
+  },
+  {
+    port: [390, 42],
+    feeder: "M390 42 V110 H420 V190 H442 V284",
+    build: "M442 284 C445 328 438 369 427 409 C418 445 417 477 430 506",
+    delay: 0.16,
+    feederDuration: 0.60,
+    buildDuration: 0.62,
+  },
+  {
+    port: [650, 42],
+    feeder: "M650 42 V120 H656 V284",
+    build: "M656 284 C690 303 716 331 728 365 C739 397 731 430 708 455 C686 478 675 490 674 506",
+    delay: 0.19,
+    feederDuration: 0.58,
+    buildDuration: 0.64,
+  },
+  {
+    port: [900, 42],
+    feeder: "M900 42 V120 H860 V284",
+    build: "M860 284 C886 315 901 352 900 391 C899 430 915 469 950 506",
+    delay: 0.21,
+    feederDuration: 0.60,
+    buildDuration: 0.64,
+  },
+  {
+    port: [1170, 42],
+    feeder: "M1170 42 V120 H1124 V284",
+    build: "M1124 284 C1162 286 1200 301 1228 327 C1254 351 1270 374 1280 390",
+    delay: 0.23,
+    feederDuration: 0.62,
+    buildDuration: 0.62,
+  },
+  {
+    port: [650, 678],
+    feeder: "M650 678 V610 H674 V506",
+    build: "M674 506 C701 482 719 455 730 423 C742 386 733 341 712 317 C695 297 676 287 656 284",
+    delay: 0.20,
+    feederDuration: 0.58,
+    buildDuration: 0.64,
+  },
+  {
+    port: [1000, 678],
+    feeder: "M1000 678 V610 H950 V506",
+    build: "M950 506 C978 487 1007 467 1030 439 C1056 407 1067 371 1054 335 C1046 313 1018 292 986 284",
+    delay: 0.22,
+    feederDuration: 0.60,
+    buildDuration: 0.64,
+  },
+] as const
 
 const ePaths = [
   "M120.67,220.27c4.37,7.39,7.47,15.8,8.78,24.75,2.2,14.98-1.07,28.48-8.04,38.1l91.88.54,10.87-62.78-103.5-.61h.01Z",
@@ -57,122 +119,139 @@ const pPaths = [
   "M1422.94,525.75l10.93,4.56,41.66,17.37,8.07-49s-.01-.02-.02-.03l36.62-202.86,2.49-12.66,2.95-17.97,2.95-17.97,2.06-14.73.53-3.25,16.06-97.49c.77-4.69,3.96-7.77,8.14-7.86l177.55-3.72,38.76-.81h.21c.13,0,.24.03.37.03.98.76,2,1.54,3.11,2.4,3.2,2.46,4.9,6.94,4.09,10.79l-19.89,94.96-16.43.35h0s-61.41,1.34-61.41,1.34l-134.62,2.9-2.47,15.09-2.95,17.97-2.95,17.97-2.02,12.31,233.53-5.04c25.35-.55,45.1-19.16,50.31-47.41l15.49-84.05c4.3-23.35-2.09-49.61-17.08-70.25-15-20.63-36.44-32.64-57.42-32.25l-216.3,4.53c-7.73.16-14.91,2.01-21.33,5.26-7.87,3.98-14.56,10.12-19.65,17.97-4.67,7.2-8.01,15.82-9.62,25.6l-31.09,188.63-17.13,103.94-10.37,62.9-4.17,26.05",
 ]
 
-function LogoPathGroup({ paths, delay }: { paths: string[]; delay: number }) {
+function LogoShape() {
   return (
     <>
-      {paths.map((d, index) => (
-        <path
-          key={d}
-          d={d}
-          pathLength="1"
-          className="pcb3-logo-line"
-          style={{ animationDelay: `${delay + index * 0.035}s` }}
-        />
-      ))}
-    </>
-  )
-}
-
-function FilledLogoGeometry() {
-  return (
-    <g className="pcb3-logo-fill" fill={GOLD}>
-      {ePaths.map((d) => <path key={`fill-e-${d}`} d={d} />)}
+      {ePaths.map((d) => <path key={`e-${d}`} d={d} />)}
       <ellipse cx="112.25" cy="251.67" rx="45.23" ry="48.58" />
-      {sPaths.map((d) => <path key={`fill-s-${d}`} d={d} />)}
-      {atPaths.map((d) => <path key={`fill-a-${d}`} d={d} />)}
-      {pPaths.map((d) => <path key={`fill-p-${d}`} d={d} />)}
+      {sPaths.map((d) => <path key={`s-${d}`} d={d} />)}
+      {atPaths.map((d) => <path key={`a-${d}`} d={d} />)}
+      {pPaths.map((d) => <path key={`p-${d}`} d={d} />)}
       <ellipse cx="1448.52" cy="539.9" rx="45.23" ry="48.58" />
-    </g>
+    </>
   )
 }
 
 export function PcbHero() {
   return (
-    <section className="pcb3-hero relative isolate min-h-[calc(100svh-4rem)] overflow-hidden border-b border-primary/15 bg-background">
+    <section className="pcb4-hero relative isolate min-h-[calc(100svh-4rem)] overflow-hidden border-b border-primary/15 bg-background">
       <style>{`
-        .pcb3-hero {
-          background: radial-gradient(circle at 50% 46%, rgba(218,160,0,.055), transparent 36%), var(--background);
+        .pcb4-hero {
+          background: radial-gradient(circle at 50% 45%, rgba(218,160,0,.045), transparent 34%), var(--background);
         }
-        .pcb3-stage {
-          height: min(72svh, 720px);
-          min-height: 520px;
+        .pcb4-stage {
+          height: min(68svh, 680px);
+          min-height: 500px;
           contain: layout paint;
-          transform: translateZ(0);
         }
-        .pcb3-port-ring { fill: var(--background); stroke: rgba(218,160,0,.62); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-        .pcb3-port-core { fill: ${GOLD}; transform-box: fill-box; transform-origin: center; animation: pcb3Port 2.4s ease-in-out infinite; }
-        .pcb3-trace {
-          fill: none; stroke: ${GOLD}; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
-          stroke-dasharray: 1; stroke-dashoffset: 1; vector-effect: non-scaling-stroke;
-          animation: pcb3Trace 1.32s cubic-bezier(.22,.72,.18,1) forwards;
-          will-change: stroke-dashoffset;
+        .pcb4-port-ring {
+          fill: var(--background);
+          stroke: rgba(218,160,0,.62);
+          stroke-width: 1.4;
+          vector-effect: non-scaling-stroke;
         }
-        .pcb3-junction { fill: ${GOLD}; opacity: 0; animation: pcb3Junction .22s ease-out forwards; }
-        .pcb3-logo-line {
-          fill: transparent; stroke: ${GOLD}; stroke-width: 8; stroke-linecap: round; stroke-linejoin: round;
-          stroke-dasharray: 1; stroke-dashoffset: 1;
-          animation: pcb3LogoDraw 1.38s cubic-bezier(.2,.72,.16,1) forwards;
-          will-change: stroke-dashoffset;
+        .pcb4-port-core { fill: ${GOLD}; }
+        .pcb4-feeder,
+        .pcb4-reveal,
+        .pcb4-signal {
+          fill: none;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-dasharray: 1;
+          stroke-dashoffset: 1;
         }
-        .pcb3-logo-fill { opacity: 0; animation: pcb3Fill .5s ease-out 3.05s forwards; }
-        .pcb3-copy { opacity: 0; transform: translateY(10px); animation: pcb3Copy .55s ease-out 3.34s forwards; }
-        .pcb3-scroll { opacity: 0; animation: pcb3Copy .45s ease-out 3.72s forwards; }
-        @keyframes pcb3Trace { to { stroke-dashoffset: 0; } }
-        @keyframes pcb3LogoDraw { 0% { stroke-dashoffset: 1; } 100% { stroke-dashoffset: 0; } }
-        @keyframes pcb3Fill { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes pcb3Copy { to { opacity: 1; transform: translateY(0); } }
-        @keyframes pcb3Junction { 0% { opacity: 0; transform: scale(.4); } 65% { opacity: 1; transform: scale(1.6); } 100% { opacity: .9; transform: scale(1); } }
-        @keyframes pcb3Port { 0%,100% { opacity: .62; transform: scale(.82); } 50% { opacity: 1; transform: scale(1.08); } }
+        .pcb4-feeder {
+          stroke: ${GOLD};
+          stroke-width: 2;
+          vector-effect: non-scaling-stroke;
+          animation: pcb4Draw var(--dur) cubic-bezier(.4,0,.2,1) var(--delay) forwards;
+        }
+        .pcb4-reveal {
+          stroke: ${GOLD};
+          stroke-width: 88;
+          animation: pcb4Draw var(--build-dur) cubic-bezier(.4,0,.2,1) var(--build-delay) forwards;
+        }
+        .pcb4-signal {
+          stroke: ${SIGNAL};
+          stroke-width: 2.3;
+          vector-effect: non-scaling-stroke;
+          animation: pcb4Draw var(--build-dur) cubic-bezier(.4,0,.2,1) var(--build-delay) forwards;
+        }
+        .pcb4-logo-fill {
+          opacity: 0;
+          animation: pcb4Resolve .16s linear 1.58s forwards;
+        }
+        .pcb4-copy {
+          opacity: 0;
+          transform: translateY(7px);
+          animation: pcb4Copy .38s cubic-bezier(.2,.7,.2,1) 1.70s forwards;
+        }
+        .pcb4-scroll { opacity: 0; animation: pcb4Resolve .25s linear 2.02s forwards; }
+        @keyframes pcb4Draw { to { stroke-dashoffset: 0; } }
+        @keyframes pcb4Resolve { to { opacity: 1; } }
+        @keyframes pcb4Copy { to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 640px) {
-          .pcb3-stage { height: 58svh; min-height: 430px; }
-          .pcb3-trace { stroke-width: 1.7; }
-          .pcb3-logo-line { stroke-width: 6; }
+          .pcb4-stage { height: 56svh; min-height: 420px; }
+          .pcb4-feeder, .pcb4-signal { stroke-width: 1.65; }
+          .pcb4-reveal { stroke-width: 72; }
         }
         @media (prefers-reduced-motion: reduce) {
-          .pcb3-port-core, .pcb3-trace, .pcb3-junction, .pcb3-logo-line, .pcb3-logo-fill, .pcb3-copy, .pcb3-scroll { animation: none !important; }
-          .pcb3-trace, .pcb3-logo-line { stroke-dashoffset: 0; }
-          .pcb3-logo-fill, .pcb3-copy, .pcb3-scroll, .pcb3-junction { opacity: 1; transform: none; }
+          .pcb4-feeder, .pcb4-reveal, .pcb4-signal, .pcb4-logo-fill, .pcb4-copy, .pcb4-scroll { animation: none !important; }
+          .pcb4-feeder, .pcb4-reveal, .pcb4-signal { stroke-dashoffset: 0; }
+          .pcb4-logo-fill, .pcb4-copy, .pcb4-scroll { opacity: 1; transform: none; }
         }
       `}</style>
 
       <div className="relative z-10 mx-auto flex min-h-[calc(100svh-4rem)] w-full flex-col items-center justify-center pb-12 text-center">
-        <div className="pcb3-stage relative w-full" aria-hidden="true">
-          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 1600 720" preserveAspectRatio="xMidYMid slice">
-            {ports.map(([cx, cy], index) => (
-              <g key={`${cx}-${cy}`}>
-                <circle cx={cx} cy={cy} r="12" className="pcb3-port-ring" />
-                <circle cx={cx} cy={cy} r="4.4" className="pcb3-port-core" style={{ animationDelay: `${index * 0.08}s` }} />
+        <div className="pcb4-stage relative w-full" aria-hidden="true">
+          <svg
+            className="absolute inset-0 h-full w-full"
+            viewBox="0 0 1600 720"
+            preserveAspectRatio="xMidYMid slice"
+            shapeRendering="geometricPrecision"
+          >
+            <defs>
+              <clipPath id="pcb4LogoClip" clipPathUnits="userSpaceOnUse">
+                <g transform={`translate(${LOGO_X} ${LOGO_Y}) scale(${LOGO_SCALE})`}>
+                  <LogoShape />
+                </g>
+              </clipPath>
+            </defs>
+
+            {routes.map(({ port: [cx, cy] }) => (
+              <g key={`port-${cx}-${cy}`}>
+                <circle cx={cx} cy={cy} r="11" className="pcb4-port-ring" />
+                <circle cx={cx} cy={cy} r="4" className="pcb4-port-core" />
               </g>
             ))}
 
-            {feederTraces.map(({ d, delay }, index) => (
-              <g key={d}>
-                <path d={d} pathLength="1" className="pcb3-trace" style={{ animationDelay: `${delay}s` }} />
-                <circle
-                  cx={[334,338,350,1270,1265,1260,520,730,990,520,820,1090][index]}
-                  cy={[352,445,530,350,445,525,286,276,276,588,588,588][index]}
-                  r="4.2"
-                  className="pcb3-junction"
-                  style={{ animationDelay: `${delay + 1.22}s` }}
-                />
-              </g>
-            ))}
+            {routes.map(({ feeder, build, delay, feederDuration, buildDuration }) => {
+              const buildDelay = delay + feederDuration - 0.045
+              const style = {
+                "--delay": `${delay}s`,
+                "--dur": `${feederDuration}s`,
+                "--build-delay": `${buildDelay}s`,
+                "--build-dur": `${buildDuration}s`,
+              } as React.CSSProperties
 
-            <g transform={`translate(${LOGO_X} ${LOGO_Y}) scale(${LOGO_SCALE})`}>
-              <LogoPathGroup paths={ePaths} delay={1.48} />
-              <ellipse cx="112.25" cy="251.67" rx="45.23" ry="48.58" pathLength="1" className="pcb3-logo-line" style={{ animationDelay: "1.55s" }} />
+              return (
+                <g key={feeder} style={style}>
+                  <path d={feeder} pathLength="1" className="pcb4-feeder" />
+                  <g clipPath="url(#pcb4LogoClip)">
+                    <path d={build} pathLength="1" className="pcb4-reveal" />
+                    <path d={build} pathLength="1" className="pcb4-signal" />
+                  </g>
+                </g>
+              )
+            })}
 
-              <LogoPathGroup paths={sPaths} delay={1.62} />
-              <LogoPathGroup paths={atPaths} delay={1.74} />
-              <LogoPathGroup paths={pPaths} delay={1.88} />
-              <ellipse cx="1448.52" cy="539.9" rx="45.23" ry="48.58" pathLength="1" className="pcb3-logo-line" style={{ animationDelay: "1.95s" }} />
-
-              <FilledLogoGeometry />
+            <g className="pcb4-logo-fill" fill={GOLD} transform={`translate(${LOGO_X} ${LOGO_Y}) scale(${LOGO_SCALE})`}>
+              <LogoShape />
             </g>
           </svg>
         </div>
 
-        <div className="pcb3-copy -mt-10 flex max-w-3xl flex-col items-center px-5 sm:px-8">
+        <div className="pcb4-copy -mt-10 flex max-w-3xl flex-col items-center px-5 sm:px-8">
           <p className="font-mono text-[0.67rem] uppercase tracking-[0.28em] text-primary/80 sm:text-xs">
             Hardware × software × people who build
           </p>
@@ -194,7 +273,7 @@ export function PcbHero() {
 
         <a
           href="#landing-content"
-          className="pcb3-scroll absolute bottom-5 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 font-mono text-[0.62rem] uppercase tracking-[0.22em] text-muted-foreground transition-colors hover:text-primary"
+          className="pcb4-scroll absolute bottom-5 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 font-mono text-[0.62rem] uppercase tracking-[0.22em] text-muted-foreground transition-colors hover:text-primary"
           aria-label="Scroll to explore Embedded Systems at Purdue"
         >
           Explore
