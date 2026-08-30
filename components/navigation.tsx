@@ -19,10 +19,21 @@ const navigation = [
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
+  const onHome = pathname === "/"
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-white/[0.08] bg-[#11110f]/90 backdrop-blur-xl">
-      <div className="mx-auto flex h-[68px] max-w-[1440px] items-center justify-between px-5 sm:px-8 lg:px-12 xl:px-16">
+    <nav
+      className={`${
+        onHome
+          ? "absolute top-0"
+          : "sticky top-0 border-b border-white/[0.08] bg-[#11110f]/90 backdrop-blur-xl"
+      } z-50 w-full`}
+    >
+      {onHome && (
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#11110f]/80 via-[#11110f]/35 to-transparent" />
+      )}
+
+      <div className="relative mx-auto flex h-[68px] max-w-[1440px] items-center justify-between px-5 sm:px-8 lg:px-12 xl:px-16">
         <Link href="/" className="group flex items-center gap-4" aria-label="Embedded Systems at Purdue home">
           <Image
             src="/logo.svg"
@@ -71,7 +82,7 @@ export function Navigation() {
             <SheetTrigger asChild>
               <button
                 type="button"
-                className="grid h-10 w-10 place-items-center border border-white/10 text-[#d6d1c7] transition-colors hover:border-[#daa000]/50 hover:text-[#f2c34f]"
+                className="grid h-10 w-10 place-items-center border border-white/10 bg-[#11110f]/45 text-[#d6d1c7] transition-colors hover:border-[#daa000]/50 hover:text-[#f2c34f]"
                 aria-label="Open navigation"
               >
                 {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
