@@ -7,7 +7,7 @@ import { ArrowDown, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const VW = 1600
-const VH = 720
+const VH = 760
 const GOLD = "#daa000"
 const BRIGHT = "#f4c64d"
 const LOGO = { x: 270, y: 248, width: 1060, height: 338 }
@@ -165,6 +165,7 @@ export function PcbHero() {
     let frame = 0
     let cancelled = false
     let complete = false
+    let copyShown = false
     let startTime = 0
     let dpr = 1
     let cssWidth = 1
@@ -181,6 +182,7 @@ export function PcbHero() {
     const firstLogoMoment = Math.min(...circuits.map((circuit) => circuit.spec.delay + circuit.duration * .34))
     const lastCircuitEnd = Math.max(...circuits.map((circuit) => circuit.end))
     const fillStart = firstLogoMoment + .32
+    const copyStart = fillStart + .18
     const animationEnd = lastCircuitEnd + .20
 
     const resize = () => {
@@ -290,9 +292,18 @@ export function PcbHero() {
       if (!startTime) startTime = now
       const elapsed = reducedMotion ? animationEnd : (now - startTime) / 1000
       draw(elapsed)
+
+      if (!copyShown && elapsed >= copyStart) {
+        copyShown = true
+        setCopyVisible(true)
+      }
+
       if (elapsed >= animationEnd) {
         complete = true
-        setCopyVisible(true)
+        if (!copyShown) {
+          copyShown = true
+          setCopyVisible(true)
+        }
         return
       }
       frame = requestAnimationFrame(tick)
@@ -306,6 +317,7 @@ export function PcbHero() {
       if (reducedMotion) {
         draw(animationEnd)
         complete = true
+        copyShown = true
         setCopyVisible(true)
       } else {
         frame = requestAnimationFrame(tick)
@@ -337,8 +349,8 @@ export function PcbHero() {
         </div>
 
         <div
-          className={`mt-6 flex max-w-3xl flex-col items-center px-5 transition-all duration-500 sm:mt-8 sm:px-8 ${
-            copyVisible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+          className={`mt-6 flex max-w-3xl flex-col items-center px-5 transition-all duration-300 sm:mt-8 sm:px-8 ${
+            copyVisible ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
           }`}
         >
           <p className="font-mono text-[0.67rem] uppercase tracking-[0.28em] text-primary/80 sm:text-xs">
@@ -363,7 +375,7 @@ export function PcbHero() {
 
         <a
           href="#landing-content"
-          className={`absolute bottom-5 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 font-mono text-[0.62rem] uppercase tracking-[0.22em] text-muted-foreground transition-opacity duration-500 hover:text-primary ${copyVisible ? "opacity-80" : "opacity-0"}`}
+          className={`absolute bottom-5 left-1/2 flex -translate-x-1/2 flex flex-col items-center gap-1 font-mono text-[0.62rem] uppercase tracking-[0.22em] text-muted-foreground transition-opacity duration-300 hover:text-primary ${copyVisible ? "opacity-80" : "opacity-0"}`}
           aria-label="Scroll to explore Embedded Systems at Purdue"
         >
           Explore
