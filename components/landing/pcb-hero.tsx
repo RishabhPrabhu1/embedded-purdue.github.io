@@ -119,7 +119,7 @@ function sampleSvgPath(d: string): PreparedRoute {
   const path = document.createElementNS(namespace, "path")
   path.setAttribute("d", d)
   const total = path.getTotalLength()
-  const sampleCount = Math.max(30, Math.min(220, Math.ceil(total / 9)))
+  const sampleCount = Math.max(28, Math.min(160, Math.ceil(total / 12)))
   const points: Point[] = []
 
   for (let index = 0; index <= sampleCount; index++) {
