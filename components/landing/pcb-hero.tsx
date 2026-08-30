@@ -13,7 +13,7 @@ const BRIGHT = "#f4c64d"
 const LOGO = { x: 270, y: 248, width: 1060, height: 338 }
 const LOGO_SCALE = LOGO.width / 1920
 const CIRCUIT_SPEED = 1280
-const LOWER_EXTENSION_TIME = 0.72
+const LOWER_EXTENSION_TIME = 0.92
 
 const coreLogoPaths = [
   "M522.61,215.02c-.87,4.61-4.11,7.58-8.32,7.58h-.07l-200.72-1.19-10.87,62.79,220.48,1.31h.46c25.83,0,45.97-18.45,51.36-47.13l13.89-73.71c4.35-23.12-1.83-49.24-16.55-69.86-14.71-20.62-35.95-32.94-56.81-32.94h-204.38c-25.95,0-46.7,19.48-51.62,48.48l-18.77,110.63-10.65,62.78-13.58,80.02c-3.91,23.05,2.54,48.9,17.25,69.16,14.69,20.23,35.75,32.3,56.34,32.3h.09l278.89-.45,1.05-6.06,7-40.35,2.9-16.73-18.71.22v.02l-280.43.45h-.01c-4.6,0-7.66-3.25-9.07-5.2-1.41-1.94-3.65-5.97-2.77-11.13l17.29-101.91,10.65-62.79,15.06-88.74c.79-4.67,4.13-7.81,8.31-7.81h204.38c4.66,0,7.73,3.32,9.14,5.3,1.41,1.98,3.64,6.07,2.66,11.24l-13.89,73.71h.02Z",
@@ -234,35 +234,6 @@ export function PcbHero() {
       })
     }
 
-    const drawVia = (point: Point, alpha: number) => {
-      if (alpha <= 0) return
-      context.save()
-      context.globalAlpha = alpha
-      context.beginPath()
-      context.arc(point[0], point[1], 4.1, 0, Math.PI * 2)
-      context.fillStyle = "rgba(15,15,15,.94)"
-      context.fill()
-      context.strokeStyle = "rgba(218,160,0,.52)"
-      context.lineWidth = 1.1
-      context.stroke()
-      context.beginPath()
-      context.arc(point[0], point[1], 1.35, 0, Math.PI * 2)
-      context.fillStyle = GOLD
-      context.fill()
-      context.restore()
-    }
-
-    const drawVias = (time: number) => {
-      circuits.forEach((circuit, index) => {
-        if (index % 2 !== 0) return
-        const progress = clamp01((time - circuit.spec.delay) / circuit.duration)
-        const inVia = circuit.spec.inBends[Math.min(1, circuit.spec.inBends.length - 1)]
-        const outVia = circuit.spec.outBends[Math.min(1, circuit.spec.outBends.length - 1)]
-        drawVia(inVia, smoothstep((progress - .08) / .10) * .82)
-        drawVia(outVia, smoothstep((progress - .76) / .10) * .74)
-      })
-    }
-
     const drawCircuits = (time: number) => {
       circuits.forEach((circuit) => {
         const progress = clamp01((time - circuit.spec.delay) / circuit.duration)
@@ -293,19 +264,19 @@ export function PcbHero() {
       context.restore()
     }
 
-    const drawLowerNode = (x: number, y: number, alpha: number) => {
+    const drawJunction = (x: number, y: number, alpha: number) => {
       if (alpha <= 0) return
       context.save()
       context.globalAlpha = alpha
       context.beginPath()
-      context.arc(x, y, 3.2, 0, Math.PI * 2)
-      context.fillStyle = "rgba(17,17,15,.95)"
+      context.arc(x, y, 3.45, 0, Math.PI * 2)
+      context.fillStyle = "rgba(17,17,15,.96)"
       context.fill()
       context.strokeStyle = GOLD
       context.lineWidth = 1.15
       context.stroke()
       context.beginPath()
-      context.arc(x, y, 1.05, 0, Math.PI * 2)
+      context.arc(x, y, 1.15, 0, Math.PI * 2)
       context.fillStyle = GOLD
       context.fill()
       context.restore()
@@ -330,50 +301,64 @@ export function PcbHero() {
         const rawProgress = clamp01((time - circuit.end) / LOWER_EXTENSION_TIME)
         if (rawProgress <= 0) return
 
-        const progress = smoothstep(rawProgress)
         const settled = smoothstep((time - circuit.end) / .28)
-        const alpha = (1 - settled * .64) * .88
+        const alpha = (1 - settled * .64) * .9
         const x = trunkXs[index]
-        const branchY1 = stageBottom + lowerDistance * (.22 + index * .05)
-        const branchY2 = stageBottom + lowerDistance * (.50 + (index % 2) * .06)
-        const outerDirection = index === 0 ? -1 : 1
-        const outerX = Math.max(22, Math.min(cssWidth - 22, x + outerDirection * cssWidth * (index === 1 ? .14 : .12)))
-        const innerX = Math.max(22, Math.min(cssWidth - 22, x - outerDirection * cssWidth * .075))
-        const branchBottom1 = stageBottom + lowerDistance * (.72 + (index % 2) * .08)
+        const leftEdge = Math.max(22, cssWidth * .035)
+        const rightEdge = Math.min(cssWidth - 22, cssWidth * .965)
+        const towardEdge = index === 0 ? leftEdge : index === trunkXs.length - 1 ? rightEdge : cssWidth * .42
+        const awayFromEdge = index === 0 ? cssWidth * .42 : index === trunkXs.length - 1 ? cssWidth * .58 : cssWidth * .73
+        const lowTarget = index === 0 ? cssWidth * .23 : index === trunkXs.length - 1 ? cssWidth * .84 : cssWidth * .53
 
         context.globalAlpha = alpha
         drawPrepared(
           context,
           prepareRoute([[x, stageBottom - 1], [x, cssHeight + 2]]),
-          smoothstep(rawProgress / .66),
+          smoothstep(rawProgress / .60),
           GOLD,
           strokeWidth
         )
 
-        const outerProgress = smoothstep((rawProgress - .16) / .58)
-        if (outerProgress > 0) {
-          context.globalAlpha = alpha * .82
+        const branch1Y = stageBottom + lowerDistance * (.15 + index * .035)
+        const branch1Progress = smoothstep((rawProgress - .10) / .52)
+        if (branch1Progress > 0) {
+          context.globalAlpha = alpha * .78
           drawPrepared(
             context,
-            prepareRoute([[x, branchY1], [outerX, branchY1], [outerX, branchBottom1]]),
-            outerProgress,
+            prepareRoute([[x, branch1Y], [towardEdge, branch1Y], [towardEdge, stageBottom + lowerDistance * (.42 + index * .05)]]),
+            branch1Progress,
             GOLD,
             strokeWidth
           )
-          drawLowerNode(x, branchY1, outerProgress * alpha * .78)
+          drawJunction(x, branch1Y, branch1Progress * alpha * .82)
         }
 
-        const innerProgress = smoothstep((rawProgress - .34) / .58)
-        if (innerProgress > 0) {
-          context.globalAlpha = alpha * .68
+        const branch2Y = stageBottom + lowerDistance * (.36 + index * .025)
+        const branch2Progress = smoothstep((rawProgress - .25) / .56)
+        if (branch2Progress > 0) {
+          context.globalAlpha = alpha * .64
           drawPrepared(
             context,
-            prepareRoute([[x, branchY2], [innerX, branchY2], [innerX, cssHeight + 2]]),
-            innerProgress,
+            prepareRoute([[x, branch2Y], [awayFromEdge, branch2Y], [awayFromEdge, stageBottom + lowerDistance * (.68 + (index % 2) * .08)]]),
+            branch2Progress,
             GOLD,
             strokeWidth
           )
-          drawLowerNode(x, branchY2, innerProgress * alpha * .66)
+          drawJunction(x, branch2Y, branch2Progress * alpha * .68)
+        }
+
+        const branch3Y = stageBottom + lowerDistance * (.61 - index * .025)
+        const branch3Progress = smoothstep((rawProgress - .42) / .54)
+        if (branch3Progress > 0) {
+          context.globalAlpha = alpha * .55
+          drawPrepared(
+            context,
+            prepareRoute([[x, branch3Y], [lowTarget, branch3Y], [lowTarget, cssHeight + 2]]),
+            branch3Progress,
+            GOLD,
+            Math.max(1.25, strokeWidth * .9)
+          )
+          drawJunction(x, branch3Y, branch3Progress * alpha * .56)
         }
       })
 
@@ -381,20 +366,37 @@ export function PcbHero() {
         const leftCircuit = downwardCircuits[index]
         const rightCircuit = downwardCircuits[index + 1]
         const linkStart = Math.max(leftCircuit.end, rightCircuit.end)
-        const linkProgress = smoothstep((time - linkStart - .18) / LOWER_EXTENSION_TIME)
-        if (linkProgress <= 0) continue
 
-        const y = stageBottom + lowerDistance * (.36 + index * .23)
-        context.globalAlpha = .24 + linkProgress * .10
-        drawPrepared(
-          context,
-          prepareRoute([[trunkXs[index], y], [trunkXs[index + 1], y]]),
-          linkProgress,
-          GOLD,
-          Math.max(1.2, strokeWidth * .82)
-        )
-        drawLowerNode(trunkXs[index], y, linkProgress * .34)
-        drawLowerNode(trunkXs[index + 1], y, linkProgress * .34)
+        const upperLinkProgress = smoothstep((time - linkStart - .16) / LOWER_EXTENSION_TIME)
+        if (upperLinkProgress > 0) {
+          const y = stageBottom + lowerDistance * (.28 + index * .08)
+          context.globalAlpha = .22 + upperLinkProgress * .10
+          drawPrepared(
+            context,
+            prepareRoute([[trunkXs[index], y], [trunkXs[index + 1], y]]),
+            upperLinkProgress,
+            GOLD,
+            Math.max(1.2, strokeWidth * .82)
+          )
+          drawJunction(trunkXs[index], y, upperLinkProgress * .32)
+          drawJunction(trunkXs[index + 1], y, upperLinkProgress * .32)
+        }
+
+        const lowerLinkProgress = smoothstep((time - linkStart - .38) / LOWER_EXTENSION_TIME)
+        if (lowerLinkProgress > 0) {
+          const y = stageBottom + lowerDistance * (.72 - index * .07)
+          const inset = cssWidth * .035
+          const fromX = trunkXs[index] + inset
+          const toX = trunkXs[index + 1] - inset
+          context.globalAlpha = .18 + lowerLinkProgress * .08
+          drawPrepared(
+            context,
+            prepareRoute([[fromX, y], [toX, y]]),
+            lowerLinkProgress,
+            GOLD,
+            Math.max(1.15, strokeWidth * .76)
+          )
+        }
       }
 
       context.restore()
@@ -410,7 +412,6 @@ export function PcbHero() {
       context.translate(0, stageOffsetY)
       context.scale(scaleX, scaleY)
       drawPorts(time)
-      drawVias(time)
       drawCircuits(time)
       drawLogo(time)
       context.restore()
