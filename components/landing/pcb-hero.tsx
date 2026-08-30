@@ -203,7 +203,7 @@ export function PcbHero() {
     const firstLogoMoment = Math.min(...circuits.map((circuit) => circuit.spec.delay + circuit.duration * .34))
     const lastCircuitEnd = Math.max(...circuits.map((circuit) => circuit.end))
     const lowerCircuitEnd = downwardCircuits.length
-      ? Math.max(...downwardCircuits.map((circuit) => circuit.end + LOWER_EXTENSION_TIME * 1.55))
+      ? Math.max(...downwardCircuits.map((circuit) => circuit.end + LOWER_EXTENSION_TIME * 1.7))
       : lastCircuitEnd
     const fillStart = firstLogoMoment + .32
     const copyStart = fillStart + .18
@@ -222,80 +222,103 @@ export function PcbHero() {
         return last[0] * scaleX
       })
       const laneFractions = [
-        [.04, .13, .22, .31],
-        [.36, .45, .55, .64],
-        [.69, .78, .87, .96],
+        [.035, .085, .14, .20, .27],
+        [.34, .42, .50, .58, .66],
+        [.73, .80, .86, .915, .965],
       ] as const
-      const levelFractions = [.12, .31, .52, .73] as const
-      const verticalEnds = [.30, .50, .72, 1.02] as const
+      const branchLevels = [
+        [.09, .22, .36, .51, .67],
+        [.11, .25, .40, .56, .72],
+        [.08, .20, .34, .49, .65],
+      ] as const
+      const verticalEnds = [1.02, .69, 1.02, .84, 1.02] as const
       const routes: LowerNetworkRoute[] = []
 
       downwardCircuits.forEach((circuit, index) => {
         const x = trunkXs[index]
         const laneSet = laneFractions[Math.min(index, laneFractions.length - 1)]
+        const levelSet = branchLevels[Math.min(index, branchLevels.length - 1)]
 
         routes.push({
           route: prepareRoute([[x, stageBottom - 1], [x, cssHeight + 2]]),
           start: circuit.end,
-          duration: LOWER_EXTENSION_TIME * .62,
-          alpha: .54,
+          duration: LOWER_EXTENSION_TIME * .60,
+          alpha: .56,
           widthScale: 1,
         })
 
         laneSet.forEach((laneFraction, branchIndex) => {
-          const y = stageBottom + lowerDistance * (levelFractions[branchIndex] + (index - 1) * .012)
+          const y = stageBottom + lowerDistance * levelSet[branchIndex]
           const targetX = cssWidth * laneFraction
           const endY = stageBottom + lowerDistance * verticalEnds[branchIndex]
           routes.push({
             route: prepareRoute([[x, y], [targetX, y], [targetX, endY]]),
-            start: circuit.end + LOWER_EXTENSION_TIME * (.08 + branchIndex * .13),
-            duration: LOWER_EXTENSION_TIME * (.48 + branchIndex * .05),
-            alpha: .42 - branchIndex * .035,
-            widthScale: branchIndex < 2 ? .96 : .86,
+            start: circuit.end + LOWER_EXTENSION_TIME * (.06 + branchIndex * .10),
+            duration: LOWER_EXTENSION_TIME * (.44 + branchIndex * .045),
+            alpha: .46 - branchIndex * .025,
+            widthScale: branchIndex < 3 ? .96 : .88,
             junctions: [[x, y]],
           })
         })
       })
 
-      if (downwardCircuits.length >= 3) {
-        const leftStart = Math.max(downwardCircuits[0].end, downwardCircuits[1].end)
-        const rightStart = Math.max(downwardCircuits[1].end, downwardCircuits[2].end)
-        const allStart = Math.max(...downwardCircuits.map((circuit) => circuit.end))
-        const bus1Y = stageBottom + lowerDistance * .24
-        const bus2Y = stageBottom + lowerDistance * .46
-        const bus3Y = stageBottom + lowerDistance * .67
-        const xA = cssWidth * .13
-        const xB = cssWidth * .45
-        const xC = cssWidth * .55
-        const xD = cssWidth * .87
-        const xE = cssWidth * .22
-        const xF = cssWidth * .78
+      const allStart = Math.max(...downwardCircuits.map((circuit) => circuit.end))
+      const laneX = (fraction: number) => cssWidth * fraction
+      const fieldY = (fraction: number) => stageBottom + lowerDistance * fraction
 
+      const connectedRuns: Array<{
+        points: Point[]
+        delay: number
+        duration: number
+        alpha: number
+        widthScale: number
+        junctions: Point[]
+      }> = [
+        { points: [[laneX(.035), fieldY(.17)], [laneX(.14), fieldY(.17)]], delay: .18, duration: .38, alpha: .35, widthScale: .82, junctions: [[laneX(.035), fieldY(.17)], [laneX(.14), fieldY(.17)]] },
+        { points: [[laneX(.085), fieldY(.30)], [laneX(.27), fieldY(.30)]], delay: .26, duration: .44, alpha: .33, widthScale: .82, junctions: [[laneX(.085), fieldY(.30)], [laneX(.27), fieldY(.30)]] },
+        { points: [[laneX(.035), fieldY(.45)], [laneX(.20), fieldY(.45)]], delay: .34, duration: .42, alpha: .31, widthScale: .79, junctions: [[laneX(.035), fieldY(.45)], [laneX(.20), fieldY(.45)]] },
+        { points: [[laneX(.14), fieldY(.61)], [laneX(.34), fieldY(.61)]], delay: .42, duration: .46, alpha: .29, widthScale: .77, junctions: [[laneX(.14), fieldY(.61)], [laneX(.34), fieldY(.61)]] },
+        { points: [[laneX(.73), fieldY(.16)], [laneX(.915), fieldY(.16)]], delay: .20, duration: .42, alpha: .35, widthScale: .82, junctions: [[laneX(.73), fieldY(.16)], [laneX(.915), fieldY(.16)]] },
+        { points: [[laneX(.80), fieldY(.29)], [laneX(.965), fieldY(.29)]], delay: .28, duration: .40, alpha: .33, widthScale: .82, junctions: [[laneX(.80), fieldY(.29)], [laneX(.965), fieldY(.29)]] },
+        { points: [[laneX(.73), fieldY(.44)], [laneX(.86), fieldY(.44)]], delay: .36, duration: .38, alpha: .31, widthScale: .79, junctions: [[laneX(.73), fieldY(.44)], [laneX(.86), fieldY(.44)]] },
+        { points: [[laneX(.66), fieldY(.60)], [laneX(.915), fieldY(.60)]], delay: .44, duration: .48, alpha: .29, widthScale: .77, junctions: [[laneX(.66), fieldY(.60)], [laneX(.915), fieldY(.60)]] },
+        { points: [[laneX(.20), fieldY(.76)], [laneX(.42), fieldY(.76)]], delay: .50, duration: .46, alpha: .27, widthScale: .74, junctions: [[laneX(.20), fieldY(.76)], [laneX(.42), fieldY(.76)]] },
+        { points: [[laneX(.58), fieldY(.76)], [laneX(.80), fieldY(.76)]], delay: .52, duration: .46, alpha: .27, widthScale: .74, junctions: [[laneX(.58), fieldY(.76)], [laneX(.80), fieldY(.76)]] },
+        { points: [[laneX(.085), fieldY(.88)], [laneX(.34), fieldY(.88)]], delay: .58, duration: .48, alpha: .24, widthScale: .70, junctions: [[laneX(.085), fieldY(.88)], [laneX(.34), fieldY(.88)]] },
+        { points: [[laneX(.66), fieldY(.88)], [laneX(.915), fieldY(.88)]], delay: .60, duration: .48, alpha: .24, widthScale: .70, junctions: [[laneX(.66), fieldY(.88)], [laneX(.915), fieldY(.88)]] },
+        { points: [[laneX(.27), fieldY(.95)], [laneX(.73), fieldY(.95)]], delay: .66, duration: .58, alpha: .20, widthScale: .67, junctions: [[laneX(.27), fieldY(.95)], [laneX(.73), fieldY(.95)]] },
+      ]
+
+      connectedRuns.forEach((run) => {
         routes.push({
-          route: prepareRoute([[xA, bus1Y], [xB, bus1Y]]),
-          start: leftStart + LOWER_EXTENSION_TIME * .24,
-          duration: LOWER_EXTENSION_TIME * .48,
-          alpha: .25,
-          widthScale: .78,
-          junctions: [[xA, bus1Y], [xB, bus1Y]],
+          route: prepareRoute(run.points),
+          start: allStart + LOWER_EXTENSION_TIME * run.delay,
+          duration: LOWER_EXTENSION_TIME * run.duration,
+          alpha: run.alpha,
+          widthScale: run.widthScale,
+          junctions: run.junctions,
         })
+      })
+
+      const sideSteps: Array<{ points: Point[]; delay: number; alpha: number }> = [
+        { points: [[laneX(.035), fieldY(.37)], [laneX(.085), fieldY(.37)], [laneX(.085), fieldY(.54)]], delay: .32, alpha: .29 },
+        { points: [[laneX(.20), fieldY(.41)], [laneX(.27), fieldY(.41)], [laneX(.27), fieldY(.68)]], delay: .38, alpha: .27 },
+        { points: [[laneX(.915), fieldY(.36)], [laneX(.965), fieldY(.36)], [laneX(.965), fieldY(.53)]], delay: .34, alpha: .29 },
+        { points: [[laneX(.73), fieldY(.40)], [laneX(.80), fieldY(.40)], [laneX(.80), fieldY(.69)]], delay: .40, alpha: .27 },
+        { points: [[laneX(.34), fieldY(.69)], [laneX(.42), fieldY(.69)], [laneX(.42), fieldY(.91)]], delay: .50, alpha: .23 },
+        { points: [[laneX(.58), fieldY(.68)], [laneX(.66), fieldY(.68)], [laneX(.66), fieldY(.92)]], delay: .52, alpha: .23 },
+      ]
+
+      sideSteps.forEach((step) => {
         routes.push({
-          route: prepareRoute([[xC, bus2Y], [xD, bus2Y]]),
-          start: rightStart + LOWER_EXTENSION_TIME * .34,
-          duration: LOWER_EXTENSION_TIME * .50,
-          alpha: .23,
+          route: prepareRoute(step.points),
+          start: allStart + LOWER_EXTENSION_TIME * step.delay,
+          duration: LOWER_EXTENSION_TIME * .52,
+          alpha: step.alpha,
           widthScale: .76,
-          junctions: [[xC, bus2Y], [xD, bus2Y]],
+          junctions: [step.points[0]],
         })
-        routes.push({
-          route: prepareRoute([[xE, bus3Y], [xF, bus3Y]]),
-          start: allStart + LOWER_EXTENSION_TIME * .48,
-          duration: LOWER_EXTENSION_TIME * .54,
-          alpha: .20,
-          widthScale: .72,
-          junctions: [[xE, bus3Y], [xF, bus3Y]],
-        })
-      }
+      })
 
       lowerNetwork = routes
     }
