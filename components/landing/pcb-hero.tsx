@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react"
 import Link from "next/link"
 import { ArrowDown, ArrowRight } from "lucide-react"
 
@@ -232,7 +233,7 @@ export function PcbHero() {
                 "--dur": `${feederDuration}s`,
                 "--build-delay": `${buildDelay}s`,
                 "--build-dur": `${buildDuration}s`,
-              } as React.CSSProperties
+              } as CSSProperties
 
               return (
                 <g key={feeder} style={style}>
