@@ -34,14 +34,10 @@ export function Navigation() {
     <nav
       className={`${
         onHome
-          ? "absolute top-0"
+          ? "absolute top-0 border-b border-white/[0.09] bg-[#11110f]/92 backdrop-blur-md"
           : "sticky top-0 border-b border-white/[0.08] bg-[#11110f]/90 backdrop-blur-xl"
       } z-50 w-full`}
     >
-      {onHome && (
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#11110f]/80 via-[#11110f]/35 to-transparent" />
-      )}
-
       <div className="relative mx-auto flex h-[68px] max-w-[1440px] items-center justify-between px-5 sm:px-8 lg:px-12 xl:px-16">
         <Link href="/" className="group flex items-center gap-4" aria-label="Embedded Systems at Purdue home">
           <Image
