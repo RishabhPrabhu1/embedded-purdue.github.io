@@ -45,6 +45,8 @@ const landingFrameScript = `
   var captureToken = 0;
   var reloadScrollY = null;
   var shouldRestoreReloadScroll = false;
+  var restoreActive = false;
+  var lastKnownScrollY = Math.max(0, window.scrollY || 0);
 
   function readPoster() {
     try { return sessionStorage.getItem(posterKey); } catch (e) { return null; }
@@ -71,12 +73,31 @@ const landingFrameScript = `
     }
   }
 
-  function rememberLandingScroll() {
+  function writeReloadScroll(value) {
     try {
-      if (!document.querySelector("[data-landing-shell]")) return;
-      if (!sessionStorage.getItem(posterKey)) return;
-      sessionStorage.setItem(scrollKey, String(Math.max(0, window.scrollY || 0)));
+      sessionStorage.setItem(scrollKey, String(Math.max(0, value)));
     } catch (e) {}
+  }
+
+  function landingCanRememberScroll() {
+    try {
+      return Boolean(document.querySelector("[data-landing-shell]")) && Boolean(sessionStorage.getItem(posterKey));
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function trackLandingScroll() {
+    if (restoreActive || shouldRestoreReloadScroll || document.visibilityState === "hidden") return;
+    if (!landingCanRememberScroll()) return;
+
+    lastKnownScrollY = Math.max(0, window.scrollY || 0);
+    writeReloadScroll(lastKnownScrollY);
+  }
+
+  function rememberLandingScroll() {
+    if (restoreActive || !landingCanRememberScroll()) return;
+    writeReloadScroll(lastKnownScrollY);
   }
 
   function activatePoster(poster) {
@@ -93,8 +114,10 @@ const landingFrameScript = `
     reloadScrollY = readReloadScroll();
     shouldRestoreReloadScroll = navigationIsReload() && reloadScrollY !== null;
 
-    if (shouldRestoreReloadScroll && "scrollRestoration" in history) {
-      history.scrollRestoration = "manual";
+    if (shouldRestoreReloadScroll) {
+      restoreActive = true;
+      lastKnownScrollY = reloadScrollY;
+      if ("scrollRestoration" in history) history.scrollRestoration = "manual";
     }
   } else {
     // A "seen" flag without the current poster cannot provide a stable first paint.
@@ -109,6 +132,7 @@ const landingFrameScript = `
     } catch (e) {}
   }
 
+  window.addEventListener("scroll", trackLandingScroll, { passive: true });
   window.addEventListener("pagehide", rememberLandingScroll);
 
   function restoreReloadScroll(shell) {
@@ -116,22 +140,59 @@ const landingFrameScript = `
 
     var target = reloadScrollY;
     shouldRestoreReloadScroll = false;
+    restoreActive = true;
+    var finished = false;
+    var fallbackTimer = 0;
 
     function apply() {
-      if (shell.isConnected) window.scrollTo(0, target);
+      if (!finished && shell.isConnected) window.scrollTo(0, target);
     }
 
-    // The cached hero/intro already use their final geometry, so restoration can
-    // happen as soon as the landing shell exists. Reapply after layout to guard
-    // against Safari's reload timing without introducing any visible animation.
+    function finish() {
+      if (finished) return;
+      finished = true;
+      restoreActive = false;
+      lastKnownScrollY = target;
+      writeReloadScroll(target);
+      if (fallbackTimer) window.clearTimeout(fallbackTimer);
+      if ("scrollRestoration" in history) history.scrollRestoration = "auto";
+      window.removeEventListener("wheel", cancelForUserInput);
+      window.removeEventListener("touchstart", cancelForUserInput);
+      window.removeEventListener("pointerdown", cancelForUserInput);
+      window.removeEventListener("keydown", cancelForUserInput, true);
+    }
+
+    function cancelForUserInput() {
+      finish();
+    }
+
+    // Safari can reset scroll more than once during a reload. Keep the known
+    // position authoritative until the page load settles, but stop immediately
+    // if the user starts interacting.
     apply();
     requestAnimationFrame(function () {
       apply();
+      requestAnimationFrame(apply);
+    });
+
+    window.addEventListener("pageshow", apply, { once: true });
+    window.addEventListener("load", function () {
+      apply();
       requestAnimationFrame(function () {
         apply();
-        if ("scrollRestoration" in history) history.scrollRestoration = "auto";
+        window.setTimeout(finish, 80);
       });
-    });
+    }, { once: true });
+
+    window.addEventListener("wheel", cancelForUserInput, { passive: true });
+    window.addEventListener("touchstart", cancelForUserInput, { passive: true });
+    window.addEventListener("pointerdown", cancelForUserInput, { passive: true });
+    window.addEventListener("keydown", cancelForUserInput, true);
+
+    fallbackTimer = window.setTimeout(function () {
+      apply();
+      finish();
+    }, 1200);
   }
 
   function capturePoster(shell, token) {
@@ -165,6 +226,8 @@ const landingFrameScript = `
 
         sessionStorage.setItem(posterKey, frame);
         sessionStorage.setItem(seenKey, "1");
+        lastKnownScrollY = Math.max(0, window.scrollY || 0);
+        writeReloadScroll(lastKnownScrollY);
         // First visit remains the live canvas. This image is only for later visits.
       } catch (e) {}
     }
