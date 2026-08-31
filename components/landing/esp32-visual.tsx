@@ -74,6 +74,7 @@ function TuningSlider({
 export function Esp32Visual() {
   const viewerRef = useRef<HTMLDivElement>(null)
   const modelRef = useRef<ModelViewerElement | null>(null)
+  const modelLoadedRef = useRef(false)
   const frameRef = useRef<number | null>(null)
   const hoverRef = useRef({ x: 0, y: 0 })
   const tuningRef = useRef<TuningValues>({ ...DEFAULT_TUNING })
@@ -159,6 +160,7 @@ export function Esp32Visual() {
 
   useEffect(() => {
     return () => {
+      modelLoadedRef.current = false
       if (frameRef.current !== null) cancelAnimationFrame(frameRef.current)
     }
   }, [])
@@ -166,7 +168,7 @@ export function Esp32Visual() {
   const flushOrbit = () => {
     frameRef.current = null
     const model = modelRef.current
-    if (!model) return
+    if (!model || !modelLoadedRef.current) return
     model.cameraOrbit = pendingOrbitRef.current
   }
 
@@ -174,6 +176,8 @@ export function Esp32Visual() {
     pendingOrbitRef.current = `${theta.toFixed(3)}deg ${phi.toFixed(
       3
     )}deg ${radius}%`
+
+    if (!modelLoadedRef.current) return
 
     if (frameRef.current === null) {
       frameRef.current = requestAnimationFrame(flushOrbit)
@@ -189,14 +193,23 @@ export function Esp32Visual() {
     )
   }
 
+  const applyModelTuning = (values = tuningRef.current) => {
+    const model = modelRef.current
+    if (!model || !modelLoadedRef.current) return
+
+    model.setAttribute(
+      "orientation",
+      `${values.modelX}deg ${values.modelY}deg ${values.modelZ}deg`
+    )
+    model.setAttribute("field-of-view", `${values.fov}deg`)
+    applyCurrentOrbit(values)
+  }
+
   const updateTuning = (key: TuningKey, value: number) => {
     const next = { ...tuningRef.current, [key]: value }
     tuningRef.current = next
     setTuning(next)
-
-    if (key === "theta" || key === "phi" || key === "radius") {
-      applyCurrentOrbit(next)
-    }
+    applyModelTuning(next)
   }
 
   const resetTuning = () => {
@@ -204,7 +217,7 @@ export function Esp32Visual() {
     tuningRef.current = next
     hoverRef.current = { x: 0, y: 0 }
     setTuning(next)
-    queueOrbit(next.theta, next.phi, next.radius)
+    applyModelTuning(next)
   }
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -232,7 +245,10 @@ export function Esp32Visual() {
     applyCurrentOrbit()
   }
 
-  const modelOrientation = `${tuning.modelX}deg ${tuning.modelY}deg ${tuning.modelZ}deg`
+  const handleModelLoad = () => {
+    modelLoadedRef.current = true
+    applyModelTuning(tuningRef.current)
+  }
 
   return (
     <div
@@ -248,14 +264,15 @@ export function Esp32Visual() {
         createElement("model-viewer", {
           ref: (node: HTMLElement | null) => {
             modelRef.current = node as ModelViewerElement | null
+            if (!node) modelLoadedRef.current = false
           },
           src: ESP32_MODEL,
           alt: "ESP32 38-pin ESP-WROOM-32 development board",
           loading: "lazy",
           reveal: "auto",
-          orientation: modelOrientation,
-          "camera-orbit": `${tuning.theta}deg ${tuning.phi}deg ${tuning.radius}%`,
-          "field-of-view": `${tuning.fov}deg`,
+          orientation: `${DEFAULT_TUNING.modelX}deg ${DEFAULT_TUNING.modelY}deg ${DEFAULT_TUNING.modelZ}deg`,
+          "camera-orbit": `${DEFAULT_TUNING.theta}deg ${DEFAULT_TUNING.phi}deg ${DEFAULT_TUNING.radius}%`,
+          "field-of-view": `${DEFAULT_TUNING.fov}deg`,
           "camera-target": "auto auto auto",
           "interaction-prompt": "none",
           "environment-image": "neutral",
@@ -263,7 +280,11 @@ export function Esp32Visual() {
           exposure: "0.82",
           "shadow-intensity": "0",
           "interpolation-decay": "72",
-          onError: () => setModelFailed(true),
+          onLoad: handleModelLoad,
+          onError: () => {
+            modelLoadedRef.current = false
+            setModelFailed(true)
+          },
           style: {
             position: "absolute",
             inset: "0",
