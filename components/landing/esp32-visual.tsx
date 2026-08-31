@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { createElement, useEffect, useRef, useState } from "react"
 
-const ESP32_RENDER =
-  "https://public.blenderkit.com/thumbnails/assets/c381d52284394f138f30c2ae26528708/files/thumbnail_d65b8be8-6804-4220-a0bd-e52a3b454c93.jpg.2048x2048_q85.jpg"
+const MODEL_VIEWER_SCRIPT =
+  "https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"
+const ESP32_MODEL = "/models/esp32/esp32-38pin.glb"
 
 type TiltPoint = {
   x: number
@@ -12,27 +13,27 @@ type TiltPoint = {
 
 export function Esp32Visual() {
   const viewerRef = useRef<HTMLDivElement>(null)
-  const cardRef = useRef<HTMLDivElement>(null)
-  const glareRef = useRef<HTMLDivElement>(null)
+  const modelRef = useRef<HTMLElement | null>(null)
   const animationRef = useRef<number | null>(null)
   const targetRef = useRef<TiltPoint>({ x: 0, y: 0 })
   const currentRef = useRef<TiltPoint>({ x: 0, y: 0 })
-  const [shouldLoadRender, setShouldLoadRender] = useState(false)
-  const [renderFailed, setRenderFailed] = useState(false)
+  const [shouldLoadModel, setShouldLoadModel] = useState(false)
+  const [viewerReady, setViewerReady] = useState(false)
+  const [modelFailed, setModelFailed] = useState(false)
 
   useEffect(() => {
     const viewer = viewerRef.current
     if (!viewer) return
 
     if (!("IntersectionObserver" in window)) {
-      setShouldLoadRender(true)
+      setShouldLoadModel(true)
       return
     }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (!entry.isIntersecting) return
-        setShouldLoadRender(true)
+        setShouldLoadModel(true)
         observer.disconnect()
       },
       { rootMargin: "700px 0px" }
@@ -43,6 +44,48 @@ export function Esp32Visual() {
   }, [])
 
   useEffect(() => {
+    if (!shouldLoadModel) return
+
+    if (customElements.get("model-viewer")) {
+      setViewerReady(true)
+      return
+    }
+
+    const existing = document.querySelector<HTMLScriptElement>(
+      'script[data-esap-model-viewer="1"]'
+    )
+
+    if (existing) {
+      if (customElements.get("model-viewer")) {
+        setViewerReady(true)
+        return
+      }
+
+      const onLoad = () => setViewerReady(true)
+      const onError = () => setModelFailed(true)
+      existing.addEventListener("load", onLoad, { once: true })
+      existing.addEventListener("error", onError, { once: true })
+      return () => {
+        existing.removeEventListener("load", onLoad)
+        existing.removeEventListener("error", onError)
+      }
+    }
+
+    const script = document.createElement("script")
+    script.type = "module"
+    script.src = MODEL_VIEWER_SCRIPT
+    script.dataset.esapModelViewer = "1"
+    script.onload = () => setViewerReady(true)
+    script.onerror = () => setModelFailed(true)
+    document.head.appendChild(script)
+
+    return () => {
+      script.onload = null
+      script.onerror = null
+    }
+  }, [shouldLoadModel])
+
+  useEffect(() => {
     return () => {
       if (animationRef.current !== null) {
         cancelAnimationFrame(animationRef.current)
@@ -51,8 +94,8 @@ export function Esp32Visual() {
   }, [])
 
   const animateTilt = () => {
-    const card = cardRef.current
-    if (!card) {
+    const model = modelRef.current
+    if (!model) {
       animationRef.current = null
       return
     }
@@ -60,29 +103,17 @@ export function Esp32Visual() {
     const current = currentRef.current
     const target = targetRef.current
 
-    current.x += (target.x - current.x) * 0.14
-    current.y += (target.y - current.y) * 0.14
+    // Keep the board feeling like a rigid object: only the camera's orbit angles
+    // change. Radius, FOV, model scale, and target stay fixed.
+    current.x += (target.x - current.x) * 0.12
+    current.y += (target.y - current.y) * 0.12
 
-    const rotateY = current.x * 10.5
-    const rotateX = current.y * -8.5
-    const radius = Math.min(1, Math.hypot(current.x, current.y))
-    const scale = 1.035 - radius * 0.012
-
-    card.style.transform = [
-      "perspective(1050px)",
-      `rotateX(${rotateX.toFixed(3)}deg)`,
-      `rotateY(${rotateY.toFixed(3)}deg)`,
-      `translate3d(${(current.x * 5).toFixed(2)}px, ${(current.y * 4).toFixed(2)}px, 26px)`,
-      `scale(${scale.toFixed(4)})`,
-    ].join(" ")
-
-    const glare = glareRef.current
-    if (glare) {
-      const gx = 50 + current.x * 24
-      const gy = 50 + current.y * 24
-      glare.style.background = `radial-gradient(circle at ${gx}% ${gy}%, rgba(255,255,255,.16), rgba(244,198,77,.045) 19%, transparent 46%)`
-      glare.style.opacity = String(0.34 + (1 - radius) * 0.12)
-    }
+    const theta = 180 + current.x * 12
+    const phi = 68 + current.y * 8
+    model.setAttribute(
+      "camera-orbit",
+      `${theta.toFixed(3)}deg ${phi.toFixed(3)}deg 112%`
+    )
 
     const moving =
       Math.abs(target.x - current.x) > 0.001 ||
@@ -106,6 +137,8 @@ export function Esp32Visual() {
     if (event.pointerType === "touch") return
 
     const rect = event.currentTarget.getBoundingClientRect()
+    if (!rect.width || !rect.height) return
+
     const x = ((event.clientX - rect.left) / rect.width) * 2 - 1
     const y = ((event.clientY - rect.top) / rect.height) * 2 - 1
 
@@ -127,47 +160,47 @@ export function Esp32Visual() {
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_46%,rgba(218,160,0,0.065),transparent_34%),linear-gradient(to_bottom,rgba(255,255,255,.018),transparent_24%,transparent_74%,rgba(0,0,0,.34))]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_46%,rgba(218,160,0,0.07),transparent_34%),linear-gradient(to_bottom,rgba(255,255,255,.018),transparent_24%,transparent_74%,rgba(0,0,0,.34))]" />
       <div className="pointer-events-none absolute inset-0 opacity-[0.16] [background-image:linear-gradient(rgba(255,255,255,.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.025)_1px,transparent_1px)] [background-size:38px_38px]" />
 
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-3 py-5 sm:px-8 sm:py-7">
-        <div
-          ref={cardRef}
-          className="relative h-[92%] w-[92%] max-w-[690px] overflow-hidden will-change-transform"
-          style={{
-            transform:
-              "perspective(1050px) rotateX(0deg) rotateY(0deg) translate3d(0,0,26px) scale(1.035)",
-            transformStyle: "preserve-3d",
-            filter: "drop-shadow(0 30px 42px rgba(0,0,0,.56))",
-          }}
-        >
-          {shouldLoadRender && !renderFailed && (
-            <img
-              src={ESP32_RENDER}
-              alt="Detailed ESP32 development board render"
-              loading="lazy"
-              decoding="async"
-              onError={() => setRenderFailed(true)}
-              className="absolute inset-0 h-full w-full scale-[1.11] object-cover object-center"
-              draggable={false}
-            />
-          )}
+      {shouldLoadModel && viewerReady && !modelFailed &&
+        createElement("model-viewer", {
+          ref: (node: HTMLElement | null) => {
+            modelRef.current = node
+          },
+          src: ESP32_MODEL,
+          alt: "ESP32 38-pin ESP-WROOM-32 development board",
+          loading: "lazy",
+          reveal: "auto",
+          "camera-orbit": "180deg 68deg 112%",
+          "field-of-view": "28deg",
+          "camera-target": "auto auto auto",
+          "interaction-prompt": "none",
+          "environment-image": "neutral",
+          exposure: "1.02",
+          "shadow-intensity": "0.72",
+          "shadow-softness": "0.92",
+          "interpolation-decay": "180",
+          onError: () => setModelFailed(true),
+          style: {
+            position: "absolute",
+            inset: "-5% -7%",
+            width: "114%",
+            height: "110%",
+            background: "transparent",
+            pointerEvents: "none",
+          },
+        })}
 
-          <div
-            ref={glareRef}
-            className="absolute inset-0 opacity-40 mix-blend-screen transition-opacity duration-300"
-            aria-hidden="true"
-          />
+      {shouldLoadModel && !viewerReady && !modelFailed && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center font-mono text-[0.52rem] uppercase tracking-[0.16em] text-white/20">
+          Loading model
         </div>
-      </div>
-
-      {!shouldLoadRender && (
-        <div className="pointer-events-none absolute inset-0" />
       )}
 
-      {renderFailed && (
+      {modelFailed && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center font-mono text-[0.52rem] uppercase tracking-[0.16em] text-white/20">
-          Visual unavailable
+          Model unavailable
         </div>
       )}
     </div>
