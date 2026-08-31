@@ -7,9 +7,11 @@ import { Footer } from "@/components/footer"
 import { Navigation } from "@/components/navigation"
 import { PcbHero } from "@/components/landing/pcb-hero"
 import { projects } from "@/app/projects/_data"
+import { getAllWorkshops } from "@/lib/workshops"
 
 const featuredSlugs = new Set(["harmonicore", "slayterhil", "bb8"])
 const featuredProjects = projects.filter((project) => featuredSlugs.has(project.slug))
+const featuredWorkshops = getAllWorkshops().slice(0, 3)
 
 const disciplines = [
   {
@@ -35,6 +37,17 @@ function SignalLabel({ children }: { children: ReactNode }) {
   )
 }
 
+function formatWorkshopDate(date?: string) {
+  if (!date) return "Workshop"
+  const parsed = new Date(date)
+  if (Number.isNaN(parsed.getTime())) return "Workshop"
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(parsed)
+}
+
 export default function HomePage() {
   return (
     <div
@@ -56,10 +69,10 @@ export default function HomePage() {
       >
         <section className="border-b border-white/[0.08] bg-[#0c0c0b]">
           <div className="mx-auto max-w-[1440px] lg:border-x lg:border-white/[0.06]">
-            <div className="flex flex-col gap-6 px-5 py-12 sm:px-8 sm:py-14 lg:flex-row lg:items-end lg:justify-between lg:px-12 lg:py-16 xl:px-16">
+            <div className="flex flex-col gap-5 px-5 py-9 sm:px-8 sm:py-10 lg:flex-row lg:items-end lg:justify-between lg:px-12 lg:py-12 xl:px-16">
               <div>
                 <SignalLabel>Selected work</SignalLabel>
-                <h2 className="mt-4 text-[clamp(2.8rem,5vw,5.2rem)] font-medium leading-[0.92] tracking-[-0.055em]">
+                <h2 className="mt-3 text-[clamp(2.7rem,4.8vw,5rem)] font-medium leading-[0.92] tracking-[-0.055em]">
                   Projects
                 </h2>
               </div>
@@ -82,7 +95,7 @@ export default function HomePage() {
                     key={project.slug}
                     href={project.readmeUrl || `/projects/${project.slug}`}
                     className={`group relative isolate overflow-hidden bg-[#121210] ${position} ${
-                      index === 0 ? "min-h-[430px] md:min-h-[600px]" : "min-h-[300px] md:min-h-[299px]"
+                      index === 0 ? "min-h-[410px] md:min-h-[560px]" : "min-h-[280px] md:min-h-[279px]"
                     }`}
                   >
                     <Image
@@ -90,9 +103,9 @@ export default function HomePage() {
                       alt={project.title}
                       fill
                       sizes={index === 0 ? "(max-width: 768px) 100vw, 58vw" : "(max-width: 768px) 100vw, 42vw"}
-                      className="object-cover opacity-[0.68] grayscale-[18%] transition duration-700 ease-out group-hover:scale-[1.016] group-hover:opacity-[0.84] group-hover:grayscale-0"
+                      className="object-cover opacity-[0.7] grayscale-[16%] transition duration-700 ease-out group-hover:scale-[1.016] group-hover:opacity-[0.86] group-hover:grayscale-0"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/10 to-black/18" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/10 to-black/16" />
 
                     <ArrowUpRight
                       className="absolute right-5 top-5 h-4 w-4 text-white/50 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[#f2c34f] sm:right-6 sm:top-6"
@@ -115,15 +128,15 @@ export default function HomePage() {
         </section>
 
         <section className="border-b border-white/[0.08] bg-[#11100d]">
-          <div className="mx-auto max-w-[1440px] lg:grid lg:grid-cols-[0.56fr_repeat(3,1fr)] lg:border-x lg:border-white/[0.06]">
-            <div className="flex items-center border-b border-white/[0.08] px-5 py-7 sm:px-8 lg:border-b-0 lg:border-r lg:px-10 xl:px-12">
+          <div className="mx-auto max-w-[1440px] lg:grid lg:grid-cols-[0.5fr_repeat(3,1fr)] lg:border-x lg:border-white/[0.06]">
+            <div className="flex items-center border-b border-white/[0.08] px-5 py-6 sm:px-8 lg:border-b-0 lg:border-r lg:px-10 xl:px-12">
               <SignalLabel>Capabilities</SignalLabel>
             </div>
 
             {disciplines.map(({ title, description }, index) => (
               <div
                 key={title}
-                className={`px-5 py-7 sm:px-8 lg:px-9 lg:py-8 xl:px-10 ${
+                className={`px-5 py-6 sm:px-8 lg:px-8 lg:py-7 xl:px-10 ${
                   index < disciplines.length - 1 ? "border-b border-white/[0.08] lg:border-b-0 lg:border-r" : ""
                 }`}
               >
@@ -131,39 +144,66 @@ export default function HomePage() {
                   <span className="h-px w-5 bg-[#daa000]/65" aria-hidden="true" />
                   <h3 className="text-xl font-medium tracking-[-0.03em] sm:text-2xl">{title}</h3>
                 </div>
-                <p className="mt-3 max-w-sm text-sm leading-6 text-[#8f8a81]">{description}</p>
+                <p className="mt-2.5 max-w-sm text-sm leading-6 text-[#8f8a81]">{description}</p>
               </div>
             ))}
           </div>
         </section>
 
         <section className="border-b border-white/[0.08] bg-[#0c0c0b]">
-          <div className="mx-auto grid max-w-[1440px] lg:grid-cols-[1.14fr_0.86fr] lg:border-x lg:border-white/[0.06]">
-            <div className="relative min-h-[400px] overflow-hidden border-b border-white/[0.08] lg:min-h-[520px] lg:border-b-0 lg:border-r">
+          <div className="mx-auto grid max-w-[1440px] lg:grid-cols-[1.08fr_0.92fr] lg:border-x lg:border-white/[0.06]">
+            <div className="relative min-h-[390px] overflow-hidden border-b border-white/[0.08] lg:min-h-[500px] lg:border-b-0 lg:border-r">
               <Image
                 src="/industry_ins.jpg"
                 alt="Embedded Systems @ Purdue workshop"
                 fill
-                sizes="(max-width: 1024px) 100vw, 57vw"
-                className="object-cover opacity-[0.8] grayscale-[10%]"
+                sizes="(max-width: 1024px) 100vw, 54vw"
+                className="object-cover opacity-[0.82] grayscale-[8%]"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/58 via-transparent to-black/18" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/14" />
             </div>
 
-            <div className="flex items-center px-5 py-12 sm:px-8 sm:py-14 lg:px-12 lg:py-14 xl:px-14">
-              <div className="max-w-lg">
+            <div className="flex items-center px-5 py-10 sm:px-8 sm:py-12 lg:px-10 lg:py-10 xl:px-12">
+              <div className="w-full">
                 <SignalLabel>Workshops</SignalLabel>
-                <h2 className="mt-5 text-[clamp(2.5rem,4.4vw,4.6rem)] font-medium leading-[0.93] tracking-[-0.05em]">
-                  Hands-on technical sessions.
+                <h2 className="mt-4 max-w-lg text-[clamp(2.45rem,4vw,4.15rem)] font-medium leading-[0.93] tracking-[-0.05em]">
+                  Learn on real hardware.
                 </h2>
-                <p className="mt-5 text-base leading-7 text-[#969188]">
-                  Learn the fundamentals, then apply them on project hardware.
+                <p className="mt-4 max-w-lg text-sm leading-6 text-[#969188] sm:text-base sm:leading-7">
+                  Technical sessions move from fundamentals to working systems.
                 </p>
+
+                <div className="mt-6 border-t border-white/[0.08]">
+                  {featuredWorkshops.map((workshop, index) => (
+                    <Link
+                      key={workshop.slug}
+                      href={`/workshops/${workshop.slug}`}
+                      className={`group grid grid-cols-[1fr_auto] items-center gap-5 py-4 ${
+                        index < featuredWorkshops.length - 1 ? "border-b border-white/[0.08]" : ""
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium tracking-[-0.01em] text-[#ded8cd] sm:text-base">
+                          {workshop.title}
+                        </p>
+                        <p className="mt-1 font-mono text-[0.55rem] uppercase tracking-[0.14em] text-[#6f6b64]">
+                          {formatWorkshopDate(workshop.date)}
+                          {workshop.location ? ` · ${workshop.location}` : ""}
+                        </p>
+                      </div>
+                      <ArrowUpRight
+                        className="h-4 w-4 text-[#777169] transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[#f2c34f]"
+                        aria-hidden="true"
+                      />
+                    </Link>
+                  ))}
+                </div>
+
                 <Link
                   href="/workshops"
-                  className="group mt-7 inline-flex items-center gap-2 font-mono text-[0.63rem] uppercase tracking-[0.16em] text-[#bdb6aa] transition-colors hover:text-[#f2c34f]"
+                  className="group mt-5 inline-flex items-center gap-2 font-mono text-[0.63rem] uppercase tracking-[0.16em] text-[#bdb6aa] transition-colors hover:text-[#f2c34f]"
                 >
-                  Browse workshops
+                  All workshops
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                 </Link>
               </div>
@@ -172,26 +212,26 @@ export default function HomePage() {
         </section>
 
         <section className="relative border-b border-white/[0.08] bg-[#0a0a09]">
-          <div className="relative mx-auto min-h-[430px] max-w-[1440px] overflow-hidden lg:border-x lg:border-white/[0.06]">
+          <div className="relative mx-auto min-h-[370px] max-w-[1440px] overflow-hidden lg:border-x lg:border-white/[0.06]">
             <Image
               src="/founders.jpeg"
               alt="Embedded Systems @ Purdue community"
               fill
               sizes="100vw"
-              className="object-cover object-center opacity-[0.5] grayscale-[12%]"
+              className="object-cover object-center opacity-[0.52] grayscale-[10%]"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a09] via-[#0a0a09]/74 to-[#0a0a09]/12" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a09]/86 via-transparent to-[#0a0a09]/18" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a09] via-[#0a0a09]/70 to-[#0a0a09]/8" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a09]/82 via-transparent to-[#0a0a09]/14" />
 
-            <div className="relative flex min-h-[430px] items-end px-5 py-12 sm:px-8 sm:py-14 lg:px-12 xl:px-16">
+            <div className="relative flex min-h-[370px] items-end px-5 py-10 sm:px-8 sm:py-12 lg:px-12 xl:px-16">
               <div className="max-w-2xl">
                 <SignalLabel>Community</SignalLabel>
-                <h2 className="mt-5 text-balance text-[clamp(2.8rem,5.2vw,5rem)] font-medium leading-[0.91] tracking-[-0.055em]">
+                <h2 className="mt-4 text-balance text-[clamp(2.65rem,4.8vw,4.7rem)] font-medium leading-[0.91] tracking-[-0.055em]">
                   Meet the people building it.
                 </h2>
                 <Link
                   href="/team"
-                  className="group mt-7 inline-flex items-center gap-2 font-mono text-[0.63rem] uppercase tracking-[0.16em] text-[#c3bcb0] transition-colors hover:text-[#f2c34f]"
+                  className="group mt-6 inline-flex items-center gap-2 font-mono text-[0.63rem] uppercase tracking-[0.16em] text-[#c3bcb0] transition-colors hover:text-[#f2c34f]"
                 >
                   Team
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
@@ -203,16 +243,16 @@ export default function HomePage() {
 
         <section className="border-b border-white/[0.08] bg-[#0c0c0b]">
           <div className="mx-auto grid max-w-[1440px] lg:grid-cols-2 lg:border-x lg:border-white/[0.06]">
-            <div className="border-b border-white/[0.08] px-5 py-12 sm:px-8 sm:py-14 lg:border-b-0 lg:border-r lg:px-12 xl:px-16">
+            <div className="border-b border-white/[0.08] px-5 py-10 sm:px-8 sm:py-12 lg:border-b-0 lg:border-r lg:px-12 xl:px-16">
               <SignalLabel>Schedule</SignalLabel>
-              <h2 className="mt-5 text-4xl font-medium tracking-[-0.05em] sm:text-5xl">What&apos;s next</h2>
+              <h2 className="mt-4 text-4xl font-medium tracking-[-0.05em] sm:text-5xl">What&apos;s next</h2>
 
-              <div className="mt-7 border-t border-white/[0.08]">
+              <div className="mt-6 border-t border-white/[0.08]">
                 <a
                   href="https://calendar.google.com/calendar/render?cid=embedded%40purdue.edu"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-center justify-between gap-6 border-b border-white/[0.08] py-5"
+                  className="group flex items-center justify-between gap-6 border-b border-white/[0.08] py-4"
                 >
                   <div>
                     <p className="text-base font-medium">Events and meetings</p>
@@ -222,7 +262,7 @@ export default function HomePage() {
                 </a>
                 <a
                   href="https://calendar.google.com/calendar/ical/embedded%40purdue.edu/public/basic.ics"
-                  className="group flex items-center justify-between gap-6 py-5"
+                  className="group flex items-center justify-between gap-6 py-4"
                 >
                   <div>
                     <p className="text-base font-medium">Subscribe</p>
@@ -233,16 +273,16 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="flex items-center px-5 py-12 sm:px-8 sm:py-14 lg:px-12 xl:px-16">
+            <div className="flex items-center px-5 py-10 sm:px-8 sm:py-12 lg:px-12 xl:px-16">
               <div className="max-w-xl">
                 <SignalLabel>Join</SignalLabel>
-                <h2 className="mt-5 text-[clamp(3rem,5.5vw,5.6rem)] font-medium leading-[0.9] tracking-[-0.06em]">
+                <h2 className="mt-4 text-[clamp(2.85rem,5vw,5.2rem)] font-medium leading-[0.9] tracking-[-0.06em]">
                   Build with us.
                 </h2>
-                <p className="mt-5 max-w-lg text-base leading-7 text-[#969188]">
+                <p className="mt-4 max-w-lg text-base leading-7 text-[#969188]">
                   Join a project, come to a workshop, or bring something you want to build.
                 </p>
-                <div className="mt-7 flex flex-wrap items-center gap-5">
+                <div className="mt-6 flex flex-wrap items-center gap-5">
                   <Link
                     href="https://discord.gg/MkPv9s9cj3"
                     target="_blank"
