@@ -291,6 +291,13 @@ export function PcbHero() {
     let lockedScrollY = 0
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    let skipAnimation = reducedMotion
+    try {
+      skipAnimation = skipAnimation || window.sessionStorage.getItem("esap-landing-animation-seen") === "1"
+    } catch {
+      // Session storage can be unavailable in hardened/private browser contexts.
+    }
+
     const root = document.documentElement
     const body = document.body
     const previousRootOverflowY = root.style.overflowY
@@ -357,7 +364,7 @@ export function PcbHero() {
       setSettled(true)
     }
 
-    if (!reducedMotion) {
+    if (!skipAnimation) {
       window.scrollTo(0, 0)
       lockedScrollY = 0
       root.style.overflowY = "hidden"
@@ -396,6 +403,11 @@ export function PcbHero() {
         copyShown = true
         setCopyVisible(true)
       }
+    }
+
+    if (skipAnimation) {
+      revealEverything()
+      setSettled(true)
     }
 
     const resize = () => {
@@ -604,7 +616,7 @@ export function PcbHero() {
       if (cancelled) return
       if (!startTime) startTime = now
 
-      const elapsed = reducedMotion ? animationEnd : (now - startTime) / 1000
+      const elapsed = (now - startTime) / 1000
       draw(elapsed)
 
       if (!navShown && elapsed >= navStart) revealNavigation()
@@ -652,13 +664,21 @@ export function PcbHero() {
         pageStart = fillStart + .46
         animationEnd = Math.max(lastCircuitEnd, fillStart + .94) + .08
 
+        if (!skipAnimation) {
+          try {
+            window.sessionStorage.setItem("esap-landing-animation-seen", "1")
+          } catch {
+            // The animation still works when storage is unavailable.
+          }
+        }
+
         const image = new Image()
         logoImage = image
         image.onload = () => {
           if (cancelled) return
           resize()
 
-          if (reducedMotion) {
+          if (skipAnimation) {
             draw(animationEnd)
             complete = true
             revealEverything()
@@ -672,7 +692,7 @@ export function PcbHero() {
           logoImage = null
           resize()
 
-          if (reducedMotion) {
+          if (skipAnimation) {
             draw(animationEnd)
             complete = true
             revealEverything()
