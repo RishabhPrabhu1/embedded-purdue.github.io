@@ -236,7 +236,7 @@ export default function HomePage() {
           <Link
             href="/team"
             data-landing-lift="card"
-            className={`${WIDE_RAIL} group relative block min-h-[370px] overflow-hidden`}
+            className="group relative block min-h-[370px] w-full overflow-hidden"
             aria-label="Meet the Embedded Systems @ Purdue team"
           >
             <Image
