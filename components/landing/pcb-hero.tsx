@@ -256,6 +256,7 @@ export function PcbHero() {
     const canvas = canvasRef.current
     if (!hero || !canvas) return
 
+    const shell = hero.closest("[data-landing-shell]") as HTMLElement | null
     const context = canvas.getContext("2d", { alpha: true })
     if (!context) return
 
@@ -268,6 +269,8 @@ export function PcbHero() {
     let cancelled = false
     let complete = false
     let copyShown = false
+    let navShown = false
+    let pageShown = false
     let startTime = 0
     let dpr = 1
     let cssWidth = 1
@@ -277,10 +280,33 @@ export function PcbHero() {
     let logoImage: HTMLImageElement | null = null
     let circuits: CircuitRuntime[] = []
     let fillStart = 0
+    let navStart = 0
     let copyStart = 0
+    let pageStart = 0
     let animationEnd = 0
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+
+    const revealNavigation = () => {
+      if (navShown) return
+      navShown = true
+      shell?.style.setProperty("--landing-nav-opacity", "1")
+    }
+
+    const revealPage = () => {
+      if (pageShown) return
+      pageShown = true
+      shell?.style.setProperty("--landing-content-opacity", "1")
+    }
+
+    const revealEverything = () => {
+      revealNavigation()
+      revealPage()
+      if (!copyShown) {
+        copyShown = true
+        setCopyVisible(true)
+      }
+    }
 
     const resize = () => {
       const rect = hero.getBoundingClientRect()
@@ -484,17 +510,18 @@ export function PcbHero() {
       const elapsed = reducedMotion ? animationEnd : (now - startTime) / 1000
       draw(elapsed)
 
+      if (!navShown && elapsed >= navStart) revealNavigation()
+
       if (!copyShown && elapsed >= copyStart) {
         copyShown = true
         setCopyVisible(true)
       }
 
+      if (!pageShown && elapsed >= pageStart) revealPage()
+
       if (elapsed >= animationEnd) {
         complete = true
-        if (!copyShown) {
-          copyShown = true
-          setCopyVisible(true)
-        }
+        revealEverything()
         return
       }
 
@@ -522,7 +549,9 @@ export function PcbHero() {
         const lastLogoDeposit = Math.max(...circuits.map((circuit) => circuit.logoEndTime))
         const lastCircuitEnd = Math.max(...circuits.map((circuit) => circuit.end))
         fillStart = lastLogoDeposit + .04
+        navStart = fillStart + .10
         copyStart = fillStart + .24
+        pageStart = fillStart + .46
         animationEnd = Math.max(lastCircuitEnd, fillStart + .94) + .08
 
         const image = new Image()
@@ -534,8 +563,7 @@ export function PcbHero() {
           if (reducedMotion) {
             draw(animationEnd)
             complete = true
-            copyShown = true
-            setCopyVisible(true)
+            revealEverything()
           } else {
             frame = requestAnimationFrame(tick)
           }
@@ -544,12 +572,18 @@ export function PcbHero() {
           if (cancelled) return
           logoImage = null
           resize()
-          setCopyVisible(true)
-          frame = requestAnimationFrame(tick)
+
+          if (reducedMotion) {
+            draw(animationEnd)
+            complete = true
+            revealEverything()
+          } else {
+            frame = requestAnimationFrame(tick)
+          }
         }
         image.src = "/logo.svg"
       } catch {
-        setCopyVisible(true)
+        revealEverything()
       }
     }
 
@@ -572,10 +606,19 @@ export function PcbHero() {
         <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 z-[1] h-full w-full" aria-hidden="true" />
       </section>
 
-      <section id="hero-intro" className="relative border-b border-white/[0.09] bg-[#0d0d0c]">
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#daa000]/60 to-transparent" />
+      <section
+        id="hero-intro"
+        className={`relative border-b transition-[background-color,border-color] duration-700 ease-out ${
+          copyVisible ? "border-white/[0.09] bg-[#0d0d0c]" : "border-transparent bg-black"
+        }`}
+      >
         <div
-          className={`mx-auto grid max-w-[1440px] transition-all duration-300 lg:grid-cols-[0.72fr_1.28fr] ${
+          className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#daa000]/60 to-transparent transition-opacity duration-700 ${
+            copyVisible ? "opacity-100" : "opacity-0"
+          }`}
+        />
+        <div
+          className={`mx-auto grid max-w-[1440px] transition-all duration-500 lg:grid-cols-[0.72fr_1.28fr] ${
             copyVisible ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
           }`}
         >
