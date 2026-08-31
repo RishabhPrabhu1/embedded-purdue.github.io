@@ -40,11 +40,43 @@ const landingFrameScript = `
   var root = document.documentElement;
   var posterKey = "esap-landing-final-poster-v4";
   var seenKey = "esap-landing-animation-seen";
+  var scrollKey = "esap-landing-reload-scroll-y";
   var currentShell = null;
   var captureToken = 0;
+  var reloadScrollY = null;
+  var shouldRestoreReloadScroll = false;
 
   function readPoster() {
     try { return sessionStorage.getItem(posterKey); } catch (e) { return null; }
+  }
+
+  function navigationIsReload() {
+    try {
+      var entries = performance.getEntriesByType && performance.getEntriesByType("navigation");
+      if (entries && entries.length) return entries[0].type === "reload";
+      return performance.navigation && performance.navigation.type === 1;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function readReloadScroll() {
+    try {
+      var raw = sessionStorage.getItem(scrollKey);
+      if (raw === null) return null;
+      var value = Number(raw);
+      return Number.isFinite(value) && value >= 0 ? value : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function rememberLandingScroll() {
+    try {
+      if (!document.querySelector("[data-landing-shell]")) return;
+      if (!sessionStorage.getItem(posterKey)) return;
+      sessionStorage.setItem(scrollKey, String(Math.max(0, window.scrollY || 0)));
+    } catch (e) {}
   }
 
   function activatePoster(poster) {
@@ -58,6 +90,12 @@ const landingFrameScript = `
   var bootPoster = readPoster();
   if (bootPoster) {
     activatePoster(bootPoster);
+    reloadScrollY = readReloadScroll();
+    shouldRestoreReloadScroll = navigationIsReload() && reloadScrollY !== null;
+
+    if (shouldRestoreReloadScroll && "scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
   } else {
     // A "seen" flag without the current poster cannot provide a stable first paint.
     // Replay the animation once and create the current poster instead.
@@ -67,7 +105,33 @@ const landingFrameScript = `
       sessionStorage.removeItem("esap-landing-final-frame-v2");
       sessionStorage.removeItem("esap-landing-final-poster-v2");
       sessionStorage.removeItem("esap-landing-final-poster-v3");
+      sessionStorage.removeItem(scrollKey);
     } catch (e) {}
+  }
+
+  window.addEventListener("pagehide", rememberLandingScroll);
+
+  function restoreReloadScroll(shell) {
+    if (!shouldRestoreReloadScroll || reloadScrollY === null || !shell.isConnected) return;
+
+    var target = reloadScrollY;
+    shouldRestoreReloadScroll = false;
+
+    function apply() {
+      if (shell.isConnected) window.scrollTo(0, target);
+    }
+
+    // The cached hero/intro already use their final geometry, so restoration can
+    // happen as soon as the landing shell exists. Reapply after layout to guard
+    // against Safari's reload timing without introducing any visible animation.
+    apply();
+    requestAnimationFrame(function () {
+      apply();
+      requestAnimationFrame(function () {
+        apply();
+        if ("scrollRestoration" in history) history.scrollRestoration = "auto";
+      });
+    });
   }
 
   function capturePoster(shell, token) {
@@ -120,6 +184,7 @@ const landingFrameScript = `
     var poster = readPoster();
     if (poster) {
       activatePoster(poster);
+      restoreReloadScroll(shell);
     } else {
       root.removeAttribute("data-esap-return-poster");
       root.style.removeProperty("--esap-return-poster");
