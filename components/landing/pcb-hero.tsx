@@ -450,7 +450,6 @@ export function PcbHero() {
           drawLightPool(context, logoHead, 78, 1)
           context.beginPath()
           context.arc(logoHead[0], logoHead[1], 4.2, 0, Math.PI * 2)
-          context.fillStyle = "#ffe3x66"
           context.fillStyle = BRIGHT
           context.fill()
         }
