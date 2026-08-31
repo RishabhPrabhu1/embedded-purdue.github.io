@@ -39,6 +39,7 @@ const returningLandingScript = `
 try {
   if (sessionStorage.getItem("esap-landing-animation-seen") === "1") {
     document.documentElement.setAttribute("data-esap-landing-seen", "1");
+
     var style = document.createElement("style");
     style.id = "esap-returning-landing-style";
     style.textContent = [
@@ -51,6 +52,26 @@ try {
       'html[data-esap-landing-seen="1"] #hero-intro [data-hero-intro-grid]{opacity:1!important;transform:translateY(0)!important}'
     ].join('');
     document.head.appendChild(style);
+
+    var logoFallback = document.createElement("style");
+    logoFallback.id = "esap-returning-logo-fallback-style";
+    logoFallback.textContent = [
+      'html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type{',
+      'background-color:#000!important;',
+      'background-image:url("/logo.svg")!important;',
+      'background-repeat:no-repeat!important;',
+      'background-position:center calc(50% + 34px)!important;',
+      'background-size:66.25% auto!important;',
+      '}'
+    ].join('');
+    document.head.appendChild(logoFallback);
+
+    window.addEventListener("load", function () {
+      window.setTimeout(function () {
+        var fallback = document.getElementById("esap-returning-logo-fallback-style");
+        if (fallback) fallback.remove();
+      }, 700);
+    }, { once: true });
   }
 } catch (e) {}
 `;
