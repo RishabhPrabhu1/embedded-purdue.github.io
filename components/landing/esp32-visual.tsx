@@ -6,15 +6,16 @@ const MODEL_VIEWER_SCRIPT =
   "https://ajax.googleapis.com/ajax/libs/model-viewer/4.3.1/model-viewer.min.js"
 const ESP32_MODEL = "/models/esp32/esp32-38pin.glb"
 
-// The converted CAD arrives with its PCB plane standing vertically. Rotate the
-// model itself onto a tabletop-like pose, then use a modest camera orbit around
-// that stable baseline so the board reads horizontally with the pins below it.
-const BASE_THETA = 90
-const BASE_PHI = 61
-const CAMERA_RADIUS = 96
+// The CAD's populated face is on negative local Z while the long header pins
+// extend toward positive Z. A +90deg pitch lays the board flat with components
+// facing up and the pin shafts hanging below the PCB. The camera is then pulled
+// slightly off-axis and closer for a restrained "coming out of the screen" pose.
+const BASE_THETA = 82
+const BASE_PHI = 58
+const CAMERA_RADIUS = 89
 const HORIZONTAL_ORBIT = 6.5
 const VERTICAL_ORBIT = 4.25
-const MODEL_ORIENTATION = "0deg -90deg 0deg"
+const MODEL_ORIENTATION = "0deg 90deg 0deg"
 
 type ModelViewerElement = HTMLElement & {
   cameraOrbit: string
@@ -181,7 +182,7 @@ export function Esp32Visual() {
           reveal: "auto",
           orientation: MODEL_ORIENTATION,
           "camera-orbit": `${BASE_THETA}deg ${BASE_PHI}deg ${CAMERA_RADIUS}%`,
-          "field-of-view": "26deg",
+          "field-of-view": "30deg",
           "camera-target": "auto auto auto",
           "interaction-prompt": "none",
           "environment-image": "neutral",
