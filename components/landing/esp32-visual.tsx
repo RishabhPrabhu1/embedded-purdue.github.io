@@ -4,7 +4,7 @@ import { createElement, useEffect, useRef, useState } from "react"
 
 const MODEL_VIEWER_SCRIPT =
   "https://ajax.googleapis.com/ajax/libs/model-viewer/4.3.1/model-viewer.min.js"
-const ESP32_MODEL = "/models/esp32/esp32-38pin.glb?v=4"
+const ESP32_MODEL = "/models/esp32/esp32-38pin.glb?v=5"
 
 // The converted CAD arrives with its PCB plane standing vertically. Rotate the
 // model itself onto a tabletop-like pose, then use a modest camera orbit around
@@ -16,19 +16,8 @@ const HORIZONTAL_ORBIT = 6.5
 const VERTICAL_ORBIT = 4.25
 const MODEL_ORIENTATION = "0deg 90deg 0deg"
 
-type ModelViewerMaterial = {
-  index: number
-  pbrMetallicRoughness: {
-    setMetallicFactor: (value: number) => void
-    setRoughnessFactor: (value: number) => void
-  }
-}
-
 type ModelViewerElement = HTMLElement & {
   cameraOrbit: string
-  model?: {
-    materials: ModelViewerMaterial[]
-  }
 }
 
 type ModelViewerConstructor = CustomElementConstructor & {
@@ -137,8 +126,6 @@ export function Esp32Visual() {
       3
     )}deg ${CAMERA_RADIUS}%`
 
-    // Collapse pointer bursts to one camera goal per display frame. model-viewer
-    // supplies the visible damping, so the response stays direct rather than floaty.
     if (frameRef.current === null) {
       frameRef.current = requestAnimationFrame(flushOrbit)
     }
@@ -159,8 +146,6 @@ export function Esp32Visual() {
       Math.min(1, ((event.clientY - rect.top) / rect.height) * 2 - 1)
     )
 
-    // Keep the first visual's direct cursor-follow feel, but only orbit a few
-    // degrees around the horizontal product-shot baseline.
     queueOrbit(
       BASE_THETA + x * HORIZONTAL_ORBIT,
       BASE_PHI - y * VERTICAL_ORBIT
@@ -171,18 +156,6 @@ export function Esp32Visual() {
     queueOrbit(BASE_THETA, BASE_PHI)
   }
 
-  const handleModelLoad = () => {
-    const model = modelRef.current
-    const pcbMaterial = model?.model?.materials.find(
-      (material) => material.index === 1
-    )
-    if (!pcbMaterial) return
-
-    // PCB solder mask is a matte dielectric, not a glossy metal.
-    pcbMaterial.pbrMetallicRoughness.setMetallicFactor(0.02)
-    pcbMaterial.pbrMetallicRoughness.setRoughnessFactor(0.82)
-  }
-
   return (
     <div
       ref={viewerRef}
@@ -190,8 +163,8 @@ export function Esp32Visual() {
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_47%,rgba(218,160,0,0.075),transparent_36%),linear-gradient(to_bottom,rgba(255,255,255,.018),transparent_24%,transparent_74%,rgba(0,0,0,.34))]" />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.14] [background-image:linear-gradient(rgba(255,255,255,.024)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.024)_1px,transparent_1px)] [background-size:38px_38px]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_47%,rgba(218,160,0,0.055),transparent_36%),linear-gradient(to_bottom,rgba(255,255,255,.012),transparent_24%,transparent_74%,rgba(0,0,0,.38))]" />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(255,255,255,.022)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.022)_1px,transparent_1px)] [background-size:38px_38px]" />
 
       {shouldLoadModel && viewerReady && !modelFailed &&
         createElement("model-viewer", {
@@ -208,11 +181,10 @@ export function Esp32Visual() {
           "camera-target": "auto auto auto",
           "interaction-prompt": "none",
           "environment-image": "neutral",
-          "tone-mapping": "agx",
-          exposure: "1.1",
+          "tone-mapping": "neutral",
+          exposure: "0.82",
           "shadow-intensity": "0",
           "interpolation-decay": "72",
-          onLoad: handleModelLoad,
           onError: () => setModelFailed(true),
           style: {
             position: "absolute",
