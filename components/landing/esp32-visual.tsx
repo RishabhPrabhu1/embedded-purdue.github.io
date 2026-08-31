@@ -6,10 +6,9 @@ const MODEL_VIEWER_SCRIPT =
   "https://ajax.googleapis.com/ajax/libs/model-viewer/4.3.1/model-viewer.min.js"
 const ESP32_MODEL = "/models/esp32/esp32-38pin.glb"
 
-// The CAD's populated face is on negative local Z while the long header pins
-// extend toward positive Z. A +90deg pitch lays the board flat with components
-// facing up and the pin shafts hanging below the PCB. The camera is then pulled
-// slightly off-axis and closer for a restrained "coming out of the screen" pose.
+// The converted CAD arrives with its PCB plane standing vertically. Rotate the
+// model itself onto a tabletop-like pose, then use a modest camera orbit around
+// that stable baseline so the board reads horizontally with the pins below it.
 const BASE_THETA = 82
 const BASE_PHI = 58
 const CAMERA_RADIUS = 89
@@ -17,8 +16,19 @@ const HORIZONTAL_ORBIT = 6.5
 const VERTICAL_ORBIT = 4.25
 const MODEL_ORIENTATION = "0deg 90deg 0deg"
 
+type ModelViewerMaterial = {
+  index: number
+  pbrMetallicRoughness: {
+    setMetallicFactor: (value: number) => void
+    setRoughnessFactor: (value: number) => void
+  }
+}
+
 type ModelViewerElement = HTMLElement & {
   cameraOrbit: string
+  model?: {
+    materials: ModelViewerMaterial[]
+  }
 }
 
 type ModelViewerConstructor = CustomElementConstructor & {
@@ -161,6 +171,20 @@ export function Esp32Visual() {
     queueOrbit(BASE_THETA, BASE_PHI)
   }
 
+  const handleModelLoad = () => {
+    const model = modelRef.current
+    const pcbMaterial = model?.model?.materials.find(
+      (material) => material.index === 1
+    )
+    if (!pcbMaterial) return
+
+    // PCB solder mask is a matte dielectric, not a glossy metal. Keeping this
+    // surface rough suppresses the bright specular wedges that make any residual
+    // CAD tessellation/normal imperfections visible while the board is moving.
+    pcbMaterial.pbrMetallicRoughness.setMetallicFactor(0.02)
+    pcbMaterial.pbrMetallicRoughness.setRoughnessFactor(0.82)
+  }
+
   return (
     <div
       ref={viewerRef}
@@ -190,6 +214,7 @@ export function Esp32Visual() {
           exposure: "1.1",
           "shadow-intensity": "0",
           "interpolation-decay": "72",
+          onLoad: handleModelLoad,
           onError: () => setModelFailed(true),
           style: {
             position: "absolute",
