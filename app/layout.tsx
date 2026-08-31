@@ -40,64 +40,11 @@ const landingFrameScript = `
   var root = document.documentElement;
   var posterKey = "esap-landing-final-poster-v4";
   var seenKey = "esap-landing-animation-seen";
-  var scrollKey = "esap-landing-reload-scroll-y";
   var currentShell = null;
   var captureToken = 0;
-  var reloadScrollY = null;
-  var shouldRestoreReloadScroll = false;
-  var restoreActive = false;
-  var lastKnownScrollY = Math.max(0, window.scrollY || 0);
 
   function readPoster() {
     try { return sessionStorage.getItem(posterKey); } catch (e) { return null; }
-  }
-
-  function navigationIsReload() {
-    try {
-      var entries = performance.getEntriesByType && performance.getEntriesByType("navigation");
-      if (entries && entries.length) return entries[0].type === "reload";
-      return performance.navigation && performance.navigation.type === 1;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  function readReloadScroll() {
-    try {
-      var raw = sessionStorage.getItem(scrollKey);
-      if (raw === null) return null;
-      var value = Number(raw);
-      return Number.isFinite(value) && value >= 0 ? value : null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  function writeReloadScroll(value) {
-    try {
-      sessionStorage.setItem(scrollKey, String(Math.max(0, value)));
-    } catch (e) {}
-  }
-
-  function landingCanRememberScroll() {
-    try {
-      return Boolean(document.querySelector("[data-landing-shell]")) && Boolean(sessionStorage.getItem(posterKey));
-    } catch (e) {
-      return false;
-    }
-  }
-
-  function trackLandingScroll() {
-    if (restoreActive || shouldRestoreReloadScroll || document.visibilityState === "hidden") return;
-    if (!landingCanRememberScroll()) return;
-
-    lastKnownScrollY = Math.max(0, window.scrollY || 0);
-    writeReloadScroll(lastKnownScrollY);
-  }
-
-  function rememberLandingScroll() {
-    if (restoreActive || !landingCanRememberScroll()) return;
-    writeReloadScroll(lastKnownScrollY);
   }
 
   function activatePoster(poster) {
@@ -110,15 +57,9 @@ const landingFrameScript = `
 
   var bootPoster = readPoster();
   if (bootPoster) {
+    // Cached visits are already in the final visual state before React mounts.
+    // Leave native browser scroll restoration completely untouched.
     activatePoster(bootPoster);
-    reloadScrollY = readReloadScroll();
-    shouldRestoreReloadScroll = navigationIsReload() && reloadScrollY !== null;
-
-    if (shouldRestoreReloadScroll) {
-      restoreActive = true;
-      lastKnownScrollY = reloadScrollY;
-      if ("scrollRestoration" in history) history.scrollRestoration = "manual";
-    }
   } else {
     // A "seen" flag without the current poster cannot provide a stable first paint.
     // Replay the animation once and create the current poster instead.
@@ -128,71 +69,8 @@ const landingFrameScript = `
       sessionStorage.removeItem("esap-landing-final-frame-v2");
       sessionStorage.removeItem("esap-landing-final-poster-v2");
       sessionStorage.removeItem("esap-landing-final-poster-v3");
-      sessionStorage.removeItem(scrollKey);
+      sessionStorage.removeItem("esap-landing-reload-scroll-y");
     } catch (e) {}
-  }
-
-  window.addEventListener("scroll", trackLandingScroll, { passive: true });
-  window.addEventListener("pagehide", rememberLandingScroll);
-
-  function restoreReloadScroll(shell) {
-    if (!shouldRestoreReloadScroll || reloadScrollY === null || !shell.isConnected) return;
-
-    var target = reloadScrollY;
-    shouldRestoreReloadScroll = false;
-    restoreActive = true;
-    var finished = false;
-    var fallbackTimer = 0;
-
-    function apply() {
-      if (!finished && shell.isConnected) window.scrollTo(0, target);
-    }
-
-    function finish() {
-      if (finished) return;
-      finished = true;
-      restoreActive = false;
-      lastKnownScrollY = target;
-      writeReloadScroll(target);
-      if (fallbackTimer) window.clearTimeout(fallbackTimer);
-      if ("scrollRestoration" in history) history.scrollRestoration = "auto";
-      window.removeEventListener("wheel", cancelForUserInput);
-      window.removeEventListener("touchstart", cancelForUserInput);
-      window.removeEventListener("pointerdown", cancelForUserInput);
-      window.removeEventListener("keydown", cancelForUserInput, true);
-    }
-
-    function cancelForUserInput() {
-      finish();
-    }
-
-    // Safari can reset scroll more than once during a reload. Keep the known
-    // position authoritative until the page load settles, but stop immediately
-    // if the user starts interacting.
-    apply();
-    requestAnimationFrame(function () {
-      apply();
-      requestAnimationFrame(apply);
-    });
-
-    window.addEventListener("pageshow", apply, { once: true });
-    window.addEventListener("load", function () {
-      apply();
-      requestAnimationFrame(function () {
-        apply();
-        window.setTimeout(finish, 80);
-      });
-    }, { once: true });
-
-    window.addEventListener("wheel", cancelForUserInput, { passive: true });
-    window.addEventListener("touchstart", cancelForUserInput, { passive: true });
-    window.addEventListener("pointerdown", cancelForUserInput, { passive: true });
-    window.addEventListener("keydown", cancelForUserInput, true);
-
-    fallbackTimer = window.setTimeout(function () {
-      apply();
-      finish();
-    }, 1200);
   }
 
   function capturePoster(shell, token) {
@@ -226,8 +104,6 @@ const landingFrameScript = `
 
         sessionStorage.setItem(posterKey, frame);
         sessionStorage.setItem(seenKey, "1");
-        lastKnownScrollY = Math.max(0, window.scrollY || 0);
-        writeReloadScroll(lastKnownScrollY);
         // First visit remains the live canvas. This image is only for later visits.
       } catch (e) {}
     }
@@ -247,7 +123,6 @@ const landingFrameScript = `
     var poster = readPoster();
     if (poster) {
       activatePoster(poster);
-      restoreReloadScroll(shell);
     } else {
       root.removeAttribute("data-esap-return-poster");
       root.style.removeProperty("--esap-return-poster");
