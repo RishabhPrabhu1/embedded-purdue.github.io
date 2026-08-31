@@ -34,7 +34,7 @@ export function Navigation() {
     <nav
       className={`${
         onHome
-          ? "absolute top-0 border-b border-white/[0.09] bg-[#11110f]/92 backdrop-blur-md"
+          ? "absolute top-0 border-b border-white/[0.09] bg-[#11110f]/92 opacity-[var(--landing-nav-opacity,1)] backdrop-blur-md transition-opacity duration-700 ease-out"
           : "sticky top-0 border-b border-white/[0.08] bg-[#11110f]/90 backdrop-blur-xl"
       } z-50 w-full`}
     >
