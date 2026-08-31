@@ -288,22 +288,68 @@ export function PcbHero() {
     let pageStart = 0
     let animationEnd = 0
     let scrollLocked = false
+    let lockedScrollY = 0
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
     const root = document.documentElement
     const body = document.body
     const previousRootOverflowY = root.style.overflowY
     const previousRootOverscrollY = root.style.overscrollBehaviorY
+    const previousRootTouchAction = root.style.touchAction
     const previousBodyOverflowY = body.style.overflowY
     const previousBodyOverscrollY = body.style.overscrollBehaviorY
+    const previousBodyPosition = body.style.position
+    const previousBodyTop = body.style.top
+    const previousBodyLeft = body.style.left
+    const previousBodyRight = body.style.right
+    const previousBodyWidth = body.style.width
+    const previousBodyTouchAction = body.style.touchAction
+
+    const preventScroll = (event: Event) => {
+      if (scrollLocked) event.preventDefault()
+    }
+
+    const preventScrollKeys = (event: KeyboardEvent) => {
+      if (!scrollLocked) return
+
+      const target = event.target as HTMLElement | null
+      if (
+        target?.isContentEditable ||
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.tagName === "SELECT"
+      ) {
+        return
+      }
+
+      if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "].includes(event.key)) {
+        event.preventDefault()
+      }
+    }
+
+    const removeScrollGuards = () => {
+      window.removeEventListener("wheel", preventScroll)
+      window.removeEventListener("touchmove", preventScroll)
+      window.removeEventListener("keydown", preventScrollKeys, true)
+    }
 
     const restoreScroll = () => {
       if (!scrollLocked) return
+
+      removeScrollGuards()
       root.style.overflowY = previousRootOverflowY
       root.style.overscrollBehaviorY = previousRootOverscrollY
+      root.style.touchAction = previousRootTouchAction
       body.style.overflowY = previousBodyOverflowY
       body.style.overscrollBehaviorY = previousBodyOverscrollY
+      body.style.position = previousBodyPosition
+      body.style.top = previousBodyTop
+      body.style.left = previousBodyLeft
+      body.style.right = previousBodyRight
+      body.style.width = previousBodyWidth
+      body.style.touchAction = previousBodyTouchAction
       scrollLocked = false
+      window.scrollTo(0, lockedScrollY)
     }
 
     const finishHandoff = () => {
@@ -313,11 +359,22 @@ export function PcbHero() {
 
     if (!reducedMotion) {
       window.scrollTo(0, 0)
+      lockedScrollY = 0
       root.style.overflowY = "hidden"
       root.style.overscrollBehaviorY = "none"
+      root.style.touchAction = "none"
       body.style.overflowY = "hidden"
       body.style.overscrollBehaviorY = "none"
+      body.style.position = "fixed"
+      body.style.top = "0px"
+      body.style.left = "0"
+      body.style.right = "0"
+      body.style.width = "100%"
+      body.style.touchAction = "none"
       scrollLocked = true
+      window.addEventListener("wheel", preventScroll, { passive: false })
+      window.addEventListener("touchmove", preventScroll, { passive: false })
+      window.addEventListener("keydown", preventScrollKeys, true)
     }
 
     const revealNavigation = () => {
@@ -638,6 +695,7 @@ export function PcbHero() {
       cancelled = true
       cancelAnimationFrame(frame)
       restoreScroll()
+      removeScrollGuards()
       window.removeEventListener("resize", resize)
     }
   }, [])
