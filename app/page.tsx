@@ -50,6 +50,10 @@ function formatWorkshopDate(date?: string) {
   }).format(parsed)
 }
 
+function projectDisplayTitle(title: string) {
+  return title.split(" (")[0]
+}
+
 export default function HomePage() {
   return (
     <div
@@ -107,7 +111,7 @@ export default function HomePage() {
                       sizes={index === 0 ? "(max-width: 768px) 100vw, 58vw" : "(max-width: 768px) 100vw, 42vw"}
                       className="object-cover opacity-[0.7] grayscale-[16%] transition duration-700 ease-out group-hover:scale-[1.016] group-hover:opacity-[0.86] group-hover:grayscale-0"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/10 to-black/16" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/10 to-black/16 transition-colors duration-500 group-hover:from-black/86" />
 
                     <ArrowUpRight
                       className="absolute right-5 top-5 h-4 w-4 text-white/50 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[#f2c34f] sm:right-6 sm:top-6"
@@ -116,7 +120,7 @@ export default function HomePage() {
 
                     <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
                       <h3 className={`${index === 0 ? "text-4xl sm:text-5xl" : "text-3xl"} font-medium tracking-[-0.045em]`}>
-                        {project.title}
+                        {projectDisplayTitle(project.title)}
                       </h3>
                       <p className="mt-2 max-w-lg font-mono text-[0.57rem] uppercase tracking-[0.14em] text-[#d6b65d]">
                         {project.technologies.slice(0, 3).join(" · ")}
@@ -153,16 +157,16 @@ export default function HomePage() {
         </section>
 
         <section className="border-b border-white/[0.08] bg-[#0c0c0b]">
-          <div className={`${WIDE_RAIL} grid lg:grid-cols-[1.12fr_0.88fr] lg:border-x lg:border-white/[0.06]`}>
+          <div className={`${WIDE_RAIL} grid lg:grid-cols-[1.12fr_0.88fr]`}>
             <div className="relative min-h-[390px] overflow-hidden border-b border-white/[0.08] lg:min-h-[500px] lg:border-b-0 lg:border-r">
               <Image
-                src="/industry_ins.jpg"
-                alt="Embedded Systems @ Purdue workshop"
+                src="/workshops/vision-kit-assembled.jpg"
+                alt="Embedded Systems @ Purdue workshop hardware"
                 fill
                 sizes="(max-width: 1024px) 100vw, 56vw"
                 className="object-cover opacity-[0.82] grayscale-[8%]"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/14" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/58 via-transparent to-black/12" />
             </div>
 
             <div className="flex items-center px-5 py-10 sm:px-8 sm:py-12 lg:px-10 lg:py-10 xl:px-12 2xl:px-16">
@@ -185,7 +189,7 @@ export default function HomePage() {
                       }`}
                     >
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium tracking-[-0.01em] text-[#ded8cd] sm:text-base">
+                        <p className="truncate text-sm font-medium tracking-[-0.01em] text-[#ded8cd] transition-colors group-hover:text-[#f3efe6] sm:text-base">
                           {workshop.title}
                         </p>
                         <p className="mt-1 font-mono text-[0.55rem] uppercase tracking-[0.14em] text-[#6f6b64]">
@@ -214,7 +218,7 @@ export default function HomePage() {
         </section>
 
         <section className="relative border-b border-white/[0.08] bg-[#0a0a09]">
-          <div className={`${WIDE_RAIL} relative min-h-[370px] overflow-hidden lg:border-x lg:border-white/[0.06]`}>
+          <div className={`${WIDE_RAIL} relative min-h-[370px] overflow-hidden`}>
             <Image
               src="/founders.jpeg"
               alt="Embedded Systems @ Purdue community"
@@ -244,11 +248,11 @@ export default function HomePage() {
         </section>
 
         <section className="border-b border-white/[0.08] bg-[#0c0c0b]">
-          <div className={`${WIDE_RAIL} grid lg:grid-cols-[0.92fr_1.08fr] lg:border-x lg:border-white/[0.06]`}>
+          <div className={`${WIDE_RAIL} grid lg:grid-cols-[0.92fr_1.08fr]`}>
             <div className="border-b border-white/[0.08] px-5 py-10 sm:px-8 sm:py-12 lg:border-b-0 lg:border-r lg:px-12 xl:px-16 2xl:px-20">
               <div className="max-w-2xl">
                 <SignalLabel>Schedule</SignalLabel>
-                <h2 className="mt-4 text-4xl font-medium tracking-[-0.05em] sm:text-5xl">What&apos;s next</h2>
+                <h2 className="mt-4 text-4xl font-medium tracking-[-0.05em] sm:text-5xl">Events</h2>
 
                 <div className="mt-6 border-t border-white/[0.08]">
                   <a
@@ -258,8 +262,8 @@ export default function HomePage() {
                     className="group flex items-center justify-between gap-6 border-b border-white/[0.08] py-4"
                   >
                     <div>
-                      <p className="text-base font-medium">Events and meetings</p>
-                      <p className="mt-1 text-sm text-[#77736b]">Google Calendar</p>
+                      <p className="text-base font-medium">Calendar</p>
+                      <p className="mt-1 text-sm text-[#77736b]">Events and meetings</p>
                     </div>
                     <ArrowUpRight className="h-4 w-4 text-[#a9a397] transition-colors group-hover:text-[#f2c34f]" aria-hidden="true" />
                   </a>
@@ -284,7 +288,7 @@ export default function HomePage() {
                   Build with us.
                 </h2>
                 <p className="mt-4 max-w-lg text-base leading-7 text-[#969188]">
-                  Join a project, come to a workshop, or bring something you want to build.
+                  Join a project, attend a workshop, or bring something you want to build.
                 </p>
                 <div className="mt-6 flex flex-wrap items-center gap-5">
                   <Link
