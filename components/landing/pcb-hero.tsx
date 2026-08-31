@@ -308,9 +308,12 @@ export function PcbHero() {
     }
 
     const getHandoffTarget = () => {
-      const viewport = window.innerHeight
-      const oldHeroHeight = Math.max(600, Math.min(viewport * .78, 760))
-      return Math.max(0, viewport - oldHeroHeight)
+      const intro = document.getElementById("hero-intro")
+      const headerOffset = 68
+      if (!intro) return Math.max(0, hero.offsetHeight - headerOffset)
+
+      const introTop = window.scrollY + intro.getBoundingClientRect().top
+      return Math.max(0, introTop - headerOffset)
     }
 
     const startHandoffScroll = () => {
