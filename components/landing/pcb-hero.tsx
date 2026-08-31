@@ -280,6 +280,7 @@ export function PcbHero() {
     let cssHeight = 1
     let scaleX = 1
     let scaleY = 1
+    let renderOffsetY = 0
     let logoImage: HTMLImageElement | null = null
     let circuits: CircuitRuntime[] = []
     let fillStart = 0
@@ -374,9 +375,14 @@ export function PcbHero() {
       const rect = hero.getBoundingClientRect()
       cssWidth = Math.max(1, rect.width)
       cssHeight = Math.max(1, rect.height)
-      const uniformScale = Math.min(cssWidth / VW, cssHeight / VH)
-      scaleX = uniformScale
-      scaleY = uniformScale
+
+      // Preserve the exact sizing model from the original 78svh / 760px hero.
+      // The blackout can be fullscreen, but the animation itself keeps its old footprint.
+      const legacyHeroHeight = Math.max(600, Math.min(cssHeight * .78, 760))
+      scaleX = cssWidth / VW
+      scaleY = legacyHeroHeight / VH
+      renderOffsetY = (cssHeight - legacyHeroHeight) / 2
+
       dpr = Math.min(window.devicePixelRatio || 1, 1.1)
       canvas.width = Math.round(cssWidth * dpr)
       canvas.height = Math.round(cssHeight * dpr)
@@ -559,7 +565,7 @@ export function PcbHero() {
       context.clearRect(0, 0, cssWidth, cssHeight)
 
       context.save()
-      context.translate((cssWidth - VW * scaleX) / 2, (cssHeight - VH * scaleY) / 2)
+      context.translate(0, renderOffsetY)
       context.scale(scaleX, scaleY)
       drawAmbientLight(time)
       drawPorts(time)
