@@ -94,7 +94,7 @@ export default function HomePage() {
                       alt={project.title}
                       fill
                       sizes={index === 0 ? "(max-width: 768px) 100vw, 58vw" : "(max-width: 768px) 100vw, 42vw"}
-                      className="object-cover opacity-66 grayscale-[22%] transition duration-700 ease-out group-hover:scale-[1.018] group-hover:opacity-82 group-hover:grayscale-0"
+                      className="object-cover opacity-[0.66] grayscale-[22%] transition duration-700 ease-out group-hover:scale-[1.018] group-hover:opacity-[0.82] group-hover:grayscale-0"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/12 to-black/20" />
                     <div className="absolute inset-x-0 top-0 flex items-center justify-between p-5 sm:p-6">
@@ -124,7 +124,7 @@ export default function HomePage() {
         <section className="border-b border-white/[0.08] bg-[#10100e]">
           <div className="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-12 xl:px-16">
             <div className="grid lg:grid-cols-[0.62fr_1.38fr]">
-              <div className="py-14 lg:border-r lg:border-white/[0.08] lg:py-18 lg:pr-12">
+              <div className="py-14 lg:border-r lg:border-white/[0.08] lg:py-[4.5rem] lg:pr-12">
                 <SignalLabel>Capabilities</SignalLabel>
                 <h2 className="mt-5 max-w-md text-4xl font-medium leading-[0.95] tracking-[-0.05em] sm:text-5xl">
                   Across the stack.
@@ -159,7 +159,7 @@ export default function HomePage() {
                 alt="Embedded Systems @ Purdue workshop"
                 fill
                 sizes="(max-width: 1024px) 100vw, 54vw"
-                className="object-cover opacity-78 grayscale-[12%]"
+                className="object-cover opacity-[0.78] grayscale-[12%]"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-black/20" />
             </div>
@@ -192,7 +192,7 @@ export default function HomePage() {
               alt="Embedded Systems @ Purdue community"
               fill
               sizes="100vw"
-              className="object-cover object-center opacity-52 grayscale-[10%]"
+              className="object-cover object-center opacity-[0.52] grayscale-[10%]"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-[#0c0c0b] via-[#0c0c0b]/72 to-[#0c0c0b]/10" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0c0c0b]/90 via-transparent to-[#0c0c0b]/24" />
