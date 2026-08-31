@@ -10,7 +10,7 @@ const VW = 1600
 const VH = 760
 const GOLD = "#daa000"
 const BRIGHT = "#f4c64d"
-const LOGO = { x: 270, y: 248, width: 1060, height: 338 }
+const LOGO = { x: 270, y: 211, width: 1060, height: 338 }
 const LOGO_SCALE = LOGO.width / 1920
 const CIRCUIT_SPEED = 1280
 
@@ -146,9 +146,10 @@ function drawLightPool(
 ) {
   if (intensity <= 0) return
   const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius)
-  gradient.addColorStop(0, `rgba(244,198,77,${.30 * intensity})`)
-  gradient.addColorStop(.14, `rgba(218,160,0,${.18 * intensity})`)
-  gradient.addColorStop(.48, `rgba(218,160,0,${.065 * intensity})`)
+  gradient.addColorStop(0, `rgba(244,198,77,${.42 * intensity})`)
+  gradient.addColorStop(.12, `rgba(218,160,0,${.25 * intensity})`)
+  gradient.addColorStop(.42, `rgba(218,160,0,${.095 * intensity})`)
+  gradient.addColorStop(.72, `rgba(148,104,0,${.025 * intensity})`)
   gradient.addColorStop(1, "rgba(218,160,0,0)")
 
   ctx.save()
@@ -250,6 +251,7 @@ export function PcbHero() {
   const heroRef = useRef<HTMLElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [copyVisible, setCopyVisible] = useState(false)
+  const [stageLocked, setStageLocked] = useState(true)
 
   useEffect(() => {
     const hero = heroRef.current
@@ -284,8 +286,40 @@ export function PcbHero() {
     let copyStart = 0
     let pageStart = 0
     let animationEnd = 0
+    let scrollLocked = false
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    const root = document.documentElement
+    const body = document.body
+    const previousRootOverflowY = root.style.overflowY
+    const previousRootOverscrollY = root.style.overscrollBehaviorY
+    const previousBodyOverflowY = body.style.overflowY
+    const previousBodyOverscrollY = body.style.overscrollBehaviorY
+
+    const restoreScroll = () => {
+      if (!scrollLocked) return
+      root.style.overflowY = previousRootOverflowY
+      root.style.overscrollBehaviorY = previousRootOverscrollY
+      body.style.overflowY = previousBodyOverflowY
+      body.style.overscrollBehaviorY = previousBodyOverscrollY
+      scrollLocked = false
+    }
+
+    const releaseStage = () => {
+      restoreScroll()
+      setStageLocked(false)
+    }
+
+    if (reducedMotion) {
+      setStageLocked(false)
+    } else {
+      window.scrollTo(0, 0)
+      root.style.overflowY = "hidden"
+      root.style.overscrollBehaviorY = "none"
+      body.style.overflowY = "hidden"
+      body.style.overscrollBehaviorY = "none"
+      scrollLocked = true
+    }
 
     const revealNavigation = () => {
       if (navShown) return
@@ -328,11 +362,11 @@ export function PcbHero() {
       const surge = Math.sin(Math.PI * surgeProgress)
       const centerX = LOGO.x + LOGO.width / 2
       const centerY = LOGO.y + LOGO.height / 2
-      const radius = 650
-      const gradient = context.createRadialGradient(centerX, centerY, 45, centerX, centerY, radius)
-      gradient.addColorStop(0, `rgba(218,160,0,${.035 * settle + .10 * surge})`)
-      gradient.addColorStop(.35, `rgba(218,160,0,${.022 * settle + .055 * surge})`)
-      gradient.addColorStop(.72, `rgba(218,160,0,${.007 * settle + .018 * surge})`)
+      const radius = 760
+      const gradient = context.createRadialGradient(centerX, centerY, 35, centerX, centerY, radius)
+      gradient.addColorStop(0, `rgba(244,198,77,${.055 * settle + .15 * surge})`)
+      gradient.addColorStop(.28, `rgba(218,160,0,${.034 * settle + .085 * surge})`)
+      gradient.addColorStop(.62, `rgba(218,160,0,${.012 * settle + .032 * surge})`)
       gradient.addColorStop(1, "rgba(218,160,0,0)")
 
       context.save()
@@ -342,9 +376,9 @@ export function PcbHero() {
 
       if (surgeProgress > 0 && surgeProgress < 1) {
         context.beginPath()
-        context.arc(centerX, centerY, 110 + surgeProgress * 470, 0, Math.PI * 2)
-        context.strokeStyle = `rgba(244,198,77,${.22 * (1 - surgeProgress)})`
-        context.lineWidth = 1.4 + (1 - surgeProgress) * 1.4
+        context.arc(centerX, centerY, 110 + surgeProgress * 520, 0, Math.PI * 2)
+        context.strokeStyle = `rgba(244,198,77,${.26 * (1 - surgeProgress)})`
+        context.lineWidth = 1.5 + (1 - surgeProgress) * 1.8
         context.stroke()
       }
       context.restore()
@@ -361,7 +395,7 @@ export function PcbHero() {
           ? clamp01((time - (circuit.spec.delay - .08)) / .32)
           : 0
 
-        drawLightPool(context, spec.port, 34 + activation * 12, .32 + activation * .68)
+        drawLightPool(context, spec.port, 48 + activation * 22, .28 + activation * .72)
 
         context.beginPath()
         context.arc(x, y, 10.5, 0, Math.PI * 2)
@@ -380,8 +414,8 @@ export function PcbHero() {
 
         if (ignition > 0 && ignition < 1) {
           context.beginPath()
-          context.arc(x, y, 12 + ignition * 24, 0, Math.PI * 2)
-          context.strokeStyle = `rgba(244,198,77,${.24 * (1 - ignition)})`
+          context.arc(x, y, 12 + ignition * 30, 0, Math.PI * 2)
+          context.strokeStyle = `rgba(244,198,77,${.28 * (1 - ignition)})`
           context.lineWidth = 1.1
           context.stroke()
         }
@@ -430,10 +464,10 @@ export function PcbHero() {
 
       context.save()
       context.globalCompositeOperation = "lighter"
-      context.globalAlpha = .16
-      context.drawImage(formationLayer, -2, -2, VW + 4, VH + 4)
-      context.globalAlpha = .12
-      context.drawImage(formationLayer, 2, 2, VW - 4, VH - 4)
+      context.globalAlpha = .18
+      context.drawImage(formationLayer, -3, -3, VW + 6, VH + 6)
+      context.globalAlpha = .13
+      context.drawImage(formationLayer, 3, 3, VW - 6, VH - 6)
       context.restore()
       context.drawImage(formationLayer, 0, 0)
     }
@@ -459,21 +493,23 @@ export function PcbHero() {
 
         context.save()
         context.globalCompositeOperation = "lighter"
-        context.globalAlpha = .055 * energy
-        drawPrepared(context, circuit.route, progress, "rgba(218,160,0,1)", 24)
-        context.globalAlpha = .13 * energy
-        drawPrepared(context, circuit.route, progress, "rgba(218,160,0,1)", 8)
+        context.globalAlpha = .018 * energy
+        drawPrepared(context, circuit.route, progress, "rgba(218,160,0,1)", 64)
+        context.globalAlpha = .052 * energy
+        drawPrepared(context, circuit.route, progress, "rgba(218,160,0,1)", 30)
+        context.globalAlpha = .14 * energy
+        drawPrepared(context, circuit.route, progress, "rgba(244,198,77,1)", 10)
         context.restore()
 
         context.globalAlpha = 1 - settled * .74
         const head = drawPrepared(context, circuit.route, progress, GOLD, 2.35)
         context.globalAlpha = 1
-        drawLightPool(context, head, 60, progress < 1 ? .92 * energy : .26 * energy)
+        drawLightPool(context, head, 112, progress < 1 ? .88 * energy : .22 * energy)
 
         const logoProgress = getLogoProgress(circuit, time)
         if (logoProgress > 0 && logoProgress < 1) {
           const logoHead = drawPrepared(context, circuit.logoRoute, logoProgress, BRIGHT, 2.15)
-          drawLightPool(context, logoHead, 78, 1)
+          drawLightPool(context, logoHead, 142, 1)
           context.beginPath()
           context.arc(logoHead[0], logoHead[1], 4.2, 0, Math.PI * 2)
           context.fillStyle = BRIGHT
@@ -522,6 +558,7 @@ export function PcbHero() {
       if (elapsed >= animationEnd) {
         complete = true
         revealEverything()
+        releaseStage()
         return
       }
 
@@ -564,6 +601,7 @@ export function PcbHero() {
             draw(animationEnd)
             complete = true
             revealEverything()
+            releaseStage()
           } else {
             frame = requestAnimationFrame(tick)
           }
@@ -577,6 +615,7 @@ export function PcbHero() {
             draw(animationEnd)
             complete = true
             revealEverything()
+            releaseStage()
           } else {
             frame = requestAnimationFrame(tick)
           }
@@ -584,6 +623,7 @@ export function PcbHero() {
         image.src = "/logo.svg"
       } catch {
         revealEverything()
+        releaseStage()
       }
     }
 
@@ -593,6 +633,7 @@ export function PcbHero() {
     return () => {
       cancelled = true
       cancelAnimationFrame(frame)
+      restoreScroll()
       window.removeEventListener("resize", resize)
     }
   }, [])
@@ -601,7 +642,11 @@ export function PcbHero() {
     <>
       <section
         ref={heroRef}
-        className="relative isolate h-[min(78svh,760px)] min-h-[600px] overflow-hidden border-b border-[#daa000]/20 bg-black"
+        className={`relative isolate overflow-hidden bg-black transition-all duration-700 ease-out ${
+          stageLocked
+            ? "h-[100svh] min-h-[100svh]"
+            : "h-[min(78svh,760px)] min-h-[600px]"
+        }`}
       >
         <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 z-[1] h-full w-full" aria-hidden="true" />
       </section>
