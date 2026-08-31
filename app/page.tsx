@@ -179,7 +179,7 @@ export default function HomePage() {
         </section>
 
         <section className="border-b border-white/[0.08] bg-[#0c0c0b]">
-          <div className={`${WIDE_RAIL} grid lg:grid-cols-[1.12fr_0.88fr]`}>
+          <div className="grid w-full lg:grid-cols-[1.12fr_0.88fr]">
             <div className="overflow-hidden border-b border-white/[0.08] lg:border-b-0 lg:border-r">
               <Esp32Visual />
             </div>
@@ -277,49 +277,54 @@ export default function HomePage() {
                   >
                     <div>
                       <p className="text-base font-medium">Calendar</p>
-                      <p className="mt-1 text-sm text-[#77736b]">Events and meetings</p>
+                      <p className="mt-1 text-sm text-[#77726a]">Stay current with meetings, workshops, and club activity.</p>
                     </div>
-                    <ArrowUpRight className="h-4 w-4 text-[#a9a397] transition-colors group-hover:text-[#f2c34f]" aria-hidden="true" />
+                    <ArrowUpRight className="h-4 w-4 text-[#777169] transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[#f2c34f]" aria-hidden="true" />
                   </a>
+
                   <a
-                    href="https://calendar.google.com/calendar/ical/embedded%40purdue.edu/public/basic.ics"
+                    href="mailto:embedded@purdue.edu"
                     className="group flex items-center justify-between gap-6 py-4"
                   >
                     <div>
-                      <p className="text-base font-medium">Subscribe</p>
-                      <p className="mt-1 text-sm text-[#77736b]">iCal feed</p>
+                      <p className="text-base font-medium">embedded@purdue.edu</p>
+                      <p className="mt-1 text-sm text-[#77726a]">Questions, collaboration, or general contact.</p>
                     </div>
-                    <ArrowUpRight className="h-4 w-4 text-[#a9a397] transition-colors group-hover:text-[#f2c34f]" aria-hidden="true" />
+                    <ArrowUpRight className="h-4 w-4 text-[#777169] transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[#f2c34f]" aria-hidden="true" />
                   </a>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center px-5 py-10 sm:px-8 sm:py-12 lg:px-12 xl:px-16 2xl:px-20">
-              <div className="max-w-2xl">
+            <div className="relative overflow-hidden px-5 py-10 sm:px-8 sm:py-12 lg:px-12 xl:px-16 2xl:px-20">
+              <div className="pointer-events-none absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(255,255,255,.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.025)_1px,transparent_1px)] [background-size:42px_42px]" />
+              <div className="relative max-w-2xl">
                 <SignalLabel>Join</SignalLabel>
-                <h2 className="mt-4 text-[clamp(2.85rem,5vw,5.2rem)] font-medium leading-[0.9] tracking-[-0.06em]">
-                  Build with us.
+                <h2 className="mt-4 text-[clamp(2.6rem,4.4vw,4.4rem)] font-medium leading-[0.92] tracking-[-0.055em]">
+                  Build something real.
                 </h2>
-                <p className="mt-4 max-w-lg text-base leading-7 text-[#969188]">
-                  Join a project, attend a workshop, or bring something you want to build.
+                <p className="mt-4 max-w-xl text-sm leading-6 text-[#918c84] sm:text-base sm:leading-7">
+                  Join the Discord for project discussion, workshop updates, and the fastest path into current work.
                 </p>
-                <div className="mt-6 flex flex-wrap items-center gap-5">
-                  <Link
-                    href="https://discord.gg/MkPv9s9cj3"
+
+                <div className="mt-7 flex flex-wrap gap-3">
+                  <a
+                    href="https://discord.gg/E9XYmSptnN"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex h-11 items-center gap-2 bg-[#5865F2] px-5 font-mono text-[0.66rem] font-semibold uppercase tracking-[0.15em] text-white shadow-[0_8px_24px_rgba(88,101,242,.18)] transition-colors hover:bg-[#6875f5]"
+                    data-landing-lift="button"
+                    className="group inline-flex items-center gap-3 bg-[#daa000] px-5 py-3.5 font-mono text-[0.65rem] font-bold uppercase tracking-[0.15em] text-[#12110d] transition-colors hover:bg-[#efbd2f]"
                   >
                     Join Discord
-                    <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
-                  </Link>
+                    <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
+                  </a>
                   <Link
-                    href="/sponsors"
-                    className="group inline-flex items-center gap-2 font-mono text-[0.62rem] uppercase tracking-[0.15em] text-[#aaa398] transition-colors hover:text-[#f2c34f]"
+                    href="/projects"
+                    data-landing-lift="button"
+                    className="inline-flex items-center gap-3 border border-white/[0.12] px-5 py-3.5 font-mono text-[0.65rem] font-semibold uppercase tracking-[0.15em] text-[#c9c3b8] transition-colors hover:border-white/[0.24] hover:text-white"
                   >
-                    Industry & sponsors
-                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                    Browse projects
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </Link>
                 </div>
               </div>
@@ -328,9 +333,7 @@ export default function HomePage() {
         </section>
       </main>
 
-      <div className="bg-[#0c0c0b] opacity-[var(--landing-content-opacity)] transition-opacity duration-[1100ms] ease-out">
-        <Footer />
-      </div>
+      <Footer />
     </div>
   )
 }
