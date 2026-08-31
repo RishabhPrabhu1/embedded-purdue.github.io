@@ -9,7 +9,7 @@ const passives = [
 ] as const
 
 export function Esp32Visual() {
-  const [tilt, setTilt] = useState({ x: -7, y: 12 })
+  const [tilt, setTilt] = useState({ x: -6, y: 9 })
   const [reducedMotion, setReducedMotion] = useState(false)
 
   useEffect(() => {
@@ -21,14 +21,14 @@ export function Esp32Visual() {
     const rect = event.currentTarget.getBoundingClientRect()
     const x = (event.clientX - rect.left) / rect.width - 0.5
     const y = (event.clientY - rect.top) / rect.height - 0.5
-    setTilt({ x: -7 - y * 13, y: 12 + x * 18 })
+    setTilt({ x: -6 - y * 10, y: 9 + x * 14 })
   }
 
-  const resetTilt = () => setTilt({ x: -7, y: 12 })
+  const resetTilt = () => setTilt({ x: -6, y: 9 })
 
   return (
     <div
-      className="relative flex min-h-[390px] items-center justify-center overflow-hidden bg-[#080a09] lg:min-h-[500px]"
+      className="relative flex h-full min-h-[390px] w-full items-center justify-center overflow-hidden bg-[#080a09] lg:min-h-[500px]"
       onPointerMove={handlePointerMove}
       onPointerLeave={resetTilt}
       aria-label="Interactive ESP32 development board visual"
@@ -36,61 +36,58 @@ export function Esp32Visual() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,rgba(88,101,242,0.09),transparent_28%),radial-gradient(circle_at_50%_58%,rgba(218,160,0,0.08),transparent_42%)]" />
       <div className="absolute inset-0 opacity-25 [background-image:linear-gradient(rgba(255,255,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.035)_1px,transparent_1px)] [background-size:36px_36px]" />
 
-      <div className="absolute left-5 top-5 font-mono text-[0.56rem] uppercase tracking-[0.17em] text-[#666a64] sm:left-7 sm:top-7">
+      <div className="absolute left-5 top-5 z-10 font-mono text-[0.56rem] uppercase tracking-[0.17em] text-[#666a64] sm:left-7 sm:top-7">
         ESP32 · Wi-Fi / BLE MCU
       </div>
-      <div className="absolute bottom-5 right-5 font-mono text-[0.52rem] uppercase tracking-[0.16em] text-[#525650] sm:bottom-7 sm:right-7">
-        Move pointer to inspect
-      </div>
 
-      <div className="relative h-[330px] w-[430px] max-w-[88%] [perspective:1100px] sm:h-[365px] sm:w-[500px]">
+      <div className="relative flex h-full min-h-[390px] w-full items-center justify-center px-[8%] py-16 [perspective:1200px] lg:min-h-[500px] lg:px-[10%] lg:py-20">
         <div
-          className="absolute left-1/2 top-1/2 h-[245px] w-[350px] max-w-[76vw] -translate-x-1/2 -translate-y-1/2 transition-transform duration-150 ease-out [transform-style:preserve-3d] sm:h-[275px] sm:w-[390px]"
+          className="relative aspect-[390/275] w-full max-w-[390px] transition-transform duration-150 ease-out [transform-style:preserve-3d] sm:max-w-[430px] lg:w-[72%] lg:max-w-[430px]"
           style={{
-            transform: `translate(-50%, -50%) perspective(1100px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) rotateZ(-2deg)`,
+            transform: `perspective(1200px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) rotateZ(-1.5deg)`,
           }}
         >
-          <div className="absolute inset-0 translate-x-[9px] translate-y-[12px] rounded-[18px] bg-[#031f1c] shadow-[0_34px_55px_rgba(0,0,0,.55)] [transform:translateZ(-14px)]" />
+          <div className="absolute inset-0 translate-x-[8px] translate-y-[10px] rounded-[18px] bg-[#031f1c] shadow-[0_30px_50px_rgba(0,0,0,.5)] [transform:translateZ(-12px)]" />
           <div className="absolute inset-0 overflow-hidden rounded-[18px] border border-[#3c7168]/60 bg-[#0a4a43] shadow-[inset_0_0_45px_rgba(0,0,0,.36)] [transform:translateZ(0)]">
             <div className="absolute inset-[14px] rounded-[12px] border border-white/[0.035]" />
 
             {pins.map((_, index) => {
               const top = `${7 + index * 6.15}%`
               return (
-                <div key={`left-${index}`} className="absolute left-[3.5%] h-[3px] w-[18px] -translate-y-1/2 bg-[#caa64d] shadow-[0_0_5px_rgba(202,166,77,.28)]" style={{ top }} />
+                <div key={`left-${index}`} className="absolute left-[3.5%] h-[3px] w-[4.6%] -translate-y-1/2 bg-[#caa64d] shadow-[0_0_5px_rgba(202,166,77,.28)]" style={{ top }} />
               )
             })}
             {pins.map((_, index) => {
               const top = `${7 + index * 6.15}%`
               return (
-                <div key={`right-${index}`} className="absolute right-[3.5%] h-[3px] w-[18px] -translate-y-1/2 bg-[#caa64d] shadow-[0_0_5px_rgba(202,166,77,.28)]" style={{ top }} />
+                <div key={`right-${index}`} className="absolute right-[3.5%] h-[3px] w-[4.6%] -translate-y-1/2 bg-[#caa64d] shadow-[0_0_5px_rgba(202,166,77,.28)]" style={{ top }} />
               )
             })}
 
             <div className="absolute left-[20%] top-[9%] h-[42%] w-[60%] border border-[#ddd9ce]/55 bg-gradient-to-br from-[#b7b5ad] via-[#e0ddd4] to-[#8d8c87] shadow-[0_7px_16px_rgba(0,0,0,.32)]">
               <div className="absolute inset-[7px] border border-black/12" />
-              <div className="absolute bottom-3 left-4 font-mono text-[0.7rem] font-semibold tracking-[0.12em] text-black/65 sm:text-[0.76rem]">ESP32</div>
-              <div className="absolute right-3 top-3 font-mono text-[0.42rem] uppercase tracking-[0.14em] text-black/45">RF module</div>
+              <div className="absolute bottom-[10%] left-[7%] font-mono text-[clamp(0.55rem,1.2vw,0.76rem)] font-semibold tracking-[0.12em] text-black/65">ESP32</div>
+              <div className="absolute right-[5%] top-[9%] font-mono text-[clamp(0.34rem,0.7vw,0.42rem)] uppercase tracking-[0.14em] text-black/45">RF module</div>
               <div className="absolute left-[14%] right-[14%] top-[14%] h-[30%] opacity-55 [background-image:repeating-linear-gradient(90deg,transparent_0_7px,rgba(20,20,20,.48)_7px_9px)]" />
             </div>
 
             <div className="absolute left-[38%] top-[57%] h-[24%] w-[24%] border border-black/65 bg-[#111615] shadow-[0_5px_12px_rgba(0,0,0,.4)]">
               <div className="absolute inset-[18%] border border-white/[0.08]" />
-              <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center font-mono text-[0.42rem] uppercase tracking-[0.11em] text-white/35">MCU</div>
+              <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center font-mono text-[clamp(0.32rem,0.65vw,0.42rem)] uppercase tracking-[0.11em] text-white/35">MCU</div>
             </div>
 
             <div className="absolute bottom-[-2%] left-1/2 h-[14%] w-[22%] -translate-x-1/2 rounded-t-[5px] border border-[#6d706e] bg-gradient-to-b from-[#a8aaa7] to-[#555957] shadow-[0_-3px_10px_rgba(0,0,0,.28)]">
               <div className="absolute bottom-0 left-[18%] right-[18%] top-[27%] rounded-t-[3px] bg-[#171a19]" />
             </div>
 
-            <div className="absolute bottom-[8%] left-[20%] h-3 w-3 rounded-full border border-[#8d887b] bg-[#272a27]" />
-            <div className="absolute bottom-[8%] right-[20%] h-3 w-3 rounded-full border border-[#8d887b] bg-[#272a27]" />
-            <div className="absolute bottom-[17%] right-[23%] h-2 w-2 rounded-full bg-[#f3bd38] shadow-[0_0_7px_rgba(243,189,56,.85),0_0_18px_rgba(243,189,56,.28)] motion-safe:animate-pulse" />
+            <div className="absolute bottom-[8%] left-[20%] aspect-square w-[3%] rounded-full border border-[#8d887b] bg-[#272a27]" />
+            <div className="absolute bottom-[8%] right-[20%] aspect-square w-[3%] rounded-full border border-[#8d887b] bg-[#272a27]" />
+            <div className="absolute bottom-[17%] right-[23%] aspect-square w-[2%] rounded-full bg-[#f3bd38] shadow-[0_0_7px_rgba(243,189,56,.85),0_0_18px_rgba(243,189,56,.28)] motion-safe:animate-pulse" />
 
             {passives.map(([left, top], index) => (
               <div
                 key={`${left}-${top}`}
-                className={`absolute h-[5px] w-[11px] ${index % 3 === 0 ? "bg-[#b8a16b]" : "bg-[#202725]"}`}
+                className={`absolute h-[1.8%] w-[2.8%] ${index % 3 === 0 ? "bg-[#b8a16b]" : "bg-[#202725]"}`}
                 style={{ left: `${left}%`, top: `${top}%` }}
               />
             ))}
