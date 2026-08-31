@@ -1,0 +1,63 @@
+/* Returning visits use the exact final canvas bitmap captured at animation completion. */
+html[data-esap-landing-seen="1"] body [data-landing-shell] {
+  --landing-nav-opacity: 1 !important;
+  --landing-content-opacity: 1 !important;
+}
+
+html[data-esap-landing-seen="1"] body [data-landing-shell] > section:first-of-type {
+  height: min(66svh, 600px) !important;
+  min-height: 500px !important;
+  transition: none !important;
+}
+
+html[data-esap-landing-seen="1"] body [data-landing-shell] > section:first-of-type canvas {
+  display: none !important;
+}
+
+html[data-esap-landing-seen="1"] body [data-landing-shell] > section:first-of-type::before {
+  display: none !important;
+  content: none !important;
+}
+
+html[data-esap-landing-seen="1"] body [data-landing-shell] > section:first-of-type::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  left: 0 !important;
+  right: auto !important;
+  top: calc(50% + 34px) !important;
+  bottom: auto !important;
+  width: 100% !important;
+  height: 100svh !important;
+  transform: translateY(-50%) !important;
+  transform-origin: center !important;
+  background-color: transparent !important;
+  background-image: var(--esap-landing-final-frame) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 100% !important;
+  filter: none !important;
+  animation: none !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+  opacity: 1 !important;
+  z-index: 2 !important;
+  pointer-events: none !important;
+}
+
+html[data-esap-landing-seen="1"] body #hero-intro {
+  border-color: rgba(255, 255, 255, .08) !important;
+  background: #0b0b0a !important;
+  transition: none !important;
+}
+
+html[data-esap-landing-seen="1"] body #hero-intro > div:first-child {
+  opacity: 1 !important;
+  transition: none !important;
+}
+
+html[data-esap-landing-seen="1"] body #hero-intro [data-hero-intro-grid] {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  transition: none !important;
+}
