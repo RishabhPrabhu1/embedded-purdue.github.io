@@ -251,6 +251,7 @@ export function PcbHero() {
   const heroRef = useRef<HTMLElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [copyVisible, setCopyVisible] = useState(false)
+  const [settled, setSettled] = useState(false)
 
   useEffect(() => {
     const hero = heroRef.current
@@ -267,13 +268,11 @@ export function PcbHero() {
     const formationContext = formationLayer.getContext("2d", { alpha: true })
 
     let frame = 0
-    let handoffFrame = 0
     let cancelled = false
     let complete = false
     let copyShown = false
     let navShown = false
     let pageShown = false
-    let handoffStarted = false
     let startTime = 0
     let dpr = 1
     let cssWidth = 1
@@ -307,41 +306,9 @@ export function PcbHero() {
       scrollLocked = false
     }
 
-    const getHandoffTarget = () => {
-      const intro = document.getElementById("hero-intro")
-      const headerOffset = 68
-      if (!intro) return Math.max(0, hero.offsetHeight - headerOffset)
-
-      const introTop = window.scrollY + intro.getBoundingClientRect().top
-      return Math.max(0, introTop - headerOffset)
-    }
-
-    const startHandoffScroll = () => {
-      if (handoffStarted) return
-      handoffStarted = true
+    const finishHandoff = () => {
       restoreScroll()
-
-      if (reducedMotion) return
-
-      const from = window.scrollY
-      const to = getHandoffTarget()
-      if (to <= from + 1) return
-
-      const started = performance.now()
-      const duration = 900
-
-      const step = (now: number) => {
-        if (cancelled) return
-        const progress = clamp01((now - started) / duration)
-        const eased = progress < .5
-          ? 4 * progress * progress * progress
-          : 1 - Math.pow(-2 * progress + 2, 3) / 2
-
-        window.scrollTo(0, from + (to - from) * eased)
-        if (progress < 1) handoffFrame = requestAnimationFrame(step)
-      }
-
-      handoffFrame = requestAnimationFrame(step)
+      setSettled(true)
     }
 
     if (!reducedMotion) {
@@ -377,10 +344,9 @@ export function PcbHero() {
     const resize = () => {
       const rect = hero.getBoundingClientRect()
       cssWidth = Math.max(1, rect.width)
-      cssHeight = Math.max(1, rect.height)
+      cssHeight = Math.max(1, window.innerHeight)
 
-      // Preserve the exact sizing model from the original 78svh / 760px hero.
-      // The blackout can be fullscreen, but the animation itself keeps its old footprint.
+      // Preserve the original animation footprint independently of the section crop.
       const legacyHeroHeight = Math.max(600, Math.min(cssHeight * .78, 760))
       scaleX = cssWidth / VW
       scaleY = legacyHeroHeight / VH
@@ -526,8 +492,8 @@ export function PcbHero() {
         const progress = clamp01((time - circuit.spec.delay) / circuit.duration)
         if (progress <= 0) return
 
-        const settled = smoothstep((time - circuit.end) / .34)
-        const energy = 1 - settled * .82
+        const settledProgress = smoothstep((time - circuit.end) / .34)
+        const energy = 1 - settledProgress * .82
 
         context.save()
         context.globalCompositeOperation = "lighter"
@@ -539,7 +505,7 @@ export function PcbHero() {
         drawPrepared(context, circuit.route, progress, "rgba(244,198,77,1)", 10)
         context.restore()
 
-        context.globalAlpha = 1 - settled * .74
+        context.globalAlpha = 1 - settledProgress * .74
         const head = drawPrepared(context, circuit.route, progress, GOLD, 2.35)
         context.globalAlpha = 1
         drawLightPool(context, head, 112, progress < 1 ? .88 * energy : .22 * energy)
@@ -597,7 +563,7 @@ export function PcbHero() {
       if (elapsed >= animationEnd) {
         complete = true
         revealEverything()
-        startHandoffScroll()
+        finishHandoff()
         return
       }
 
@@ -640,7 +606,7 @@ export function PcbHero() {
             draw(animationEnd)
             complete = true
             revealEverything()
-            restoreScroll()
+            finishHandoff()
           } else {
             frame = requestAnimationFrame(tick)
           }
@@ -654,7 +620,7 @@ export function PcbHero() {
             draw(animationEnd)
             complete = true
             revealEverything()
-            restoreScroll()
+            finishHandoff()
           } else {
             frame = requestAnimationFrame(tick)
           }
@@ -662,7 +628,7 @@ export function PcbHero() {
         image.src = "/logo.svg"
       } catch {
         revealEverything()
-        restoreScroll()
+        finishHandoff()
       }
     }
 
@@ -672,7 +638,6 @@ export function PcbHero() {
     return () => {
       cancelled = true
       cancelAnimationFrame(frame)
-      cancelAnimationFrame(handoffFrame)
       restoreScroll()
       window.removeEventListener("resize", resize)
     }
@@ -682,9 +647,17 @@ export function PcbHero() {
     <>
       <section
         ref={heroRef}
-        className="relative isolate h-[100svh] min-h-[100svh] overflow-hidden bg-black"
+        className={`relative isolate overflow-hidden bg-black transition-all duration-700 ease-[cubic-bezier(.22,1,.36,1)] ${
+          settled
+            ? "h-[min(55svh,500px)] min-h-[420px]"
+            : "h-[100svh] min-h-[100svh]"
+        }`}
       >
-        <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 z-[1] h-full w-full" aria-hidden="true" />
+        <canvas
+          ref={canvasRef}
+          className="pointer-events-none absolute left-0 top-1/2 z-[1] h-[100svh] w-full -translate-y-1/2"
+          aria-hidden="true"
+        />
       </section>
 
       <section
