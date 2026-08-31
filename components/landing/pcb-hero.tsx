@@ -138,6 +138,26 @@ function drawPrepared(
   return head
 }
 
+function drawLightPool(
+  ctx: CanvasRenderingContext2D,
+  [x, y]: Point,
+  radius: number,
+  intensity: number
+) {
+  if (intensity <= 0) return
+  const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius)
+  gradient.addColorStop(0, `rgba(244,198,77,${.30 * intensity})`)
+  gradient.addColorStop(.14, `rgba(218,160,0,${.18 * intensity})`)
+  gradient.addColorStop(.48, `rgba(218,160,0,${.065 * intensity})`)
+  gradient.addColorStop(1, "rgba(218,160,0,0)")
+
+  ctx.save()
+  ctx.globalCompositeOperation = "lighter"
+  ctx.fillStyle = gradient
+  ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2)
+  ctx.restore()
+}
+
 function logoPoint([x, y]: Point): Point {
   return [LOGO.x + x * LOGO_SCALE, LOGO.y + y * LOGO_SCALE]
 }
@@ -274,25 +294,71 @@ export function PcbHero() {
       if (complete) draw(animationEnd)
     }
 
+    const drawAmbientLight = (time: number) => {
+      if (time < fillStart) return
+
+      const settle = smoothstep((time - fillStart) / .85)
+      const surgeProgress = clamp01((time - fillStart) / .72)
+      const surge = Math.sin(Math.PI * surgeProgress)
+      const centerX = LOGO.x + LOGO.width / 2
+      const centerY = LOGO.y + LOGO.height / 2
+      const radius = 650
+      const gradient = context.createRadialGradient(centerX, centerY, 45, centerX, centerY, radius)
+      gradient.addColorStop(0, `rgba(218,160,0,${.035 * settle + .10 * surge})`)
+      gradient.addColorStop(.35, `rgba(218,160,0,${.022 * settle + .055 * surge})`)
+      gradient.addColorStop(.72, `rgba(218,160,0,${.007 * settle + .018 * surge})`)
+      gradient.addColorStop(1, "rgba(218,160,0,0)")
+
+      context.save()
+      context.globalCompositeOperation = "lighter"
+      context.fillStyle = gradient
+      context.fillRect(0, 0, VW, VH)
+
+      if (surgeProgress > 0 && surgeProgress < 1) {
+        context.beginPath()
+        context.arc(centerX, centerY, 110 + surgeProgress * 470, 0, Math.PI * 2)
+        context.strokeStyle = `rgba(244,198,77,${.22 * (1 - surgeProgress)})`
+        context.lineWidth = 1.4 + (1 - surgeProgress) * 1.4
+        context.stroke()
+      }
+      context.restore()
+    }
+
     const drawPorts = (time: number) => {
       circuitSpecs.forEach((spec, index) => {
         const [x, y] = spec.port
-        const activation = smoothstep((time - (circuits[index].spec.delay - .08)) / .12)
+        const circuit = circuits[index]
+        const activation = circuit
+          ? smoothstep((time - (circuit.spec.delay - .08)) / .12)
+          : 0
+        const ignition = circuit
+          ? clamp01((time - (circuit.spec.delay - .08)) / .32)
+          : 0
+
+        drawLightPool(context, spec.port, 34 + activation * 12, .32 + activation * .68)
 
         context.beginPath()
         context.arc(x, y, 10.5, 0, Math.PI * 2)
-        context.fillStyle = "rgba(15,15,15,.96)"
+        context.fillStyle = "rgba(0,0,0,.98)"
         context.fill()
-        context.strokeStyle = `rgba(218,160,0,${.42 + activation * .34})`
+        context.strokeStyle = `rgba(218,160,0,${.50 + activation * .38})`
         context.lineWidth = 1.4
         context.stroke()
 
         context.beginPath()
-        context.arc(x, y, 3.6 + activation * .45, 0, Math.PI * 2)
-        context.fillStyle = GOLD
-        context.globalAlpha = .64 + activation * .36
+        context.arc(x, y, 3.7 + activation * .5, 0, Math.PI * 2)
+        context.fillStyle = BRIGHT
+        context.globalAlpha = .72 + activation * .28
         context.fill()
         context.globalAlpha = 1
+
+        if (ignition > 0 && ignition < 1) {
+          context.beginPath()
+          context.arc(x, y, 12 + ignition * 24, 0, Math.PI * 2)
+          context.strokeStyle = `rgba(244,198,77,${.24 * (1 - ignition)})`
+          context.lineWidth = 1.1
+          context.stroke()
+        }
       })
     }
 
@@ -317,7 +383,7 @@ export function PcbHero() {
 
         const bloomProgress = clamp01(logoProgress + .045)
         formationContext.save()
-        formationContext.globalAlpha = .24
+        formationContext.globalAlpha = .22
         drawPrepared(formationContext, circuit.logoRoute, bloomProgress, "#ffffff", 126)
         formationContext.globalAlpha = .68
         drawPrepared(formationContext, circuit.logoRoute, logoProgress, "#ffffff", 86)
@@ -336,6 +402,13 @@ export function PcbHero() {
       formationContext.drawImage(logoImage, LOGO.x, LOGO.y, LOGO.width, LOGO.height)
       formationContext.globalCompositeOperation = "source-over"
 
+      context.save()
+      context.globalCompositeOperation = "lighter"
+      context.globalAlpha = .16
+      context.drawImage(formationLayer, -2, -2, VW + 4, VH + 4)
+      context.globalAlpha = .12
+      context.drawImage(formationLayer, 2, 2, VW - 4, VH - 4)
+      context.restore()
       context.drawImage(formationLayer, 0, 0)
     }
 
@@ -355,23 +428,36 @@ export function PcbHero() {
         const progress = clamp01((time - circuit.spec.delay) / circuit.duration)
         if (progress <= 0) return
 
-        const settled = smoothstep((time - circuit.end) / .30)
+        const settled = smoothstep((time - circuit.end) / .34)
+        const energy = 1 - settled * .82
+
+        context.save()
+        context.globalCompositeOperation = "lighter"
+        context.globalAlpha = .055 * energy
+        drawPrepared(context, circuit.route, progress, "rgba(218,160,0,1)", 24)
+        context.globalAlpha = .13 * energy
+        drawPrepared(context, circuit.route, progress, "rgba(218,160,0,1)", 8)
+        context.restore()
+
         context.globalAlpha = 1 - settled * .74
         const head = drawPrepared(context, circuit.route, progress, GOLD, 2.35)
         context.globalAlpha = 1
+        drawLightPool(context, head, 60, progress < 1 ? .92 * energy : .26 * energy)
 
         const logoProgress = getLogoProgress(circuit, time)
         if (logoProgress > 0 && logoProgress < 1) {
           const logoHead = drawPrepared(context, circuit.logoRoute, logoProgress, BRIGHT, 2.15)
+          drawLightPool(context, logoHead, 78, 1)
           context.beginPath()
-          context.arc(logoHead[0], logoHead[1], 4.1, 0, Math.PI * 2)
+          context.arc(logoHead[0], logoHead[1], 4.2, 0, Math.PI * 2)
+          context.fillStyle = "#ffe3x66"
           context.fillStyle = BRIGHT
           context.fill()
         }
 
         if (progress < 1) {
           context.beginPath()
-          context.arc(head[0], head[1], 2.9, 0, Math.PI * 2)
+          context.arc(head[0], head[1], 3, 0, Math.PI * 2)
           context.fillStyle = BRIGHT
           context.fill()
         }
@@ -384,6 +470,7 @@ export function PcbHero() {
 
       context.save()
       context.scale(scaleX, scaleY)
+      drawAmbientLight(time)
       drawPorts(time)
       drawLogoFormation(time)
       drawLogoCleanup(time)
@@ -436,8 +523,8 @@ export function PcbHero() {
         const lastLogoDeposit = Math.max(...circuits.map((circuit) => circuit.logoEndTime))
         const lastCircuitEnd = Math.max(...circuits.map((circuit) => circuit.end))
         fillStart = lastLogoDeposit + .04
-        copyStart = fillStart + .22
-        animationEnd = Math.max(lastCircuitEnd, fillStart + .68) + .08
+        copyStart = fillStart + .24
+        animationEnd = Math.max(lastCircuitEnd, fillStart + .94) + .08
 
         const image = new Image()
         logoImage = image
@@ -456,6 +543,7 @@ export function PcbHero() {
         }
         image.onerror = () => {
           if (cancelled) return
+          logoImage = null
           resize()
           setCopyVisible(true)
           frame = requestAnimationFrame(tick)
@@ -480,9 +568,8 @@ export function PcbHero() {
     <>
       <section
         ref={heroRef}
-        className="relative isolate h-[min(78svh,760px)] min-h-[600px] overflow-hidden border-b border-[#daa000]/20 bg-background"
+        className="relative isolate h-[min(78svh,760px)] min-h-[600px] overflow-hidden border-b border-[#daa000]/20 bg-black"
       >
-        <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_48%,rgba(218,160,0,0.06),transparent_42%)]" />
         <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 z-[1] h-full w-full" aria-hidden="true" />
       </section>
 
