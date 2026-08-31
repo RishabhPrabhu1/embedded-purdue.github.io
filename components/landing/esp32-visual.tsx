@@ -89,10 +89,6 @@ export function Esp32Visual() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_52%_45%,rgba(218,160,0,0.07),transparent_32%),linear-gradient(to_bottom,rgba(8,10,9,0.02),transparent_72%,rgba(8,10,9,0.28))]" />
       <div className="pointer-events-none absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(255,255,255,.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.025)_1px,transparent_1px)] [background-size:38px_38px]" />
 
-      <div className="pointer-events-none absolute left-5 top-5 z-20 font-mono text-[0.56rem] uppercase tracking-[0.17em] text-[#777b74] sm:left-7 sm:top-7">
-        ESP32-WROOM-32E
-      </div>
-
       {shouldLoadModel && viewerReady && !modelFailed &&
         createElement("model-viewer", {
           ref: (node: HTMLElement | null) => {
@@ -132,15 +128,6 @@ export function Esp32Visual() {
           Model unavailable
         </div>
       )}
-
-      <a
-        href="https://www.espressif.com/en/products/modules/esp32-wroom-32"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="absolute bottom-4 left-5 z-20 font-mono text-[0.46rem] uppercase tracking-[0.13em] text-white/30 transition-colors hover:text-white/55 sm:bottom-5 sm:left-7"
-      >
-        Official Espressif model
-      </a>
     </div>
   )
 }
