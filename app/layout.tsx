@@ -42,6 +42,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`dark ${GeistSans.variable} ${GeistMono.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{if(sessionStorage.getItem("esap-landing-animation-seen")==="1"){document.documentElement.setAttribute("data-esap-landing-seen","1")}}catch(e){}',
+          }}
+        />
+      </head>
       <body className="min-h-screen font-sans antialiased bg-background text-foreground">
         <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
         <Analytics />
