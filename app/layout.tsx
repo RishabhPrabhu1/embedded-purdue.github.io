@@ -38,26 +38,35 @@ export const metadata: Metadata = {
 const landingFrameScript = `
 (function () {
   var root = document.documentElement;
-  var frameKey = "esap-landing-final-frame";
+  var frameKey = "esap-landing-final-frame-v2";
+  var posterKey = "esap-landing-final-poster-v2";
   var seenKey = "esap-landing-animation-seen";
 
-  function activateFrame(frame) {
-    if (!frame) return;
+  function activateFrame(frame, poster) {
+    if (!frame || !poster) return;
     root.style.setProperty("--esap-return-frame", 'url("' + frame + '")');
+    root.style.setProperty("--esap-return-poster", 'url("' + poster + '")');
     root.setAttribute("data-esap-return-frame", "1");
     try { sessionStorage.setItem(seenKey, "1"); } catch (e) {}
   }
 
   var bootFrame = null;
-  try { bootFrame = sessionStorage.getItem(frameKey); } catch (e) {}
+  var bootPoster = null;
+  try {
+    bootFrame = sessionStorage.getItem(frameKey);
+    bootPoster = sessionStorage.getItem(posterKey);
+  } catch (e) {}
 
-  if (bootFrame) {
-    activateFrame(bootFrame);
+  if (bootFrame && bootPoster) {
+    activateFrame(bootFrame, bootPoster);
     return;
   }
 
+  // Any older return-frame cache is intentionally ignored so the animation can
+  // run once and create the new fast poster + full-frame pair.
   try {
-    if (sessionStorage.getItem(seenKey) === "1") sessionStorage.removeItem(seenKey);
+    sessionStorage.removeItem(seenKey);
+    sessionStorage.removeItem("esap-landing-final-frame");
   } catch (e) {}
 
   function beginCapture() {
@@ -75,16 +84,48 @@ const landingFrameScript = `
       }
 
       try {
-        var frame = canvas.toDataURL("image/webp", 0.92);
+        // Bake the hero's real black background into the captured frame so the
+        // cached image is the complete final visual, not a transparent canvas layer.
+        var capture = document.createElement("canvas");
+        capture.width = canvas.width;
+        capture.height = canvas.height;
+        var captureContext = capture.getContext("2d", { alpha: false });
+        if (!captureContext) return;
+        captureContext.fillStyle = "#000000";
+        captureContext.fillRect(0, 0, capture.width, capture.height);
+        captureContext.drawImage(canvas, 0, 0);
+
+        var frame = capture.toDataURL("image/jpeg", 0.92);
         if (!frame || frame === "data:,") return;
 
+        // A small copy of the same actual final frame gives Safari something it
+        // can decode on the first paint while the full-resolution image decodes.
+        var poster = document.createElement("canvas");
+        poster.width = Math.min(480, capture.width);
+        poster.height = Math.max(1, Math.round(capture.height * poster.width / capture.width));
+        var posterContext = poster.getContext("2d", { alpha: false });
+        if (!posterContext) return;
+        posterContext.fillStyle = "#000000";
+        posterContext.fillRect(0, 0, poster.width, poster.height);
+        posterContext.drawImage(capture, 0, 0, poster.width, poster.height);
+
+        var posterFrame = poster.toDataURL("image/jpeg", 0.72);
+        if (!posterFrame || posterFrame === "data:,") return;
+
         sessionStorage.setItem(frameKey, frame);
+        sessionStorage.setItem(posterKey, posterFrame);
         sessionStorage.setItem(seenKey, "1");
 
-        // The first visit keeps the live canvas. Once its normal settle transition is over,
-        // switching to the identical cached bitmap is visually inert and primes client-side returns.
-        window.setTimeout(function () { activateFrame(frame); }, 760);
-      } catch (e) {}
+        // Leave the first visit's live canvas untouched through its normal settle.
+        // After that transition, swapping to the same captured visual is inert and
+        // primes client-side navigation back to the landing page.
+        window.setTimeout(function () { activateFrame(frame, posterFrame); }, 760);
+      } catch (e) {
+        try {
+          sessionStorage.removeItem(frameKey);
+          sessionStorage.removeItem(posterKey);
+        } catch (storageError) {}
+      }
     }
 
     requestAnimationFrame(captureWhenSettled);
@@ -126,10 +167,11 @@ html[data-esap-return-frame="1"] [data-landing-shell] > section:first-of-type::a
   height: 100svh !important;
   transform: translateY(-50%) !important;
   transform-origin: center !important;
-  background-image: var(--esap-return-frame) !important;
-  background-position: center !important;
-  background-repeat: no-repeat !important;
-  background-size: 100% 100% !important;
+  background-color: #000 !important;
+  background-image: var(--esap-return-frame), var(--esap-return-poster) !important;
+  background-position: center, center !important;
+  background-repeat: no-repeat, no-repeat !important;
+  background-size: 100% 100%, 100% 100% !important;
   filter: none !important;
   animation: none !important;
   -webkit-mask-image: none !important;
