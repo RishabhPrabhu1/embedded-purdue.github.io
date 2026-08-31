@@ -1,6 +1,6 @@
 "use client"
 
-import { createElement, useEffect, useRef, useState } from "react"
+import { createElement, useCallback, useEffect, useRef, useState } from "react"
 
 const MODEL_VIEWER_SCRIPT =
   "https://ajax.googleapis.com/ajax/libs/model-viewer/4.3.1/model-viewer.min.js"
@@ -24,6 +24,8 @@ type TuningKey = keyof TuningValues
 
 type ModelViewerElement = HTMLElement & {
   cameraOrbit: string
+  loaded?: boolean
+  jumpCameraToGoal?: () => void
 }
 
 type ModelViewerConstructor = CustomElementConstructor & {
@@ -60,7 +62,7 @@ function TuningSlider({
         max={max}
         step={step}
         value={value}
-        onChange={(event) => onChange(Number(event.currentTarget.value))}
+        onInput={(event) => onChange(Number(event.currentTarget.value))}
         className="h-1 w-full cursor-ew-resize accent-[#daa000]"
       />
       <span className="text-right font-mono text-[0.5rem] tabular-nums text-[#d8c076]">
@@ -165,6 +167,52 @@ export function Esp32Visual() {
     }
   }, [])
 
+  const applyValuesToModel = useCallback(
+    (model: ModelViewerElement, values: TuningValues, snapCamera = false) => {
+      model.setAttribute(
+        "orientation",
+        `${values.modelX}deg ${values.modelY}deg ${values.modelZ}deg`
+      )
+      model.setAttribute("field-of-view", `${values.fov}deg`)
+
+      const hover = hoverRef.current
+      model.cameraOrbit = `${(
+        values.theta +
+        hover.x * HORIZONTAL_ORBIT
+      ).toFixed(3)}deg ${(
+        values.phi -
+        hover.y * VERTICAL_ORBIT
+      ).toFixed(3)}deg ${values.radius}%`
+
+      if (snapCamera) model.jumpCameraToGoal?.()
+    },
+    []
+  )
+
+  const setModelNode = useCallback(
+    (node: HTMLElement | null) => {
+      const model = node as ModelViewerElement | null
+      modelRef.current = model
+
+      if (!model) {
+        modelLoadedRef.current = false
+        return
+      }
+
+      const markLoaded = () => {
+        modelLoadedRef.current = true
+        applyValuesToModel(model, tuningRef.current, true)
+      }
+
+      if (model.loaded) {
+        markLoaded()
+      } else {
+        model.addEventListener("load", markLoaded, { once: true })
+      }
+    },
+    [applyValuesToModel]
+  )
+
   const flushOrbit = () => {
     frameRef.current = null
     const model = modelRef.current
@@ -193,23 +241,17 @@ export function Esp32Visual() {
     )
   }
 
-  const applyModelTuning = (values = tuningRef.current) => {
+  const applyModelTuning = (values = tuningRef.current, snapCamera = false) => {
     const model = modelRef.current
     if (!model || !modelLoadedRef.current) return
-
-    model.setAttribute(
-      "orientation",
-      `${values.modelX}deg ${values.modelY}deg ${values.modelZ}deg`
-    )
-    model.setAttribute("field-of-view", `${values.fov}deg`)
-    applyCurrentOrbit(values)
+    applyValuesToModel(model, values, snapCamera)
   }
 
   const updateTuning = (key: TuningKey, value: number) => {
     const next = { ...tuningRef.current, [key]: value }
     tuningRef.current = next
     setTuning(next)
-    applyModelTuning(next)
+    applyModelTuning(next, true)
   }
 
   const resetTuning = () => {
@@ -217,7 +259,7 @@ export function Esp32Visual() {
     tuningRef.current = next
     hoverRef.current = { x: 0, y: 0 }
     setTuning(next)
-    applyModelTuning(next)
+    applyModelTuning(next, true)
   }
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -245,11 +287,6 @@ export function Esp32Visual() {
     applyCurrentOrbit()
   }
 
-  const handleModelLoad = () => {
-    modelLoadedRef.current = true
-    applyModelTuning(tuningRef.current)
-  }
-
   return (
     <div
       ref={viewerRef}
@@ -262,10 +299,7 @@ export function Esp32Visual() {
 
       {shouldLoadModel && viewerReady && !modelFailed &&
         createElement("model-viewer", {
-          ref: (node: HTMLElement | null) => {
-            modelRef.current = node as ModelViewerElement | null
-            if (!node) modelLoadedRef.current = false
-          },
+          ref: setModelNode,
           src: ESP32_MODEL,
           alt: "ESP32 38-pin ESP-WROOM-32 development board",
           loading: "lazy",
@@ -280,7 +314,6 @@ export function Esp32Visual() {
           exposure: "0.82",
           "shadow-intensity": "0",
           "interpolation-decay": "72",
-          onLoad: handleModelLoad,
           onError: () => {
             modelLoadedRef.current = false
             setModelFailed(true)
