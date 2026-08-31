@@ -1,3 +1,12 @@
+/* The hero already changes height during its handoff. Keep the intro from adding a second positional motion on top of it. */
+#hero-intro [data-hero-intro-grid] {
+  transform: none !important;
+  transition-property: opacity !important;
+  transition-duration: 280ms !important;
+  transition-timing-function: ease-out !important;
+  will-change: opacity;
+}
+
 /* Returning visits use the exact final canvas bitmap captured at animation completion. */
 html[data-esap-landing-seen="1"] body [data-landing-shell] {
   --landing-nav-opacity: 1 !important;
@@ -58,6 +67,7 @@ html[data-esap-landing-seen="1"] body #hero-intro > div:first-child {
 
 html[data-esap-landing-seen="1"] body #hero-intro [data-hero-intro-grid] {
   opacity: 1 !important;
-  transform: translateY(0) !important;
+  transform: none !important;
   transition: none !important;
+  will-change: auto;
 }
