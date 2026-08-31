@@ -259,6 +259,16 @@ export function PcbHero() {
     if (!hero || !canvas) return
 
     const shell = hero.closest("[data-landing-shell]") as HTMLElement | null
+
+    // Cached return visits are already fully represented by the boot-time poster
+    // and settled-state CSS. Do not run the renderer or flip React state after
+    // hydration; those unnecessary updates can make the intro below the hero jump.
+    if (document.documentElement.hasAttribute("data-esap-return-poster")) {
+      shell?.style.setProperty("--landing-nav-opacity", "1")
+      shell?.style.setProperty("--landing-content-opacity", "1")
+      return
+    }
+
     const context = canvas.getContext("2d", { alpha: true })
     if (!context) return
 
