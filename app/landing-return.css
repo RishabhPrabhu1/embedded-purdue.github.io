@@ -82,6 +82,15 @@ html[data-esap-landing-seen="1"] body #hero-intro [data-hero-intro-grid] {
   will-change: auto;
 }
 
+/* Do not expose fallback-font metrics on cached returns. Layout remains reserved while the real fonts finish. */
+html[data-esap-landing-seen="1"][data-esap-return-fonts-ready="0"] body #hero-intro [data-hero-intro-grid] {
+  visibility: hidden !important;
+}
+
+html[data-esap-landing-seen="1"][data-esap-return-fonts-ready="1"] body #hero-intro [data-hero-intro-grid] {
+  visibility: visible !important;
+}
+
 @media (min-width: 1024px) {
   html[data-esap-landing-seen="1"] body #hero-intro {
     height: var(--esap-return-intro-height, auto) !important;
