@@ -44,6 +44,7 @@ const returningLandingScript = `
   var currentShell = null;
   var settleObserver = null;
   var returnViewportHeight = 0;
+  var fontReadyRequest = 0;
 
   function readFrame() {
     try {
@@ -72,11 +73,31 @@ const returningLandingScript = `
     root.style.setProperty("--esap-return-intro-height", introHeight + "px");
   }
 
+  function exposeReturnFontsWhenReady() {
+    if (!root.hasAttribute("data-esap-landing-seen")) return;
+
+    if (!document.fonts || document.fonts.status === "loaded") {
+      root.setAttribute("data-esap-return-fonts-ready", "1");
+      return;
+    }
+
+    root.setAttribute("data-esap-return-fonts-ready", "0");
+    var request = ++fontReadyRequest;
+
+    document.fonts.ready.then(function () {
+      if (request !== fontReadyRequest || !root.hasAttribute("data-esap-landing-seen")) return;
+      requestAnimationFrame(function () {
+        if (request === fontReadyRequest) root.setAttribute("data-esap-return-fonts-ready", "1");
+      });
+    });
+  }
+
   function activateFrame(frame) {
     if (!frame) return false;
     setReturnGeometry();
     root.style.setProperty("--esap-landing-final-frame", 'url("' + frame + '")');
     root.setAttribute("data-esap-landing-seen", "1");
+    root.setAttribute("data-esap-return-fonts-ready", "0");
     return true;
   }
 
@@ -132,10 +153,13 @@ const returningLandingScript = `
     var frame = readFrame();
     if (frame) {
       activateFrame(frame);
+      exposeReturnFontsWhenReady();
       return;
     }
 
+    fontReadyRequest += 1;
     root.removeAttribute("data-esap-landing-seen");
+    root.removeAttribute("data-esap-return-fonts-ready");
     root.style.removeProperty("--esap-landing-final-frame");
     root.style.removeProperty("--esap-return-vh");
     root.style.removeProperty("--esap-return-hero-height");
@@ -160,6 +184,7 @@ const returningLandingScript = `
 
   function startLandingObserver() {
     syncLandingMount();
+    if (bootFrame) exposeReturnFontsWhenReady();
     var observer = new MutationObserver(syncLandingMount);
     observer.observe(document.body, { childList: true, subtree: true });
   }
