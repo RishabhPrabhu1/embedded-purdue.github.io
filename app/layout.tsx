@@ -5,6 +5,7 @@ import { GeistMono } from "geist/font/mono";
 import { Analytics } from "@vercel/analytics/next";
 import { Suspense } from "react";
 import "./globals.css";
+import "./landing-return.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -38,38 +39,101 @@ export const metadata: Metadata = {
 const returningLandingScript = `
 (function () {
   var root = document.documentElement;
-  var seenAtBoot = false;
+  var frameKey = "esap-landing-final-frame";
+  var seenKey = "esap-landing-animation-seen";
   var currentShell = null;
-  var firstLandingMountHandled = false;
+  var settleObserver = null;
 
-  try {
-    seenAtBoot = sessionStorage.getItem("esap-landing-animation-seen") === "1";
-  } catch (e) {}
-
-  if (seenAtBoot) root.setAttribute("data-esap-landing-seen", "1");
-
-  function storageSaysSeen() {
+  function readFrame() {
     try {
-      return sessionStorage.getItem("esap-landing-animation-seen") === "1";
+      return sessionStorage.getItem(frameKey);
     } catch (e) {
-      return false;
+      return null;
     }
+  }
+
+  function clearInvalidSeenState() {
+    try {
+      if (sessionStorage.getItem(seenKey) === "1" && !sessionStorage.getItem(frameKey)) {
+        sessionStorage.removeItem(seenKey);
+      }
+    } catch (e) {}
+  }
+
+  function activateFrame(frame) {
+    if (!frame) return false;
+    root.style.setProperty("--esap-landing-final-frame", 'url("' + frame + '")');
+    root.setAttribute("data-esap-landing-seen", "1");
+    return true;
+  }
+
+  function stopSettleObserver() {
+    if (settleObserver) settleObserver.disconnect();
+    settleObserver = null;
+  }
+
+  function cacheSettledCanvas(shell) {
+    stopSettleObserver();
+
+    var hero = shell.querySelector("section:first-of-type");
+    if (!hero) return;
+
+    function captureIfSettled() {
+      if (!hero.isConnected) {
+        stopSettleObserver();
+        return;
+      }
+
+      var canvas = hero.querySelector("canvas");
+      var isSettled = hero.className.indexOf("h-[min(66svh,600px)]") !== -1;
+      if (!canvas || !isSettled || canvas.width < 2 || canvas.height < 2) return;
+
+      try {
+        var frame = canvas.toDataURL("image/webp", 0.92);
+        if (!frame || frame === "data:,") return;
+
+        sessionStorage.setItem(frameKey, frame);
+        sessionStorage.setItem(seenKey, "1");
+        activateFrame(frame);
+        stopSettleObserver();
+      } catch (e) {
+        try {
+          sessionStorage.removeItem(seenKey);
+          sessionStorage.removeItem(frameKey);
+        } catch (storageError) {}
+      }
+    }
+
+    captureIfSettled();
+    settleObserver = new MutationObserver(captureIfSettled);
+    settleObserver.observe(hero, { attributes: true, attributeFilter: ["class"] });
   }
 
   function syncLandingMount() {
     var shell = document.querySelector("[data-landing-shell]");
     if (shell === currentShell) return;
 
+    stopSettleObserver();
     currentShell = shell;
     if (!shell) return;
 
-    if (!firstLandingMountHandled) {
-      firstLandingMountHandled = true;
-      if (seenAtBoot) root.setAttribute("data-esap-landing-seen", "1");
+    var frame = readFrame();
+    if (frame) {
+      activateFrame(frame);
       return;
     }
 
-    if (storageSaysSeen()) root.setAttribute("data-esap-landing-seen", "1");
+    root.removeAttribute("data-esap-landing-seen");
+    root.style.removeProperty("--esap-landing-final-frame");
+    clearInvalidSeenState();
+    cacheSettledCanvas(shell);
+  }
+
+  var bootFrame = readFrame();
+  if (bootFrame) {
+    activateFrame(bootFrame);
+  } else {
+    clearInvalidSeenState();
   }
 
   function startLandingObserver() {
@@ -94,7 +158,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <head>
-        <link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" />
         <script dangerouslySetInnerHTML={{ __html: returningLandingScript }} />
       </head>
       <body className="min-h-screen font-sans antialiased bg-background text-foreground">
