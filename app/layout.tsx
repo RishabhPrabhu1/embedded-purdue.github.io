@@ -36,27 +36,106 @@ export const metadata: Metadata = {
 };
 
 const returningLandingScript = `
-try {
-  if (sessionStorage.getItem("esap-landing-animation-seen") === "1") {
-    document.documentElement.setAttribute("data-esap-landing-seen", "1");
+(function () {
+  var root = document.documentElement;
+  var seenAtBoot = false;
 
-    var style = document.createElement("style");
-    style.id = "esap-returning-landing-style";
-    style.textContent = [
-      'html[data-esap-landing-seen="1"] [data-landing-shell]{--landing-nav-opacity:1!important;--landing-content-opacity:1!important}',
-      'html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type{height:min(66svh,600px)!important;min-height:500px!important;transition:none!important}',
-      'html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type canvas{top:calc(50% + 34px)!important;opacity:0!important;transition:none!important}',
-      'html[data-esap-landing-seen="1"][data-esap-canvas-ready="1"] [data-landing-shell]>section:first-of-type canvas{opacity:1!important}',
-      'html[data-esap-landing-seen="1"] [data-returning-logo-fallback]{display:block!important;opacity:1!important}',
-      'html[data-esap-landing-seen="1"][data-esap-canvas-ready="1"] [data-returning-logo-fallback]{opacity:0!important}',
-      'html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type::before,html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type::after{display:none!important}',
-      'html[data-esap-landing-seen="1"] #hero-intro{border-color:rgba(255,255,255,.08)!important;background:#0b0b0a!important;transition:none!important}',
-      'html[data-esap-landing-seen="1"] #hero-intro>div:first-child{opacity:1!important;transition:none!important}',
-      'html[data-esap-landing-seen="1"] #hero-intro [data-hero-intro-grid]{opacity:1!important;transform:translateY(0)!important;transition:none!important}'
-    ].join('');
-    document.head.appendChild(style);
+  try {
+    seenAtBoot = sessionStorage.getItem("esap-landing-animation-seen") === "1";
+  } catch (e) {}
+
+  if (seenAtBoot) root.setAttribute("data-esap-landing-seen", "1");
+
+  var style = document.createElement("style");
+  style.id = "esap-returning-landing-style";
+  style.textContent = [
+    'html[data-esap-landing-seen="1"] [data-landing-shell]{--landing-nav-opacity:1!important;--landing-content-opacity:1!important}',
+    'html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type{height:min(66svh,600px)!important;min-height:500px!important;transition:none!important}',
+    'html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type canvas{top:calc(50% + 34px)!important;opacity:0!important;transition:none!important}',
+    'html[data-esap-landing-seen="1"][data-esap-canvas-ready="1"] [data-landing-shell]>section:first-of-type canvas{opacity:1!important}',
+    'html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type::before{display:none!important}',
+    'html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type::after{content:""!important;display:block!important;position:absolute!important;left:50%!important;top:calc(50% + 34px)!important;width:66.25%!important;height:clamp(267px,34.69svh,338px)!important;transform:translate(-50%,-50%)!important;transform-origin:center!important;background:url("/logo.svg") center/100% 100% no-repeat!important;filter:none!important;animation:none!important;-webkit-mask-image:none!important;mask-image:none!important;opacity:1!important;z-index:2!important;pointer-events:none!important}',
+    'html[data-esap-landing-seen="1"][data-esap-canvas-ready="1"] [data-landing-shell]>section:first-of-type::after{opacity:0!important}',
+    'html[data-esap-landing-seen="1"] #hero-intro{border-color:rgba(255,255,255,.08)!important;background:#0b0b0a!important;transition:none!important}',
+    'html[data-esap-landing-seen="1"] #hero-intro>div:first-child{opacity:1!important;transition:none!important}',
+    'html[data-esap-landing-seen="1"] #hero-intro [data-hero-intro-grid]{opacity:1!important;transform:translateY(0)!important;transition:none!important}'
+  ].join('');
+  document.head.appendChild(style);
+
+  var landingMounted = false;
+  var canvasWatch = 0;
+
+  function storageSaysSeen() {
+    try {
+      return sessionStorage.getItem("esap-landing-animation-seen") === "1";
+    } catch (e) {
+      return false;
+    }
   }
-} catch (e) {}
+
+  function stopCanvasWatch() {
+    if (canvasWatch) cancelAnimationFrame(canvasWatch);
+    canvasWatch = 0;
+  }
+
+  function watchCanvas(shell) {
+    stopCanvasWatch();
+
+    function check() {
+      if (!shell.isConnected) {
+        canvasWatch = 0;
+        return;
+      }
+
+      var canvas = shell.querySelector("section:first-of-type canvas");
+      if (canvas && canvas.width > 300 && canvas.height > 300) {
+        canvasWatch = requestAnimationFrame(function () {
+          if (shell.isConnected) root.setAttribute("data-esap-canvas-ready", "1");
+          canvasWatch = 0;
+        });
+        return;
+      }
+
+      canvasWatch = requestAnimationFrame(check);
+    }
+
+    canvasWatch = requestAnimationFrame(check);
+  }
+
+  function syncLandingMount() {
+    var shell = document.querySelector("[data-landing-shell]");
+
+    if (!shell) {
+      if (landingMounted) {
+        landingMounted = false;
+        root.removeAttribute("data-esap-canvas-ready");
+        stopCanvasWatch();
+      }
+      return;
+    }
+
+    if (landingMounted) return;
+    landingMounted = true;
+
+    if (!storageSaysSeen()) return;
+
+    root.setAttribute("data-esap-landing-seen", "1");
+    root.removeAttribute("data-esap-canvas-ready");
+    watchCanvas(shell);
+  }
+
+  function startLandingObserver() {
+    syncLandingMount();
+    var observer = new MutationObserver(syncLandingMount);
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", startLandingObserver, { once: true });
+  } else {
+    startLandingObserver();
+  }
+})();
 `;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
