@@ -655,7 +655,8 @@ export function PcbHero() {
       >
         <canvas
           ref={canvasRef}
-          className="pointer-events-none absolute left-0 top-1/2 z-[1] h-[100svh] w-full -translate-y-1/2"
+          className="pointer-events-none absolute left-0 z-[1] h-[100svh] w-full -translate-y-1/2 transition-[top] duration-700 ease-[cubic-bezier(.22,1,.36,1)]"
+          style={{ top: settled ? "calc(50% + 34px)" : "50%" }}
           aria-hidden="true"
         />
       </section>
