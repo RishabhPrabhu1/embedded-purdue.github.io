@@ -145,3 +145,53 @@
     @apply bg-secondary text-secondary-foreground;
   }
 }
+
+/* On desktop, the settled hero and its intro together occupy exactly one viewport. */
+@media (min-width: 1024px) {
+  #hero-intro {
+    height: calc(100svh - clamp(500px, 66svh, 600px));
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #hero-intro > div:nth-child(2) {
+    height: 100%;
+  }
+
+  #hero-intro > div:nth-child(2) > div {
+    min-height: 0;
+  }
+
+  #hero-intro > div:nth-child(2) > div:first-child {
+    padding-top: clamp(0.85rem, 1.8vh, 1.5rem);
+    padding-bottom: clamp(0.85rem, 1.8vh, 1.5rem);
+  }
+
+  #hero-intro > div:nth-child(2) > div:first-child > div {
+    margin-top: clamp(0.6rem, 1.5vh, 1.25rem);
+  }
+
+  #hero-intro > div:nth-child(2) > div:last-child {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: clamp(0.85rem, 1.8vh, 1.5rem);
+    padding-bottom: clamp(0.85rem, 1.8vh, 1.5rem);
+  }
+
+  #hero-intro h1 {
+    font-size: clamp(1.8rem, 4.6vh, 3.55rem);
+    line-height: 0.94;
+  }
+
+  #hero-intro h1 + div {
+    margin-top: clamp(0.6rem, 1.5vh, 1.25rem);
+    padding-top: clamp(0.6rem, 1.5vh, 1.25rem);
+    gap: clamp(0.7rem, 1.6vh, 1.35rem);
+  }
+
+  #hero-intro h1 + div > p {
+    font-size: clamp(0.78rem, 1.6vh, 0.95rem);
+    line-height: 1.45;
+  }
+}
