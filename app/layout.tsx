@@ -38,123 +38,171 @@ export const metadata: Metadata = {
 const landingFrameScript = `
 (function () {
   var root = document.documentElement;
-  var frameKey = "esap-landing-final-frame-v2";
-  var posterKey = "esap-landing-final-poster-v2";
+  var posterKey = "esap-landing-final-poster-v3";
   var seenKey = "esap-landing-animation-seen";
+  var currentShell = null;
+  var captureToken = 0;
 
-  function activateFrame(frame, poster) {
-    if (!frame || !poster) return;
-    root.style.setProperty("--esap-return-frame", 'url("' + frame + '")');
+  function readPoster() {
+    try { return sessionStorage.getItem(posterKey); } catch (e) { return null; }
+  }
+
+  function activatePoster(poster) {
+    if (!poster) return false;
     root.style.setProperty("--esap-return-poster", 'url("' + poster + '")');
-    root.setAttribute("data-esap-return-frame", "1");
+    root.setAttribute("data-esap-return-poster", "1");
     try { sessionStorage.setItem(seenKey, "1"); } catch (e) {}
+    return true;
   }
 
-  var bootFrame = null;
-  var bootPoster = null;
-  try {
-    bootFrame = sessionStorage.getItem(frameKey);
-    bootPoster = sessionStorage.getItem(posterKey);
-  } catch (e) {}
-
-  if (bootFrame && bootPoster) {
-    activateFrame(bootFrame, bootPoster);
-    return;
+  var bootPoster = readPoster();
+  if (bootPoster) {
+    activatePoster(bootPoster);
+  } else {
+    // A "seen" flag without a poster cannot provide a stable first paint.
+    // Replay the animation once and create the poster instead.
+    try {
+      sessionStorage.removeItem(seenKey);
+      sessionStorage.removeItem("esap-landing-final-frame");
+      sessionStorage.removeItem("esap-landing-final-frame-v2");
+      sessionStorage.removeItem("esap-landing-final-poster-v2");
+    } catch (e) {}
   }
 
-  // Any older return-frame cache is intentionally ignored so the animation can
-  // run once and create the new fast poster + full-frame pair.
-  try {
-    sessionStorage.removeItem(seenKey);
-    sessionStorage.removeItem("esap-landing-final-frame");
-  } catch (e) {}
+  function waitForFinalCanvas(shell, token) {
+    function check() {
+      if (token !== captureToken || !shell.isConnected) return;
 
-  function beginCapture() {
-    var shell = document.querySelector("[data-landing-shell]");
-    if (!shell) return;
+      var hero = shell.querySelector("section:first-of-type");
+      var canvas = hero && hero.querySelector("canvas");
+      if (!hero || !canvas) {
+        requestAnimationFrame(check);
+        return;
+      }
 
-    function captureWhenSettled() {
+      var dpr = Math.min(window.devicePixelRatio || 1, 1.1);
+      var expectedWidth = Math.round(Math.max(1, hero.getBoundingClientRect().width) * dpr);
+      var expectedHeight = Math.round(Math.max(1, window.innerHeight) * dpr);
+      var settled = hero.className.indexOf("h-[min(66svh,600px)]") !== -1;
+      var sized = Math.abs(canvas.width - expectedWidth) <= 2 && Math.abs(canvas.height - expectedHeight) <= 2;
+
+      if (!settled || !sized) {
+        requestAnimationFrame(check);
+        return;
+      }
+
+      // resize() and draw(animationEnd) run synchronously in the hero. Waiting one
+      // more frame guarantees the finished canvas is painted before the poster leaves.
+      requestAnimationFrame(function () {
+        if (token === captureToken && shell.isConnected) {
+          root.setAttribute("data-esap-return-canvas-ready", "1");
+        }
+      });
+    }
+
+    requestAnimationFrame(check);
+  }
+
+  function capturePoster(shell, token) {
+    function check() {
+      if (token !== captureToken || !shell.isConnected) return;
+
       var hero = shell.querySelector("section:first-of-type");
       var canvas = hero && hero.querySelector("canvas");
       var settled = hero && hero.className.indexOf("h-[min(66svh,600px)]") !== -1;
 
       if (!hero || !canvas || !settled || canvas.width < 2 || canvas.height < 2) {
-        requestAnimationFrame(captureWhenSettled);
+        requestAnimationFrame(check);
         return;
       }
 
       try {
-        // Bake the hero's real black background into the captured frame so the
-        // cached image is the complete final visual, not a transparent canvas layer.
-        var capture = document.createElement("canvas");
-        capture.width = canvas.width;
-        capture.height = canvas.height;
-        var captureContext = capture.getContext("2d", { alpha: false });
-        if (!captureContext) return;
-        captureContext.fillStyle = "#000000";
-        captureContext.fillRect(0, 0, capture.width, capture.height);
-        captureContext.drawImage(canvas, 0, 0);
+        // Cache only a tiny version of the real finished canvas. It is small enough
+        // for Safari to decode immediately and exists solely to bridge hydration.
+        var poster = document.createElement("canvas");
+        poster.width = Math.min(192, canvas.width);
+        poster.height = Math.max(1, Math.round(canvas.height * poster.width / canvas.width));
+        var context = poster.getContext("2d", { alpha: false });
+        if (!context) return;
 
-        var frame = capture.toDataURL("image/jpeg", 0.92);
+        context.fillStyle = "#000000";
+        context.fillRect(0, 0, poster.width, poster.height);
+        context.drawImage(canvas, 0, 0, poster.width, poster.height);
+
+        var frame = poster.toDataURL("image/jpeg", 0.58);
         if (!frame || frame === "data:,") return;
 
-        // A small copy of the same actual final frame gives Safari something it
-        // can decode on the first paint while the full-resolution image decodes.
-        var poster = document.createElement("canvas");
-        poster.width = Math.min(480, capture.width);
-        poster.height = Math.max(1, Math.round(capture.height * poster.width / capture.width));
-        var posterContext = poster.getContext("2d", { alpha: false });
-        if (!posterContext) return;
-        posterContext.fillStyle = "#000000";
-        posterContext.fillRect(0, 0, poster.width, poster.height);
-        posterContext.drawImage(capture, 0, 0, poster.width, poster.height);
-
-        var posterFrame = poster.toDataURL("image/jpeg", 0.72);
-        if (!posterFrame || posterFrame === "data:,") return;
-
-        sessionStorage.setItem(frameKey, frame);
-        sessionStorage.setItem(posterKey, posterFrame);
+        sessionStorage.setItem(posterKey, frame);
         sessionStorage.setItem(seenKey, "1");
-
-        // Leave the first visit's live canvas untouched through its normal settle.
-        // After that transition, swapping to the same captured visual is inert and
-        // primes client-side navigation back to the landing page.
-        window.setTimeout(function () { activateFrame(frame, posterFrame); }, 760);
-      } catch (e) {
-        try {
-          sessionStorage.removeItem(frameKey);
-          sessionStorage.removeItem(posterKey);
-        } catch (storageError) {}
-      }
+        // Do not activate it on this visit. The live canvas remains untouched.
+      } catch (e) {}
     }
 
-    requestAnimationFrame(captureWhenSettled);
+    requestAnimationFrame(check);
+  }
+
+  function syncLandingShell() {
+    var shell = document.querySelector("[data-landing-shell]");
+    if (shell === currentShell) return;
+
+    currentShell = shell;
+    captureToken += 1;
+    root.removeAttribute("data-esap-return-canvas-ready");
+
+    if (!shell) return;
+
+    var token = captureToken;
+    var poster = readPoster();
+    if (poster) {
+      activatePoster(poster);
+      waitForFinalCanvas(shell, token);
+    } else {
+      root.removeAttribute("data-esap-return-poster");
+      root.style.removeProperty("--esap-return-poster");
+      capturePoster(shell, token);
+    }
+  }
+
+  function start() {
+    syncLandingShell();
+    var observer = new MutationObserver(syncLandingShell);
+    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", beginCapture, { once: true });
+    document.addEventListener("DOMContentLoaded", start, { once: true });
   } else {
-    beginCapture();
+    start();
   }
 })();
 `;
 
 const landingFrameStyle = `
-html[data-esap-return-frame="1"] [data-landing-shell] > section:first-of-type {
+/* Cached returns only override visibility/paint state; normal landing layout CSS stays intact. */
+html[data-esap-return-poster="1"] [data-landing-shell] {
+  --landing-nav-opacity: 1 !important;
+  --landing-content-opacity: 1 !important;
+}
+
+html[data-esap-return-poster="1"] [data-landing-shell] > section:first-of-type {
   height: min(66svh, 600px) !important;
   min-height: 500px !important;
   transition: none !important;
 }
 
-html[data-esap-return-frame="1"] [data-landing-shell] > section:first-of-type canvas {
+html[data-esap-return-poster="1"] [data-landing-shell] > section:first-of-type canvas {
   visibility: hidden !important;
 }
 
-html[data-esap-return-frame="1"] [data-landing-shell] > section:first-of-type::before {
+html[data-esap-return-poster="1"][data-esap-return-canvas-ready="1"] [data-landing-shell] > section:first-of-type canvas {
+  visibility: visible !important;
+}
+
+html[data-esap-return-poster="1"] [data-landing-shell] > section:first-of-type::before {
   display: none !important;
 }
 
-html[data-esap-return-frame="1"] [data-landing-shell] > section:first-of-type::after {
+html[data-esap-return-poster="1"] [data-landing-shell] > section:first-of-type::after {
   content: "" !important;
   display: block !important;
   position: absolute !important;
@@ -168,16 +216,36 @@ html[data-esap-return-frame="1"] [data-landing-shell] > section:first-of-type::a
   transform: translateY(-50%) !important;
   transform-origin: center !important;
   background-color: #000 !important;
-  background-image: var(--esap-return-frame), var(--esap-return-poster) !important;
-  background-position: center, center !important;
-  background-repeat: no-repeat, no-repeat !important;
-  background-size: 100% 100%, 100% 100% !important;
+  background-image: var(--esap-return-poster) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 100% !important;
   filter: none !important;
   animation: none !important;
   -webkit-mask-image: none !important;
   mask-image: none !important;
   opacity: 1 !important;
   pointer-events: none !important;
+}
+
+html[data-esap-return-poster="1"][data-esap-return-canvas-ready="1"] [data-landing-shell] > section:first-of-type::after {
+  display: none !important;
+}
+
+html[data-esap-return-poster="1"] #hero-intro {
+  border-color: rgba(255,255,255,.08) !important;
+  background: #0b0b0a !important;
+  transition: none !important;
+}
+
+/* Preserve the normal intro dimensions. Remove only the return-visit movement. */
+html[data-esap-return-poster="1"] #hero-intro > div:first-child,
+html[data-esap-return-poster="1"] #hero-intro [data-hero-intro-grid] {
+  transition: none !important;
+}
+
+html[data-esap-return-poster="1"] #hero-intro [data-hero-intro-grid] {
+  transform: none !important;
 }
 `;
 
