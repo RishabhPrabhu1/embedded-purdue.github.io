@@ -374,8 +374,9 @@ export function PcbHero() {
       const rect = hero.getBoundingClientRect()
       cssWidth = Math.max(1, rect.width)
       cssHeight = Math.max(1, rect.height)
-      scaleX = cssWidth / VW
-      scaleY = cssHeight / VH
+      const uniformScale = Math.min(cssWidth / VW, cssHeight / VH)
+      scaleX = uniformScale
+      scaleY = uniformScale
       dpr = Math.min(window.devicePixelRatio || 1, 1.1)
       canvas.width = Math.round(cssWidth * dpr)
       canvas.height = Math.round(cssHeight * dpr)
@@ -558,6 +559,7 @@ export function PcbHero() {
       context.clearRect(0, 0, cssWidth, cssHeight)
 
       context.save()
+      context.translate((cssWidth - VW * scaleX) / 2, (cssHeight - VH * scaleY) / 2)
       context.scale(scaleX, scaleY)
       drawAmbientLight(time)
       drawPorts(time)
