@@ -5,7 +5,7 @@ import { createElement, useEffect, useRef, useState } from "react"
 const MODEL_VIEWER_SCRIPT =
   "https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"
 const ESP32_MODEL =
-  "https://www.espressif.com/sites/default/files/3dmodel/ESP32-WROOM-32E_20210903.glb"
+  "https://raw.githubusercontent.com/mfranzon/circuitiny/main/resources/boards/xiao-esp32s3.glb"
 
 export function Esp32Visual() {
   const viewerRef = useRef<HTMLDivElement>(null)
@@ -72,11 +72,11 @@ export function Esp32Visual() {
     const model = modelRef.current
     if (!model) return
 
+    // Rotation only: keep distance and FOV fixed so the board never appears to swell.
     model.setAttribute(
       "camera-orbit",
-      hovered ? "32deg 63deg 118%" : "18deg 68deg 124%"
+      hovered ? "34deg 58deg 116%" : "18deg 66deg 116%"
     )
-    model.setAttribute("field-of-view", hovered ? "26deg" : "29deg")
   }
 
   return (
@@ -95,22 +95,22 @@ export function Esp32Visual() {
             modelRef.current = node
           },
           src: ESP32_MODEL,
-          alt: "ESP32-WROOM-32E 3D model",
+          alt: "XIAO ESP32-S3 3D model",
           loading: "lazy",
           reveal: "auto",
-          "camera-orbit": "18deg 68deg 124%",
+          "camera-orbit": "18deg 66deg 116%",
           "field-of-view": "29deg",
           "interaction-prompt": "none",
           "environment-image": "neutral",
-          exposure: "0.95",
-          "shadow-intensity": "0.55",
-          "shadow-softness": "0.95",
-          "interpolation-decay": "110",
+          exposure: "0.98",
+          "shadow-intensity": "0.65",
+          "shadow-softness": "0.92",
+          "interpolation-decay": "85",
           onError: () => setModelFailed(true),
           style: {
             position: "absolute",
-            inset: "2% -4% -2% -4%",
-            width: "108%",
+            inset: "0 -3%",
+            width: "106%",
             height: "100%",
             background: "transparent",
             pointerEvents: "none",
