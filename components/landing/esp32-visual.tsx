@@ -6,13 +6,15 @@ const MODEL_VIEWER_SCRIPT =
   "https://ajax.googleapis.com/ajax/libs/model-viewer/4.3.1/model-viewer.min.js"
 const ESP32_MODEL = "/models/esp32/esp32-38pin.glb"
 
-// Product-shot baseline: the board sits horizontally, the pin rows read below
-// the PCB, and the front edge is biased slightly toward the viewer.
-const BASE_THETA = 178
-const BASE_PHI = 74
-const CAMERA_RADIUS = 94
+// The converted CAD arrives with its PCB plane standing vertically. Rotate the
+// model itself onto a tabletop-like pose, then use a modest camera orbit around
+// that stable baseline so the board reads horizontally with the pins below it.
+const BASE_THETA = 90
+const BASE_PHI = 61
+const CAMERA_RADIUS = 96
 const HORIZONTAL_ORBIT = 6.5
 const VERTICAL_ORBIT = 4.25
+const MODEL_ORIENTATION = "0deg -90deg 0deg"
 
 type ModelViewerElement = HTMLElement & {
   cameraOrbit: string
@@ -146,9 +148,8 @@ export function Esp32Visual() {
       Math.min(1, ((event.clientY - rect.top) / rect.height) * 2 - 1)
     )
 
-    // Match the first visual's feel: the board continuously follows cursor
-    // position across the panel. Vertical response is inverted so moving the
-    // cursor down tips the near edge toward the viewer rather than away.
+    // Keep the first visual's direct cursor-follow feel, but only orbit a few
+    // degrees around the horizontal product-shot baseline.
     queueOrbit(
       BASE_THETA + x * HORIZONTAL_ORBIT,
       BASE_PHI - y * VERTICAL_ORBIT
@@ -178,8 +179,9 @@ export function Esp32Visual() {
           alt: "ESP32 38-pin ESP-WROOM-32 development board",
           loading: "lazy",
           reveal: "auto",
+          orientation: MODEL_ORIENTATION,
           "camera-orbit": `${BASE_THETA}deg ${BASE_PHI}deg ${CAMERA_RADIUS}%`,
-          "field-of-view": "25.5deg",
+          "field-of-view": "26deg",
           "camera-target": "auto auto auto",
           "interaction-prompt": "none",
           "environment-image": "neutral",
