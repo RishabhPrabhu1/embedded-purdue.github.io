@@ -5,7 +5,6 @@ import { GeistMono } from "geist/font/mono";
 import { Analytics } from "@vercel/analytics/next";
 import { Suspense } from "react";
 import "./globals.css";
-import "./landing-return.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -36,165 +35,55 @@ export const metadata: Metadata = {
   generator: "esap-web",
 };
 
-const returningLandingScript = `
-(function () {
-  var root = document.documentElement;
-  var frameKey = "esap-landing-final-frame";
-  var seenKey = "esap-landing-animation-seen";
-  var currentShell = null;
-  var settleObserver = null;
-  var returnViewportHeight = 0;
-  var fontReadyRequest = 0;
-
-  function readFrame() {
-    try {
-      return sessionStorage.getItem(frameKey);
-    } catch (e) {
-      return null;
-    }
+const landingFrameScript = `
+try {
+  var frame = sessionStorage.getItem("esap-landing-final-frame");
+  if (frame) {
+    document.documentElement.setAttribute("data-esap-return-frame", "1");
+    document.documentElement.style.setProperty("--esap-return-frame", 'url("' + frame + '")');
   }
+} catch (e) {}
+`;
 
-  function clearInvalidSeenState() {
-    try {
-      if (sessionStorage.getItem(seenKey) === "1" && !sessionStorage.getItem(frameKey)) {
-        sessionStorage.removeItem(seenKey);
-      }
-    } catch (e) {}
-  }
+const landingFrameStyle = `
+html[data-esap-return-frame="1"] [data-pcb-hero] {
+  height: min(66svh, 600px) !important;
+  min-height: 500px !important;
+  transition: none !important;
+}
 
-  function setReturnGeometry() {
-    var viewportHeight = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 760);
-    var heroHeight = Math.max(500, Math.min(viewportHeight * 0.66, 600));
-    var introHeight = Math.max(0, Math.min(276, viewportHeight - heroHeight));
+html[data-esap-return-frame="1"] [data-pcb-hero] canvas {
+  visibility: hidden !important;
+}
 
-    returnViewportHeight = viewportHeight;
-    root.style.setProperty("--esap-return-vh", viewportHeight + "px");
-    root.style.setProperty("--esap-return-hero-height", heroHeight + "px");
-    root.style.setProperty("--esap-return-intro-height", introHeight + "px");
-  }
+html[data-esap-return-frame="1"] [data-pcb-hero]::before {
+  display: none !important;
+}
 
-  function exposeReturnFontsWhenReady() {
-    if (!root.hasAttribute("data-esap-landing-seen")) return;
-
-    if (!document.fonts || document.fonts.status === "loaded") {
-      root.setAttribute("data-esap-return-fonts-ready", "1");
-      return;
-    }
-
-    root.setAttribute("data-esap-return-fonts-ready", "0");
-    var request = ++fontReadyRequest;
-
-    document.fonts.ready.then(function () {
-      if (request !== fontReadyRequest || !root.hasAttribute("data-esap-landing-seen")) return;
-      requestAnimationFrame(function () {
-        if (request === fontReadyRequest) root.setAttribute("data-esap-return-fonts-ready", "1");
-      });
-    });
-  }
-
-  function activateFrame(frame) {
-    if (!frame) return false;
-    setReturnGeometry();
-    root.style.setProperty("--esap-landing-final-frame", 'url("' + frame + '")');
-    root.setAttribute("data-esap-landing-seen", "1");
-    root.setAttribute("data-esap-return-fonts-ready", "0");
-    return true;
-  }
-
-  function stopSettleObserver() {
-    if (settleObserver) settleObserver.disconnect();
-    settleObserver = null;
-  }
-
-  function cacheSettledCanvas(shell) {
-    stopSettleObserver();
-
-    var hero = shell.querySelector("section:first-of-type");
-    if (!hero) return;
-
-    function captureIfSettled() {
-      if (!hero.isConnected) {
-        stopSettleObserver();
-        return;
-      }
-
-      var canvas = hero.querySelector("canvas");
-      var isSettled = hero.className.indexOf("h-[min(66svh,600px)]") !== -1;
-      if (!canvas || !isSettled || canvas.width < 2 || canvas.height < 2) return;
-
-      try {
-        var frame = canvas.toDataURL("image/webp", 0.92);
-        if (!frame || frame === "data:,") return;
-
-        sessionStorage.setItem(frameKey, frame);
-        sessionStorage.setItem(seenKey, "1");
-        stopSettleObserver();
-      } catch (e) {
-        try {
-          sessionStorage.removeItem(seenKey);
-          sessionStorage.removeItem(frameKey);
-        } catch (storageError) {}
-      }
-    }
-
-    captureIfSettled();
-    settleObserver = new MutationObserver(captureIfSettled);
-    settleObserver.observe(hero, { attributes: true, attributeFilter: ["class"] });
-  }
-
-  function syncLandingMount() {
-    var shell = document.querySelector("[data-landing-shell]");
-    if (shell === currentShell) return;
-
-    stopSettleObserver();
-    currentShell = shell;
-    if (!shell) return;
-
-    var frame = readFrame();
-    if (frame) {
-      activateFrame(frame);
-      exposeReturnFontsWhenReady();
-      return;
-    }
-
-    fontReadyRequest += 1;
-    root.removeAttribute("data-esap-landing-seen");
-    root.removeAttribute("data-esap-return-fonts-ready");
-    root.style.removeProperty("--esap-landing-final-frame");
-    root.style.removeProperty("--esap-return-vh");
-    root.style.removeProperty("--esap-return-hero-height");
-    root.style.removeProperty("--esap-return-intro-height");
-    clearInvalidSeenState();
-    cacheSettledCanvas(shell);
-  }
-
-  var bootFrame = readFrame();
-  if (bootFrame) {
-    activateFrame(bootFrame);
-  } else {
-    clearInvalidSeenState();
-  }
-
-  window.addEventListener("resize", function () {
-    if (!root.hasAttribute("data-esap-landing-seen")) return;
-    var nextHeight = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 760);
-    if (Math.abs(nextHeight - returnViewportHeight) < 48) return;
-    setReturnGeometry();
-  }, { passive: true });
-
-  function startLandingObserver() {
-    syncLandingMount();
-    if (bootFrame) exposeReturnFontsWhenReady();
-    var observer = new MutationObserver(syncLandingMount);
-    observer.observe(document.body, { childList: true, subtree: true });
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", startLandingObserver, { once: true });
-  } else {
-    startLandingObserver();
-  }
-})();
+html[data-esap-return-frame="1"] [data-pcb-hero]::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  z-index: 3 !important;
+  left: 0 !important;
+  right: auto !important;
+  top: calc(50% + 34px) !important;
+  bottom: auto !important;
+  width: 100% !important;
+  height: 100svh !important;
+  transform: translateY(-50%) !important;
+  transform-origin: center !important;
+  background-image: var(--esap-return-frame) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 100% !important;
+  filter: none !important;
+  animation: none !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+  opacity: 1 !important;
+  pointer-events: none !important;
+}
 `;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -205,7 +94,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: returningLandingScript }} />
+        <style dangerouslySetInnerHTML={{ __html: landingFrameStyle }} />
+        <script dangerouslySetInnerHTML={{ __html: landingFrameScript }} />
       </head>
       <body className="min-h-screen font-sans antialiased bg-background text-foreground">
         <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
