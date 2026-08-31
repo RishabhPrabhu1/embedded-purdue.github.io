@@ -4,7 +4,7 @@ import { createElement, useEffect, useRef, useState } from "react"
 
 const MODEL_VIEWER_SCRIPT =
   "https://ajax.googleapis.com/ajax/libs/model-viewer/4.3.1/model-viewer.min.js"
-const ESP32_MODEL = "/models/esp32/esp32-38pin.glb?v=3"
+const ESP32_MODEL = "/models/esp32/esp32-38pin.glb?v=4"
 
 // The converted CAD arrives with its PCB plane standing vertically. Rotate the
 // model itself onto a tabletop-like pose, then use a modest camera orbit around
@@ -178,9 +178,7 @@ export function Esp32Visual() {
     )
     if (!pcbMaterial) return
 
-    // PCB solder mask is a matte dielectric, not a glossy metal. Keeping this
-    // surface rough suppresses the bright specular wedges that make any residual
-    // CAD tessellation/normal imperfections visible while the board is moving.
+    // PCB solder mask is a matte dielectric, not a glossy metal.
     pcbMaterial.pbrMetallicRoughness.setMetallicFactor(0.02)
     pcbMaterial.pbrMetallicRoughness.setRoughnessFactor(0.82)
   }
