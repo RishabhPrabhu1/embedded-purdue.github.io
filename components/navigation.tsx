@@ -74,9 +74,9 @@ export function Navigation() {
             href="https://discord.gg/MkPv9s9cj3"
             target="_blank"
             rel="noopener noreferrer"
-            className="group inline-flex h-9 items-center gap-2 border border-[#daa000]/40 px-4 font-mono text-[0.61rem] uppercase tracking-[0.14em] text-[#d8bb67] transition-colors hover:border-[#daa000] hover:bg-[#daa000] hover:text-[#11110f]"
+            className="group inline-flex h-9 items-center gap-2 border border-[#7289ff]/35 bg-[#5865F2] px-4 font-mono text-[0.61rem] font-semibold uppercase tracking-[0.14em] text-white shadow-[0_6px_20px_rgba(88,101,242,.16)] transition-colors hover:border-[#8b96ff] hover:bg-[#6875f5]"
           >
-            Join
+            Discord
             <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
           </Link>
         </div>
@@ -118,9 +118,9 @@ export function Navigation() {
                   href="https://discord.gg/MkPv9s9cj3"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-11 w-full items-center justify-between bg-[#daa000] px-4 font-mono text-[0.64rem] font-semibold uppercase tracking-[0.15em] text-[#11110f]"
+                  className="flex h-11 w-full items-center justify-between bg-[#5865F2] px-4 font-mono text-[0.64rem] font-semibold uppercase tracking-[0.15em] text-white transition-colors hover:bg-[#6875f5]"
                 >
-                  Join Discord
+                  Discord
                   <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
               </div>
