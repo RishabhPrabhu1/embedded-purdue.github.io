@@ -1,435 +1,340 @@
 // app/projects/_ProjectsGridClient.tsx
-"use client";
+"use client"
 
-import Link from "next/link";
-import { useMemo, useCallback, useState, useRef, useEffect } from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ChevronDown, X } from "lucide-react";
-import { allStatuses, collectTechs, collectSemesters } from "./_data";
-import type { Project as DataProject } from "./_data";
+import Link from "next/link"
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { ArrowUpRight, ChevronDown, Search, X } from "lucide-react"
 
-// Locally we allow description/image to be optional since sanitizeProjects()
-// in page.tsx strips non-serializable fields; intersect with Omit to relax those.
+import { allStatuses, collectSemesters, collectTechs } from "./_data"
+import type { Project as DataProject } from "./_data"
+
 type Project = Omit<DataProject, "description" | "image" | "icon"> & {
-  description?: string;  // may be absent after sanitization
-  image?: string;        // may be filename or absolute
-};
-
-/** Normalize project image to a public URL under `/projects/<slug>/...` */
-function resolveProjectImage(p: Project) {
-  const raw = p.image || "";
-  if (!raw) return "/projects/logo.png";
-  if (/^https?:\/\//i.test(raw)) return raw;
-
-  // normalize to /projects/<slug>/<file>
-  let path = raw.replace(/^\/+/, "");
-  if (path.startsWith("projects/")) path = path.slice("projects/".length);
-  if (path.startsWith(`${p.slug}/`)) return `/projects/${path}`;
-  return `/projects/${p.slug}/${path}`;
+  description?: string
+  image?: string
 }
 
-// Status priority: Active first, then Planned, then Completed
-const STATUS_ORDER: Record<string, number> = { Active: 0, Planned: 1, Completed: 2 };
+const STATUS_ORDER: Record<string, number> = { Active: 0, Planned: 1, Completed: 2 }
 
-/** Decide where the card should link */
-function resolveProjectHref(p: Project): { href: string; external: boolean } {
-  const url = p.readmeUrl?.trim();
+function resolveProjectImage(project: Project) {
+  const raw = project.image?.trim() ?? ""
+  if (!raw) return "/projects/logo.png"
+  if (/^https?:\/\//i.test(raw)) return raw
+  if (raw.startsWith("/")) return raw
 
-  // External link
-  if (url && /^https?:\/\//i.test(url)) {
-    return { href: url, external: true };
-  }
-
-  // Bad internal file path (not served by Next)
-  if (url && url.startsWith("/content/")) {
-    return { href: `/projects/${p.slug}`, external: false };
-  }
-
-  // Valid internal route under /projects/*
-  if (url && url.startsWith("/projects/")) {
-    return { href: url, external: false };
-  }
-
-  // Fallback: route to the rendered project page
-  return { href: `/projects/${p.slug}`, external: false };
+  const path = raw.replace(/^\/+/, "")
+  if (path.startsWith("projects/")) return `/${path}`
+  if (path.startsWith(`${project.slug}/`)) return `/projects/${path}`
+  return `/projects/${project.slug}/${path}`
 }
 
-/** Encode a string[] as a comma-separated URL param value */
-function encodeTechs(techs: string[]): string {
-  return techs.join(",");
+function resolveProjectHref(project: Project): { href: string; external: boolean } {
+  const url = project.readmeUrl?.trim()
+  if (url && /^https?:\/\//i.test(url)) return { href: url, external: true }
+  if (url && url.startsWith("/content/")) return { href: `/projects/${project.slug}`, external: false }
+  if (url && url.startsWith("/projects/")) return { href: url, external: false }
+  return { href: `/projects/${project.slug}`, external: false }
 }
 
-/** Decode a comma-separated URL param value back into a string[] */
-function decodeTechs(raw: string): string[] {
-  return raw ? raw.split(",").filter(Boolean) : [];
+function encodeTechs(techs: string[]) {
+  return techs.join(",")
 }
 
-/** Dropdown that renders a list of checkboxes — closes on outside click */
-function TechCheckboxDropdown({
+function decodeTechs(raw: string) {
+  return raw ? raw.split(",").filter(Boolean) : []
+}
+
+function TechDropdown({
   allTechs,
   selectedTechs,
   onChange,
 }: {
-  allTechs: string[];
-  selectedTechs: string[];
-  onChange: (next: string[]) => void;
+  allTechs: string[]
+  selectedTechs: string[]
+  onChange: (next: string[]) => void
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
 
-  // Close when clicking outside the dropdown
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+    const handleOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false)
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    document.addEventListener("mousedown", handleOutside)
+    return () => document.removeEventListener("mousedown", handleOutside)
+  }, [])
 
-  function toggle(tech: string) {
-    const next = selectedTechs.includes(tech)
-      ? selectedTechs.filter((t) => t !== tech)
-      : [...selectedTechs, tech];
-    onChange(next);
+  const toggle = (tech: string) => {
+    onChange(
+      selectedTechs.includes(tech)
+        ? selectedTechs.filter((selected) => selected !== tech)
+        : [...selectedTechs, tech]
+    )
   }
 
   const label =
     selectedTechs.length === 0
-      ? "All technologies"
+      ? "Technology"
       : selectedTechs.length === 1
-      ? selectedTechs[0]
-      : `${selectedTechs.length} technologies`;
+        ? selectedTechs[0]
+        : `${selectedTechs.length} selected`
 
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => setOpen((o) => !o)}
-        className={TRIGGER_CLS}
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        className="flex h-10 min-w-[150px] items-center justify-between gap-3 border border-white/[0.09] bg-[#0d0d0b] px-3 font-mono text-[0.58rem] uppercase tracking-[0.12em] text-[#9c968c] transition-colors hover:border-[#daa000]/45 hover:text-[#d8d1c5]"
       >
-        <span className={TRIGGER_LABEL_CLS}>{label}</span>
-        <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        <span className="max-w-[150px] truncate">{label}</span>
+        <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-md border bg-popover shadow-md">
-          {/* Clear selection */}
+        <div className="absolute left-0 top-full z-50 mt-px w-64 border border-white/[0.09] bg-[#0d0d0b] shadow-[0_24px_60px_rgba(0,0,0,0.42)]">
           {selectedTechs.length > 0 && (
             <button
+              type="button"
               onClick={() => onChange([])}
-              className="flex w-full items-center gap-2 border-b px-3 py-2 text-xs text-muted-foreground hover:bg-primary/15 hover:text-foreground"
+              className="flex w-full items-center gap-2 border-b border-white/[0.08] px-3 py-3 font-mono text-[0.56rem] uppercase tracking-[0.12em] text-[#777169] transition-colors hover:text-[#f2c34f]"
             >
-              <X className="h-3 w-3" /> Clear selection
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
+              Clear technology
             </button>
           )}
-          <ul className="max-h-64 overflow-y-auto py-1">
+
+          <div className="max-h-72 overflow-y-auto py-1">
             {allTechs.map((tech) => (
-              <li key={tech}>
-                <label className="flex cursor-pointer items-center gap-2.5 px-3 py-1.5 text-sm hover:bg-primary/15">
-                  <input
-                    type="checkbox"
-                    checked={selectedTechs.includes(tech)}
-                    onChange={() => toggle(tech)}
-                    className="h-3.5 w-3.5 accent-primary"
-                  />
-                  {tech}
-                </label>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Shared classes for all dropdown trigger buttons — keeps status, tech, and semester visually identical
-const TRIGGER_CLS =
-  "flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring w-full sm:w-40";
-
-// Shared label span inside every trigger — truncates long values with ellipsis
-const TRIGGER_LABEL_CLS = "flex-1 text-left truncate overflow-hidden";
-
-/** Generic single-select dropdown that mirrors the look of TechCheckboxDropdown */
-function SelectDropdown({
-  value,
-  options,
-  placeholder,
-  onChange,
-}: {
-  value: string;
-  options: string[];
-  placeholder: string;
-  onChange: (value: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  // Close when clicking outside the dropdown
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const label = value === "all" ? placeholder : value;
-
-  return (
-    <div ref={ref} className="relative">
-      <button onClick={() => setOpen((o) => !o)} className={TRIGGER_CLS}>
-        <span className={TRIGGER_LABEL_CLS}>{label}</span>
-        <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-
-      {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 min-w-full rounded-md border bg-popover shadow-md">
-          <ul className="py-1">
-            <li>
-              <button
-                onClick={() => { onChange("all"); setOpen(false); }}
-                className={`w-full px-3 py-1.5 text-left text-sm hover:bg-primary/15 ${value === "all" ? "font-medium" : ""}`}
+              <label
+                key={tech}
+                className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm text-[#aaa49a] transition-colors hover:bg-white/[0.025] hover:text-[#e4ded3]"
               >
-                {placeholder}
-              </button>
-            </li>
-            {options.map((opt) => (
-              <li key={opt}>
-                <button
-                  onClick={() => { onChange(opt); setOpen(false); }}
-                  className={`w-full px-3 py-1.5 text-left text-sm hover:bg-primary/15 ${value === opt ? "font-medium" : ""}`}
-                >
-                  {opt}
-                </button>
-              </li>
+                <input
+                  type="checkbox"
+                  checked={selectedTechs.includes(tech)}
+                  onChange={() => toggle(tech)}
+                  className="h-3.5 w-3.5 accent-[#daa000]"
+                />
+                <span>{tech}</span>
+              </label>
             ))}
-          </ul>
+          </div>
         </div>
       )}
     </div>
-  );
+  )
 }
 
 export default function ProjectsGridClient({ projects }: { projects: Project[] }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const sp = useSearchParams();
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
-  const selectedStatus = sp.get("status") ?? "all";
-  // techs is now a string[] decoded from a comma-separated URL param
-  const selectedTechs = useMemo(() => decodeTechs(sp.get("techs") ?? ""), [sp]);
-  const selectedSemester = sp.get("semester") ?? "all";
-  const query = sp.get("q") ?? "";
+  const selectedStatus = searchParams.get("status") ?? "all"
+  const selectedTechs = useMemo(() => decodeTechs(searchParams.get("techs") ?? ""), [searchParams])
+  const selectedSemester = searchParams.get("semester") ?? "all"
+  const query = searchParams.get("q") ?? ""
 
-  // Pull tech and semester options from _data helpers rather than deriving them here
-  const allTechs = useMemo(() => collectTechs(projects), [projects]);
-  const allSemesters = useMemo(() => collectSemesters(projects), [projects]);
+  const allTechs = useMemo(() => collectTechs(projects), [projects])
+  const allSemesters = useMemo(() => collectSemesters(projects), [projects])
 
-  const filtered = useMemo(() => {
-    const q = query.toLowerCase();
-    const results = projects.filter((p) => {
-      const sOK = selectedStatus === "all" || p.status === selectedStatus;
-      // Project must include ALL of the selected techs (AND logic)
-      const tOK =
-        selectedTechs.length === 0 ||
-        selectedTechs.every((t) => p.technologies.includes(t));
-      const semOK = selectedSemester === "all" || p.semester === selectedSemester;
-      const qOK =
-        !q ||
-        p.title.toLowerCase().includes(q) ||
-        p.description?.toLowerCase().includes(q) ||
-        p.technologies.some((t) => t.toLowerCase().includes(q));
-      return sOK && tOK && semOK && qOK;
-    });
-
-    // When no filters are active, sort Active first, then Planned, then Completed,
-    // with alphabetical ordering within each group.
-    // When filters are active, just sort alphabetically.
-    const noFilters =
-      selectedStatus === "all" && selectedTechs.length === 0 && selectedSemester === "all" && !q;
-    return results.sort((a, b) => {
-      if (noFilters) {
-        const statusDiff =
-          (STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99);
-        if (statusDiff !== 0) return statusDiff;
-      }
-      return a.title.localeCompare(b.title);
-    });
-  }, [projects, selectedStatus, selectedTechs, selectedSemester, query]);
-
-  /** Build a URL with updated params, leaving others intact */
   const hrefWith = useCallback(
-    (s: string, techs: string[], sem: string, q: string) => {
-      const qs = new URLSearchParams();
-      if (s !== "all") qs.set("status", s);
-      if (techs.length > 0) qs.set("techs", encodeTechs(techs));
-      if (sem !== "all") qs.set("semester", sem);
-      if (q) qs.set("q", q);
-      const str = qs.toString();
-      return str ? `${pathname}?${str}` : pathname;
+    (status: string, techs: string[], semester: string, q: string) => {
+      const params = new URLSearchParams()
+      if (status !== "all") params.set("status", status)
+      if (techs.length) params.set("techs", encodeTechs(techs))
+      if (semester !== "all") params.set("semester", semester)
+      if (q) params.set("q", q)
+      const queryString = params.toString()
+      return queryString ? `${pathname}?${queryString}` : pathname
     },
     [pathname]
-  );
+  )
 
-  /** Soft-navigate: update URL params without a full page reload */
   const navigate = useCallback(
-    (s: string, techs: string[], sem: string, q: string) => {
-      router.push(hrefWith(s, techs, sem, q), { scroll: false });
+    (status: string, techs: string[], semester: string, q: string) => {
+      router.push(hrefWith(status, techs, semester, q), { scroll: false })
     },
-    [router, hrefWith]
-  );
+    [hrefWith, router]
+  )
 
-  // For dropdowns — soft-navigate on change via router.push
-  function handleSelect(param: "status" | "semester", value: string) {
-    const next = { status: selectedStatus, semester: selectedSemester };
-    next[param] = value;
-    navigate(next.status, selectedTechs, next.semester, query);
-  }
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase()
+    const noFilters =
+      selectedStatus === "all" && selectedTechs.length === 0 && selectedSemester === "all" && !q
 
-  // Tech checkboxes — toggle individual techs in the URL param
-  function handleTechChange(next: string[]) {
-    navigate(selectedStatus, next, selectedSemester, query);
-  }
+    return projects
+      .filter((project) => {
+        const statusMatch = selectedStatus === "all" || project.status === selectedStatus
+        const techMatch =
+          selectedTechs.length === 0 || selectedTechs.every((tech) => project.technologies.includes(tech))
+        const semesterMatch = selectedSemester === "all" || project.semester === selectedSemester
+        const queryMatch =
+          !q ||
+          project.title.toLowerCase().includes(q) ||
+          project.description?.toLowerCase().includes(q) ||
+          project.technologies.some((tech) => tech.toLowerCase().includes(q))
 
-  // Live search — update URL (and therefore results) on every keystroke
-  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
-    navigate(selectedStatus, selectedTechs, selectedSemester, e.target.value);
-  }
+        return statusMatch && techMatch && semesterMatch && queryMatch
+      })
+      .sort((a, b) => {
+        if (noFilters) {
+          const statusDiff = (STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99)
+          if (statusDiff !== 0) return statusDiff
+        }
+        return a.title.localeCompare(b.title)
+      })
+  }, [projects, query, selectedSemester, selectedStatus, selectedTechs])
 
-  // Derived outside filtered so the UI (results count, Clear all) can use it too
   const hasFilters =
-    selectedStatus !== "all" || selectedTechs.length > 0 || selectedSemester !== "all" || !!query;
+    selectedStatus !== "all" || selectedTechs.length > 0 || selectedSemester !== "all" || Boolean(query)
+
+  const handleSearch = (event: ChangeEvent<HTMLInputElement>) => {
+    navigate(selectedStatus, selectedTechs, selectedSemester, event.target.value)
+  }
 
   return (
     <>
-      {/* Search + Filters */}
-      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
-        {/* Search — controlled by URL param, updates on every keystroke */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-          <input
-            value={query}
-            onChange={handleSearchChange}
-            placeholder="Search projects…"
-            className="w-full rounded-md border bg-background py-2 pl-9 pr-4 text-sm shadow-sm outline-none ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 placeholder:text-muted-foreground"
-          />
+      <div className="border-b border-white/[0.08] px-5 py-5 sm:px-8 lg:px-12 xl:px-16">
+        <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="relative">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5f5b55]"
+              aria-hidden="true"
+            />
+            <input
+              value={query}
+              onChange={handleSearch}
+              placeholder="Search projects"
+              className="h-10 w-full border border-white/[0.09] bg-[#0d0d0b] pl-10 pr-4 text-sm text-[#d8d1c5] outline-none transition-colors placeholder:text-[#55514c] focus:border-[#daa000]/55"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <TechDropdown
+              allTechs={allTechs}
+              selectedTechs={selectedTechs}
+              onChange={(next) => navigate(selectedStatus, next, selectedSemester, query)}
+            />
+
+            <select
+              value={selectedSemester}
+              onChange={(event) => navigate(selectedStatus, selectedTechs, event.target.value, query)}
+              className="h-10 min-w-[150px] border border-white/[0.09] bg-[#0d0d0b] px-3 font-mono text-[0.58rem] uppercase tracking-[0.12em] text-[#9c968c] outline-none transition-colors focus:border-[#daa000]/55"
+              aria-label="Filter by semester"
+            >
+              <option value="all">Semester</option>
+              {allSemesters.map((semester) => (
+                <option key={semester} value={semester}>
+                  {semester}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {/* Status */}
-        <SelectDropdown
-          value={selectedStatus}
-          options={[...allStatuses]}
-          placeholder="All statuses"
-          onChange={(v) => handleSelect("status", v)}
-        />
+        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-white/[0.06] pt-4">
+          <span className="font-mono text-[0.56rem] uppercase tracking-[0.15em] text-[#55514c]">Status</span>
+          {(["all", ...allStatuses] as const).map((status) => {
+            const active = selectedStatus === status
+            return (
+              <button
+                key={status}
+                type="button"
+                onClick={() => navigate(status, selectedTechs, selectedSemester, query)}
+                className={`flex items-center gap-2 font-mono text-[0.58rem] uppercase tracking-[0.13em] transition-colors ${
+                  active ? "text-[#f2c34f]" : "text-[#6f6b64] hover:text-[#c8c1b5]"
+                }`}
+              >
+                <span className={`h-1.5 w-1.5 rounded-full ${active ? "bg-[#f4c64d]" : "bg-white/15"}`} aria-hidden="true" />
+                {status === "all" ? "All" : status}
+              </button>
+            )
+          })}
 
-        {/* Tech — checkbox dropdown for multi-select */}
-        <TechCheckboxDropdown
-          allTechs={allTechs}
-          selectedTechs={selectedTechs}
-          onChange={handleTechChange}
-        />
+          <span className="ml-auto font-mono text-[0.56rem] uppercase tracking-[0.14em] text-[#5f5b55]">
+            {filtered.length} project{filtered.length === 1 ? "" : "s"}
+          </span>
 
-        {/* Semester */}
-        <SelectDropdown
-          value={selectedSemester}
-          options={allSemesters}
-          placeholder="All semesters"
-          onChange={(v) => handleSelect("semester", v)}
-        />
-
-        {/* Clear */}
-        {hasFilters && (
-          <Link
-            href="/projects"
-            className="whitespace-nowrap text-sm text-muted-foreground underline-offset-4 hover:underline"
-          >
-            Clear all
-          </Link>
-        )}
+          {hasFilters && (
+            <Link
+              href="/projects"
+              className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-[#8d783e] transition-colors hover:text-[#f2c34f]"
+            >
+              Clear
+            </Link>
+          )}
+        </div>
       </div>
 
-      {/* Results count */}
-      <p className="mb-4 text-sm text-muted-foreground">
-        {filtered.length} project{filtered.length !== 1 ? "s" : ""}
-        {hasFilters ? " match your filters" : ""}
-      </p>
+      {!filtered.length ? (
+        <div className="px-5 py-16 sm:px-8 lg:px-12 xl:px-16">
+          <div className="border-l border-[#daa000]/45 pl-5">
+            <p className="text-xl font-medium tracking-[-0.03em] text-[#d9d2c6]">No projects match this view.</p>
+            <Link
+              href="/projects"
+              className="mt-3 inline-flex font-mono text-[0.61rem] uppercase tracking-[0.15em] text-[#9c968c] transition-colors hover:text-[#f2c34f]"
+            >
+              Clear filters
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div className="grid gap-px bg-white/[0.08] sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((project) => {
+            const image = resolveProjectImage(project)
+            const { href, external } = resolveProjectHref(project)
 
-      {/* Grid */}
-      <section>
-        {!filtered.length && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>No projects match</CardTitle>
-              <CardDescription>
-                Try different filters or{" "}
-                <Link href="/projects" className="underline">clear all filters</Link>.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        )}
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((p) => {
-            const img = resolveProjectImage(p);
-            const { href, external } = resolveProjectHref(p);
-
-            const CardInner = (
-              <Card className="h-full overflow-hidden transition-all hover:shadow-md">
+            return (
+              <Link
+                key={project.slug}
+                href={href}
+                target={external ? "_blank" : undefined}
+                rel={external ? "noopener noreferrer" : undefined}
+                className="group relative isolate min-h-[340px] overflow-hidden bg-[#11110e] sm:min-h-[360px]"
+              >
                 <img
-                  src={img || "/images/fallback.jpg"}
-                  alt={`${p.title} cover`}
-                  className="h-40 w-full object-cover"
+                  src={image}
+                  alt={`${project.title} cover`}
+                  className="absolute inset-0 h-full w-full object-cover opacity-[0.65] grayscale-[18%] transition duration-700 ease-out group-hover:scale-[1.018] group-hover:opacity-[0.84] group-hover:grayscale-0"
                   loading="lazy"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null; // prevents infinite loop
-                    e.currentTarget.src = "/projects/logo.png";
+                  onError={(event) => {
+                    event.currentTarget.onerror = null
+                    event.currentTarget.src = "/projects/logo.png"
                   }}
                 />
-                <CardHeader>
-                  <div className="mb-2 flex items-center justify-between">
-                    <Badge variant={p.status === "Active" ? "default" : p.status === "Completed" ? "secondary" : "outline"}>
-                      {p.status}
-                    </Badge>
-                    {p.semester && <span className="rounded-full border px-2 py-0.5 text-xs">{p.semester}</span>}
-                  </div>
-                  <CardTitle className="leading-tight">{p.title}</CardTitle>
-                  {p.description && (
-                    <CardDescription className="text-base">{p.description}</CardDescription>
-                  )}
-                </CardHeader>
-                {!!p.technologies.length && (
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {p.technologies.map((t) => (
-                        <Badge key={`${p.slug}-${t}`} variant="outline" className="text-xs">
-                          {t}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                )}
-              </Card>
-            );
+                <div className="absolute inset-0 bg-gradient-to-t from-black/94 via-black/16 to-black/28" />
 
-            return external ? (
-              <a key={p.slug} href={href} className="no-underline" target="_blank" rel="noopener noreferrer">
-                {CardInner}
-              </a>
-            ) : (
-              <Link key={p.slug} href={href} className="no-underline">
-                {CardInner}
+                <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-4 p-5 sm:p-6">
+                  <div className="flex items-center gap-2 font-mono text-[0.56rem] uppercase tracking-[0.14em] text-white/60">
+                    <span className={`h-1.5 w-1.5 rounded-full ${project.status === "Active" ? "bg-[#f4c64d] shadow-[0_0_8px_rgba(244,198,77,0.35)]" : "bg-white/35"}`} />
+                    {project.status}
+                    {project.semester ? ` · ${project.semester}` : ""}
+                  </div>
+                  <ArrowUpRight
+                    className="h-4 w-4 text-white/55 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[#f2c34f]"
+                    aria-hidden="true"
+                  />
+                </div>
+
+                <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+                  <h2 className="max-w-xl text-3xl font-medium leading-[0.98] tracking-[-0.045em] text-[#f0eadf]">
+                    {project.title}
+                  </h2>
+                  {project.description && (
+                    <p className="mt-3 line-clamp-2 max-w-lg text-sm leading-6 text-white/62">
+                      {project.description}
+                    </p>
+                  )}
+                  <p className="mt-4 font-mono text-[0.55rem] uppercase tracking-[0.13em] text-[#d5b55c]">
+                    {project.technologies.slice(0, 4).join(" · ")}
+                  </p>
+                </div>
               </Link>
-            );
+            )
           })}
         </div>
-      </section>
+      )}
     </>
-  );
+  )
 }
