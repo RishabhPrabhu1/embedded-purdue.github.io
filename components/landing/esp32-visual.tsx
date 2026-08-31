@@ -26,6 +26,7 @@ type ModelViewerElement = HTMLElement & {
   cameraOrbit: string
   orientation: string
   fieldOfView: string
+  loaded?: boolean
   jumpCameraToGoal?: () => void
 }
 
@@ -57,7 +58,7 @@ function TuningSlider({
   }
 
   return (
-    <label className="grid grid-cols-[72px_1fr_54px] items-center gap-2">
+    <label className="grid grid-cols-[72px_1fr_58px] items-center gap-2">
       <span className="font-mono text-[0.48rem] uppercase tracking-[0.12em] text-white/45">
         {label}
       </span>
@@ -71,17 +72,21 @@ function TuningSlider({
         onChange={handleValue}
         className="h-4 w-full cursor-ew-resize accent-[#daa000]"
       />
-      <input
-        type="number"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(event) => onChange(Number(event.currentTarget.value))}
-        className="w-[54px] border border-white/[0.08] bg-black/50 px-1 py-0.5 text-right font-mono text-[0.5rem] tabular-nums text-[#d8c076] outline-none focus:border-[#daa000]/45"
-        aria-label={`${label} numeric value`}
-      />
-      <span className="sr-only">{suffix}</span>
+      <div className="relative">
+        <input
+          type="number"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(event) => onChange(Number(event.currentTarget.value))}
+          className="w-full border border-white/[0.08] bg-black/50 py-0.5 pl-1 pr-3 text-right font-mono text-[0.5rem] tabular-nums text-[#d8c076] outline-none focus:border-[#daa000]/45"
+          aria-label={`${label} numeric value`}
+        />
+        <span className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 font-mono text-[0.42rem] text-white/25">
+          {suffix}
+        </span>
+      </div>
     </label>
   )
 }
@@ -99,7 +104,25 @@ export function Esp32Visual() {
   const [tuning, setTuning] = useState<TuningValues>({ ...DEFAULT_TUNING })
   const [shouldLoadModel, setShouldLoadModel] = useState(false)
   const [viewerReady, setViewerReady] = useState(false)
+  const [modelLoaded, setModelLoaded] = useState(false)
   const [modelFailed, setModelFailed] = useState(false)
+
+  // Start downloading the relatively large GLB during the hero animation so the
+  // eventual model-viewer request can be fulfilled from the browser HTTP cache.
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      fetch(ESP32_MODEL, { cache: "force-cache" })
+        .then((response) => {
+          if (!response.ok) throw new Error("ESP32 preload failed")
+          return response.arrayBuffer()
+        })
+        .catch(() => {
+          // The normal model-viewer request still gets a chance to load it later.
+        })
+    }, 250)
+
+    return () => window.clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     const viewer = viewerRef.current
@@ -123,8 +146,8 @@ export function Esp32Visual() {
     return () => observer.disconnect()
   }, [])
 
-  // Warm the model-viewer runtime as soon as the page mounts. The actual WebGL
-  // element stays deferred until the workshops section approaches the viewport.
+  // Warm the model-viewer runtime immediately; only WebGL/model presentation is
+  // deferred until the workshops section approaches the viewport.
   useEffect(() => {
     const markReady = () => {
       const ModelViewer = customElements.get(
@@ -182,19 +205,24 @@ export function Esp32Visual() {
     (model: ModelViewerElement, values: TuningValues, snapCamera = false) => {
       const hover = hoverRef.current
 
-      // Use model-viewer's public properties directly. This avoids React/custom-
-      // element attribute timing issues in Safari and works before or after load.
-      model.orientation = `${values.modelX}deg ${values.modelY}deg ${values.modelZ}deg`
-      model.fieldOfView = `${values.fov}deg`
-      model.cameraOrbit = `${(
-        values.theta +
-        hover.x * HORIZONTAL_ORBIT
-      ).toFixed(3)}deg ${(
-        values.phi -
-        hover.y * VERTICAL_ORBIT
-      ).toFixed(3)}deg ${values.radius}%`
+      try {
+        // These are model-viewer's public reactive properties. Applying them on
+        // the element avoids React/custom-element attribute lifecycle races.
+        model.orientation = `${values.modelX}deg ${values.modelY}deg ${values.modelZ}deg`
+        model.fieldOfView = `${values.fov}deg`
+        model.cameraOrbit = `${(
+          values.theta +
+          hover.x * HORIZONTAL_ORBIT
+        ).toFixed(3)}deg ${(
+          values.phi -
+          hover.y * VERTICAL_ORBIT
+        ).toFixed(3)}deg ${values.radius}%`
 
-      if (snapCamera) model.jumpCameraToGoal?.()
+        if (snapCamera) model.jumpCameraToGoal?.()
+      } catch {
+        // If the internal scene is not constructed yet, the latest state is
+        // applied again by the load handler below.
+      }
     },
     []
   )
@@ -203,7 +231,18 @@ export function Esp32Visual() {
     (node: HTMLElement | null) => {
       const model = node as ModelViewerElement | null
       modelRef.current = model
-      if (model) applyValuesToModel(model, tuningRef.current, true)
+      if (!model) {
+        setModelLoaded(false)
+        return
+      }
+
+      const markLoaded = () => {
+        setModelLoaded(true)
+        applyValuesToModel(model, tuningRef.current, true)
+      }
+
+      if (model.loaded) markLoaded()
+      else model.addEventListener("load", markLoaded, { once: true })
     },
     [applyValuesToModel]
   )
@@ -212,7 +251,12 @@ export function Esp32Visual() {
     frameRef.current = null
     const model = modelRef.current
     if (!model) return
-    model.cameraOrbit = pendingOrbitRef.current
+
+    try {
+      model.cameraOrbit = pendingOrbitRef.current
+    } catch {
+      // Model is still warming; the next pointer/tuning update will retry.
+    }
   }
 
   const queueOrbit = (theta: number, phi: number, radius: number) => {
@@ -331,16 +375,25 @@ export function Esp32Visual() {
       )}
 
       <div
-        className="absolute bottom-3 left-3 z-20 w-[310px] border border-white/[0.1] bg-black/75 p-3 shadow-[0_12px_36px_rgba(0,0,0,.42)] backdrop-blur-md"
+        className="absolute bottom-3 left-3 z-20 w-[318px] border border-white/[0.1] bg-black/75 p-3 shadow-[0_12px_36px_rgba(0,0,0,.42)] backdrop-blur-md"
         onPointerMove={(event) => event.stopPropagation()}
         onPointerLeave={(event) => event.stopPropagation()}
         onPointerDown={(event) => event.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between gap-3 border-b border-white/[0.08] pb-2">
           <div>
-            <p className="font-mono text-[0.52rem] uppercase tracking-[0.15em] text-[#d8c076]">
-              ESP32 tuning
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="font-mono text-[0.52rem] uppercase tracking-[0.15em] text-[#d8c076]">
+                ESP32 tuning
+              </p>
+              <span
+                className={`font-mono text-[0.42rem] uppercase tracking-[0.12em] ${
+                  modelLoaded ? "text-emerald-400/70" : "text-white/25"
+                }`}
+              >
+                {modelLoaded ? "Ready" : "Loading"}
+              </span>
+            </div>
             <p className="mt-0.5 font-mono text-[0.43rem] uppercase tracking-[0.1em] text-white/25">
               Screenshot these values
             </p>
