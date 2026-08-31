@@ -3,20 +3,30 @@
 import { createElement, useEffect, useRef, useState } from "react"
 
 const MODEL_VIEWER_SCRIPT =
-  "https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"
+  "https://ajax.googleapis.com/ajax/libs/model-viewer/4.3.1/model-viewer.min.js"
 const ESP32_MODEL = "/models/esp32/esp32-38pin.glb"
 
-type TiltPoint = {
-  x: number
-  y: number
+const BASE_THETA = 164
+const BASE_PHI = 62
+const CAMERA_RADIUS = 103
+const HORIZONTAL_ORBIT = 9
+const VERTICAL_ORBIT = 5.5
+
+type ModelViewerElement = HTMLElement & {
+  cameraOrbit: string
+}
+
+type ModelViewerConstructor = CustomElementConstructor & {
+  minimumRenderScale: number
 }
 
 export function Esp32Visual() {
   const viewerRef = useRef<HTMLDivElement>(null)
-  const modelRef = useRef<HTMLElement | null>(null)
-  const animationRef = useRef<number | null>(null)
-  const targetRef = useRef<TiltPoint>({ x: 0, y: 0 })
-  const currentRef = useRef<TiltPoint>({ x: 0, y: 0 })
+  const modelRef = useRef<ModelViewerElement | null>(null)
+  const frameRef = useRef<number | null>(null)
+  const pendingOrbitRef = useRef(
+    `${BASE_THETA}deg ${BASE_PHI}deg ${CAMERA_RADIUS}%`
+  )
   const [shouldLoadModel, setShouldLoadModel] = useState(false)
   const [viewerReady, setViewerReady] = useState(false)
   const [modelFailed, setModelFailed] = useState(false)
@@ -46,22 +56,30 @@ export function Esp32Visual() {
   useEffect(() => {
     if (!shouldLoadModel) return
 
-    if (customElements.get("model-viewer")) {
+    const markReady = () => {
+      const ModelViewer = customElements.get(
+        "model-viewer"
+      ) as ModelViewerConstructor | undefined
+      if (!ModelViewer) return false
+
+      // model-viewer normally lowers its internal DPR under GPU load. A single,
+      // lightweight product model looks noticeably cleaner if we keep it at the
+      // browser's full device-pixel ratio instead of pulsing resolution in motion.
+      ModelViewer.minimumRenderScale = 1
       setViewerReady(true)
-      return
+      return true
     }
+
+    if (markReady()) return
 
     const existing = document.querySelector<HTMLScriptElement>(
       'script[data-esap-model-viewer="1"]'
     )
 
     if (existing) {
-      if (customElements.get("model-viewer")) {
-        setViewerReady(true)
-        return
+      const onLoad = () => {
+        if (!markReady()) setModelFailed(true)
       }
-
-      const onLoad = () => setViewerReady(true)
       const onError = () => setModelFailed(true)
       existing.addEventListener("load", onLoad, { once: true })
       existing.addEventListener("error", onError, { once: true })
@@ -75,7 +93,9 @@ export function Esp32Visual() {
     script.type = "module"
     script.src = MODEL_VIEWER_SCRIPT
     script.dataset.esapModelViewer = "1"
-    script.onload = () => setViewerReady(true)
+    script.onload = () => {
+      if (!markReady()) setModelFailed(true)
+    }
     script.onerror = () => setModelFailed(true)
     document.head.appendChild(script)
 
@@ -87,50 +107,28 @@ export function Esp32Visual() {
 
   useEffect(() => {
     return () => {
-      if (animationRef.current !== null) {
-        cancelAnimationFrame(animationRef.current)
-      }
+      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current)
     }
   }, [])
 
-  const animateTilt = () => {
+  const flushOrbit = () => {
+    frameRef.current = null
     const model = modelRef.current
-    if (!model) {
-      animationRef.current = null
-      return
-    }
-
-    const current = currentRef.current
-    const target = targetRef.current
-
-    // Keep the board feeling like a rigid object: only the camera's orbit angles
-    // change. Radius, FOV, model scale, and target stay fixed.
-    current.x += (target.x - current.x) * 0.12
-    current.y += (target.y - current.y) * 0.12
-
-    const theta = 180 + current.x * 12
-    const phi = 68 + current.y * 8
-    model.setAttribute(
-      "camera-orbit",
-      `${theta.toFixed(3)}deg ${phi.toFixed(3)}deg 112%`
-    )
-
-    const moving =
-      Math.abs(target.x - current.x) > 0.001 ||
-      Math.abs(target.y - current.y) > 0.001
-
-    if (moving) {
-      animationRef.current = requestAnimationFrame(animateTilt)
-    } else {
-      current.x = target.x
-      current.y = target.y
-      animationRef.current = null
-    }
+    if (!model) return
+    model.cameraOrbit = pendingOrbitRef.current
   }
 
-  const requestTiltFrame = () => {
-    if (animationRef.current !== null) return
-    animationRef.current = requestAnimationFrame(animateTilt)
+  const queueOrbit = (theta: number, phi: number) => {
+    pendingOrbitRef.current = `${theta.toFixed(3)}deg ${phi.toFixed(
+      3
+    )}deg ${CAMERA_RADIUS}%`
+
+    // Pointer events can arrive faster than display refresh. Only hand one goal
+    // to model-viewer per frame; its own critically damped camera interpolation
+    // handles the visible motion from there.
+    if (frameRef.current === null) {
+      frameRef.current = requestAnimationFrame(flushOrbit)
+    }
   }
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -139,18 +137,24 @@ export function Esp32Visual() {
     const rect = event.currentTarget.getBoundingClientRect()
     if (!rect.width || !rect.height) return
 
-    const x = ((event.clientX - rect.left) / rect.width) * 2 - 1
-    const y = ((event.clientY - rect.top) / rect.height) * 2 - 1
+    const rawX = ((event.clientX - rect.left) / rect.width) * 2 - 1
+    const rawY = ((event.clientY - rect.top) / rect.height) * 2 - 1
+    const x = Math.max(-1, Math.min(1, rawX))
+    const y = Math.max(-1, Math.min(1, rawY))
 
-    targetRef.current.x = Math.max(-1, Math.min(1, x))
-    targetRef.current.y = Math.max(-1, Math.min(1, y))
-    requestTiltFrame()
+    // Slight sine easing gives useful movement near the middle without making
+    // the outer corners snap to an exaggerated angle.
+    const easedX = Math.sin((x * Math.PI) / 2)
+    const easedY = Math.sin((y * Math.PI) / 2)
+
+    queueOrbit(
+      BASE_THETA + easedX * HORIZONTAL_ORBIT,
+      BASE_PHI + easedY * VERTICAL_ORBIT
+    )
   }
 
   const handlePointerLeave = () => {
-    targetRef.current.x = 0
-    targetRef.current.y = 0
-    requestTiltFrame()
+    queueOrbit(BASE_THETA, BASE_PHI)
   }
 
   return (
@@ -160,33 +164,33 @@ export function Esp32Visual() {
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_46%,rgba(218,160,0,0.07),transparent_34%),linear-gradient(to_bottom,rgba(255,255,255,.018),transparent_24%,transparent_74%,rgba(0,0,0,.34))]" />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.16] [background-image:linear-gradient(rgba(255,255,255,.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.025)_1px,transparent_1px)] [background-size:38px_38px]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_47%,rgba(218,160,0,0.075),transparent_36%),linear-gradient(to_bottom,rgba(255,255,255,.018),transparent_24%,transparent_74%,rgba(0,0,0,.34))]" />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.14] [background-image:linear-gradient(rgba(255,255,255,.024)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.024)_1px,transparent_1px)] [background-size:38px_38px]" />
 
       {shouldLoadModel && viewerReady && !modelFailed &&
         createElement("model-viewer", {
-          ref: (node: HTMLElement | null) => {
+          ref: (node: ModelViewerElement | null) => {
             modelRef.current = node
           },
           src: ESP32_MODEL,
           alt: "ESP32 38-pin ESP-WROOM-32 development board",
           loading: "lazy",
           reveal: "auto",
-          "camera-orbit": "180deg 68deg 112%",
-          "field-of-view": "28deg",
+          "camera-orbit": `${BASE_THETA}deg ${BASE_PHI}deg ${CAMERA_RADIUS}%`,
+          "field-of-view": "27deg",
           "camera-target": "auto auto auto",
           "interaction-prompt": "none",
           "environment-image": "neutral",
-          exposure: "1.02",
-          "shadow-intensity": "0.72",
-          "shadow-softness": "0.92",
-          "interpolation-decay": "180",
+          "tone-mapping": "agx",
+          exposure: "1.1",
+          "shadow-intensity": "0",
+          "interpolation-decay": "82",
           onError: () => setModelFailed(true),
           style: {
             position: "absolute",
-            inset: "-5% -7%",
-            width: "114%",
-            height: "110%",
+            inset: "0",
+            width: "100%",
+            height: "100%",
             background: "transparent",
             pointerEvents: "none",
           },
