@@ -94,7 +94,6 @@ const returningLandingScript = `
 
         sessionStorage.setItem(frameKey, frame);
         sessionStorage.setItem(seenKey, "1");
-        activateFrame(frame);
         stopSettleObserver();
       } catch (e) {
         try {
