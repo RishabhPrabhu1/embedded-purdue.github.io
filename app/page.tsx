@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import {
@@ -52,11 +53,23 @@ function SectionLabel({ index, label }: { index: string; label: string }) {
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen overflow-hidden bg-[#11110f] text-[#f3efe6]">
+    <div
+      data-landing-shell
+      className="min-h-screen overflow-hidden bg-black text-[#f3efe6]"
+      style={
+        {
+          "--landing-nav-opacity": "0",
+          "--landing-content-opacity": "0",
+        } as CSSProperties
+      }
+    >
       <Navigation />
       <PcbHero />
 
-      <main id="landing-content">
+      <main
+        id="landing-content"
+        className="bg-[#11110f] opacity-[var(--landing-content-opacity)] transition-opacity duration-[1100ms] ease-out"
+      >
         <section className="border-b border-white/[0.09]">
           <div className="mx-auto grid max-w-[1440px] px-5 sm:px-8 lg:grid-cols-[1.35fr_0.65fr] lg:px-12 xl:px-16">
             <div className="border-white/[0.09] py-20 lg:border-r lg:py-28 lg:pr-16">
@@ -387,7 +400,9 @@ export default function HomePage() {
         </section>
       </main>
 
-      <Footer />
+      <div className="bg-[#11110f] opacity-[var(--landing-content-opacity)] transition-opacity duration-[1100ms] ease-out">
+        <Footer />
+      </div>
     </div>
   )
 }
