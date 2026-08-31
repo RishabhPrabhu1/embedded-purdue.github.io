@@ -649,7 +649,7 @@ export function PcbHero() {
         ref={heroRef}
         className={`relative isolate overflow-hidden bg-black transition-all duration-700 ease-[cubic-bezier(.22,1,.36,1)] ${
           settled
-            ? "h-[min(55svh,500px)] min-h-[420px]"
+            ? "h-[min(62svh,560px)] min-h-[480px]"
             : "h-[100svh] min-h-[100svh]"
         }`}
       >
