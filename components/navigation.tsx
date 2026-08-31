@@ -38,7 +38,7 @@ export function Navigation() {
           : "sticky top-0 border-b border-white/[0.08] bg-[#0c0c0b]/92 backdrop-blur-xl"
       } z-50 w-full`}
     >
-      <div className="relative mx-auto flex h-[68px] max-w-[1440px] items-center justify-between px-5 sm:px-8 lg:px-12 xl:px-16">
+      <div className="relative mx-auto flex h-[68px] w-full items-center justify-between px-5 sm:px-8 lg:w-[calc(100%_-_48px)] lg:border-x lg:border-white/[0.05] lg:px-8 xl:px-10 2xl:w-[calc(100%_-_80px)] 2xl:px-12">
         <Link href="/" className="flex items-center gap-4" aria-label="Embedded Systems @ Purdue home">
           <Image
             src="/logo.svg"
