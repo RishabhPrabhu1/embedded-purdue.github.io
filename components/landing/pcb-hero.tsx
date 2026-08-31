@@ -346,7 +346,6 @@ export function PcbHero() {
       cssWidth = Math.max(1, rect.width)
       cssHeight = Math.max(1, window.innerHeight)
 
-      // Preserve the original animation footprint independently of the section crop.
       const legacyHeroHeight = Math.max(600, Math.min(cssHeight * .78, 760))
       scaleX = cssWidth / VW
       scaleY = legacyHeroHeight / VH
@@ -664,53 +663,62 @@ export function PcbHero() {
       <section
         id="hero-intro"
         className={`relative border-b transition-[background-color,border-color] duration-700 ease-out ${
-          copyVisible ? "border-white/[0.09] bg-[#0d0d0c]" : "border-transparent bg-black"
+          copyVisible ? "border-white/[0.08] bg-[#0b0b0a]" : "border-transparent bg-black"
         }`}
       >
         <div
-          className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#daa000]/60 to-transparent transition-opacity duration-700 ${
+          className={`pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#daa000]/70 to-transparent transition-opacity duration-700 ${
             copyVisible ? "opacity-100" : "opacity-0"
           }`}
         />
+
         <div
-          className={`mx-auto grid max-w-[1440px] transition-all duration-500 lg:grid-cols-[0.72fr_1.28fr] ${
+          data-hero-intro-grid
+          className={`mx-auto grid max-w-[1440px] transition-all duration-500 lg:grid-cols-[0.5fr_1.15fr_0.85fr] ${
             copyVisible ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
           }`}
         >
-          <div className="flex min-h-44 flex-col justify-between border-b border-white/[0.09] px-5 py-8 sm:px-8 lg:min-h-[300px] lg:border-b-0 lg:border-r lg:px-12 lg:py-10 xl:px-16">
-            <p className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-[#daa000]">
-              Embedded Systems @ Purdue
-            </p>
-            <div className="mt-10 flex items-center gap-3 font-mono text-[0.58rem] uppercase tracking-[0.18em] text-[#6f6b64]">
-              <span>Hardware</span>
-              <span className="h-px w-5 bg-[#daa000]/40" />
-              <span>Software</span>
-              <span className="h-px w-5 bg-[#daa000]/40" />
-              <span>Systems</span>
+          <div className="flex items-center border-b border-white/[0.08] px-5 py-6 sm:px-8 lg:border-b-0 lg:border-r lg:px-10 xl:px-12">
+            <div>
+              <div className="flex items-center gap-3">
+                <span className="relative flex h-2.5 w-2.5 items-center justify-center" aria-hidden="true">
+                  <span className="absolute h-6 w-6 rounded-full bg-[#daa000]/10 blur-sm" />
+                  <span className="relative h-1.5 w-1.5 rounded-full bg-[#f4c64d] shadow-[0_0_10px_rgba(244,198,77,0.55)]" />
+                </span>
+                <span className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-[#c7c0b3]">
+                  Embedded Systems @ Purdue
+                </span>
+              </div>
+              <p className="mt-3 font-mono text-[0.57rem] uppercase tracking-[0.16em] text-[#67635c]">
+                Hardware · Firmware · Systems
+              </p>
             </div>
           </div>
 
-          <div className="px-5 py-10 sm:px-8 sm:py-12 lg:px-12 lg:py-14 xl:px-16">
-            <h1 className="max-w-4xl text-balance text-[clamp(2.25rem,4.7vw,5.4rem)] font-medium leading-[0.94] tracking-[-0.055em] text-[#f3efe6]">
-              A home for people who build embedded systems.
+          <div className="flex items-center border-b border-white/[0.08] px-5 py-7 sm:px-8 lg:border-b-0 lg:border-r lg:px-10 xl:px-12">
+            <h1 className="max-w-3xl text-balance text-[clamp(2rem,4.4vh,3.45rem)] font-medium leading-[0.94] tracking-[-0.05em] text-[#f3efe6]">
+              Build embedded systems that work in the real world.
             </h1>
-            <div className="mt-8 grid gap-7 border-t border-white/[0.09] pt-7 md:grid-cols-[1fr_auto] md:items-end">
-              <p className="max-w-2xl text-sm leading-6 text-[#97938a] sm:text-base sm:leading-7">
-                Design boards, program microcontrollers, work with FPGAs, and ship real systems with a community built around making.
-              </p>
+          </div>
 
-              <div className="flex flex-wrap gap-3 md:justify-end">
-                <Button size="lg" className="h-11 px-6" asChild>
+          <div className="flex items-center px-5 py-7 sm:px-8 lg:px-10 xl:px-12">
+            <div>
+              <p className="max-w-md text-sm leading-6 text-[#9a958b]">
+                Boards, firmware, FPGAs, robotics, and the engineering required to make them work together.
+              </p>
+              <div className="mt-5 flex flex-wrap items-center gap-4">
+                <Button size="sm" className="h-10 px-5" asChild>
                   <Link href="https://discord.gg/MkPv9s9cj3" target="_blank" rel="noopener noreferrer">
                     Join ES@P
                   </Link>
                 </Button>
-                <Button variant="outline" size="lg" className="h-11 border-[#daa000]/30 bg-transparent px-6" asChild>
-                  <Link href="/projects">
-                    Explore projects
-                    <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-                  </Link>
-                </Button>
+                <Link
+                  href="/projects"
+                  className="group inline-flex items-center gap-2 font-mono text-[0.64rem] uppercase tracking-[0.16em] text-[#bdb7ab] transition-colors hover:text-[#f2c34f]"
+                >
+                  Projects
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                </Link>
               </div>
             </div>
           </div>
