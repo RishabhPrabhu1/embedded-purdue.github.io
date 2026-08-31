@@ -7,6 +7,16 @@
   will-change: opacity;
 }
 
+/* Keep first-run layout motion to one dimension. Safari otherwise interpolates height/min-height together. */
+[data-landing-shell] > section:first-of-type {
+  transition-property: height !important;
+  overflow-anchor: none;
+}
+
+#hero-intro {
+  overflow-anchor: none;
+}
+
 /* Returning visits use the exact final canvas bitmap captured at animation completion. */
 html[data-esap-landing-seen="1"] body [data-landing-shell] {
   --landing-nav-opacity: 1 !important;
@@ -14,8 +24,8 @@ html[data-esap-landing-seen="1"] body [data-landing-shell] {
 }
 
 html[data-esap-landing-seen="1"] body [data-landing-shell] > section:first-of-type {
-  height: min(66svh, 600px) !important;
-  min-height: 500px !important;
+  height: var(--esap-return-hero-height, min(66svh, 600px)) !important;
+  min-height: var(--esap-return-hero-height, 500px) !important;
   transition: none !important;
 }
 
@@ -37,7 +47,7 @@ html[data-esap-landing-seen="1"] body [data-landing-shell] > section:first-of-ty
   top: calc(50% + 34px) !important;
   bottom: auto !important;
   width: 100% !important;
-  height: 100svh !important;
+  height: var(--esap-return-vh, 100svh) !important;
   transform: translateY(-50%) !important;
   transform-origin: center !important;
   background-color: transparent !important;
@@ -70,4 +80,12 @@ html[data-esap-landing-seen="1"] body #hero-intro [data-hero-intro-grid] {
   transform: none !important;
   transition: none !important;
   will-change: auto;
+}
+
+@media (min-width: 1024px) {
+  html[data-esap-landing-seen="1"] body #hero-intro {
+    height: var(--esap-return-intro-height, auto) !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
 }
