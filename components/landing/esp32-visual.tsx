@@ -6,15 +6,21 @@ const MODEL_VIEWER_SCRIPT =
   "https://ajax.googleapis.com/ajax/libs/model-viewer/4.3.1/model-viewer.min.js"
 const ESP32_MODEL = "/models/esp32/esp32-38pin.glb?v=5"
 
-// The converted CAD arrives with its PCB plane standing vertically. Rotate the
-// model itself onto a tabletop-like pose, then use a modest camera orbit around
-// that stable baseline so the board reads horizontally with the pins below it.
-const BASE_THETA = 82
-const BASE_PHI = 58
-const CAMERA_RADIUS = 89
 const HORIZONTAL_ORBIT = 6.5
 const VERTICAL_ORBIT = 4.25
-const MODEL_ORIENTATION = "0deg 90deg 0deg"
+
+const DEFAULT_TUNING = {
+  modelX: 0,
+  modelY: 90,
+  modelZ: 0,
+  theta: 82,
+  phi: 58,
+  radius: 89,
+  fov: 30,
+}
+
+type TuningValues = typeof DEFAULT_TUNING
+type TuningKey = keyof TuningValues
 
 type ModelViewerElement = HTMLElement & {
   cameraOrbit: string
@@ -24,13 +30,58 @@ type ModelViewerConstructor = CustomElementConstructor & {
   minimumRenderScale: number
 }
 
+type TuningSliderProps = {
+  label: string
+  value: number
+  min: number
+  max: number
+  step?: number
+  suffix?: string
+  onChange: (value: number) => void
+}
+
+function TuningSlider({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  suffix = "°",
+  onChange,
+}: TuningSliderProps) {
+  return (
+    <label className="grid grid-cols-[72px_1fr_48px] items-center gap-2">
+      <span className="font-mono text-[0.48rem] uppercase tracking-[0.12em] text-white/45">
+        {label}
+      </span>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(event) => onChange(Number(event.currentTarget.value))}
+        className="h-1 w-full cursor-ew-resize accent-[#daa000]"
+      />
+      <span className="text-right font-mono text-[0.5rem] tabular-nums text-[#d8c076]">
+        {value}
+        {suffix}
+      </span>
+    </label>
+  )
+}
+
 export function Esp32Visual() {
   const viewerRef = useRef<HTMLDivElement>(null)
   const modelRef = useRef<ModelViewerElement | null>(null)
   const frameRef = useRef<number | null>(null)
+  const hoverRef = useRef({ x: 0, y: 0 })
+  const tuningRef = useRef<TuningValues>({ ...DEFAULT_TUNING })
   const pendingOrbitRef = useRef(
-    `${BASE_THETA}deg ${BASE_PHI}deg ${CAMERA_RADIUS}%`
+    `${DEFAULT_TUNING.theta}deg ${DEFAULT_TUNING.phi}deg ${DEFAULT_TUNING.radius}%`
   )
+
+  const [tuning, setTuning] = useState<TuningValues>({ ...DEFAULT_TUNING })
   const [shouldLoadModel, setShouldLoadModel] = useState(false)
   const [viewerReady, setViewerReady] = useState(false)
   const [modelFailed, setModelFailed] = useState(false)
@@ -66,8 +117,6 @@ export function Esp32Visual() {
       ) as ModelViewerConstructor | undefined
       if (!ModelViewer) return false
 
-      // Keep full render resolution during motion. model-viewer otherwise lowers
-      // its internal render scale under load, which is visible as a quality pulse.
       ModelViewer.minimumRenderScale = 1
       setViewerReady(true)
       return true
@@ -121,14 +170,41 @@ export function Esp32Visual() {
     model.cameraOrbit = pendingOrbitRef.current
   }
 
-  const queueOrbit = (theta: number, phi: number) => {
+  const queueOrbit = (theta: number, phi: number, radius: number) => {
     pendingOrbitRef.current = `${theta.toFixed(3)}deg ${phi.toFixed(
       3
-    )}deg ${CAMERA_RADIUS}%`
+    )}deg ${radius}%`
 
     if (frameRef.current === null) {
       frameRef.current = requestAnimationFrame(flushOrbit)
     }
+  }
+
+  const applyCurrentOrbit = (values = tuningRef.current) => {
+    const hover = hoverRef.current
+    queueOrbit(
+      values.theta + hover.x * HORIZONTAL_ORBIT,
+      values.phi - hover.y * VERTICAL_ORBIT,
+      values.radius
+    )
+  }
+
+  const updateTuning = (key: TuningKey, value: number) => {
+    const next = { ...tuningRef.current, [key]: value }
+    tuningRef.current = next
+    setTuning(next)
+
+    if (key === "theta" || key === "phi" || key === "radius") {
+      applyCurrentOrbit(next)
+    }
+  }
+
+  const resetTuning = () => {
+    const next = { ...DEFAULT_TUNING }
+    tuningRef.current = next
+    hoverRef.current = { x: 0, y: 0 }
+    setTuning(next)
+    queueOrbit(next.theta, next.phi, next.radius)
   }
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -137,24 +213,26 @@ export function Esp32Visual() {
     const rect = event.currentTarget.getBoundingClientRect()
     if (!rect.width || !rect.height) return
 
-    const x = Math.max(
-      -1,
-      Math.min(1, ((event.clientX - rect.left) / rect.width) * 2 - 1)
-    )
-    const y = Math.max(
-      -1,
-      Math.min(1, ((event.clientY - rect.top) / rect.height) * 2 - 1)
-    )
+    hoverRef.current = {
+      x: Math.max(
+        -1,
+        Math.min(1, ((event.clientX - rect.left) / rect.width) * 2 - 1)
+      ),
+      y: Math.max(
+        -1,
+        Math.min(1, ((event.clientY - rect.top) / rect.height) * 2 - 1)
+      ),
+    }
 
-    queueOrbit(
-      BASE_THETA + x * HORIZONTAL_ORBIT,
-      BASE_PHI - y * VERTICAL_ORBIT
-    )
+    applyCurrentOrbit()
   }
 
   const handlePointerLeave = () => {
-    queueOrbit(BASE_THETA, BASE_PHI)
+    hoverRef.current = { x: 0, y: 0 }
+    applyCurrentOrbit()
   }
+
+  const modelOrientation = `${tuning.modelX}deg ${tuning.modelY}deg ${tuning.modelZ}deg`
 
   return (
     <div
@@ -175,9 +253,9 @@ export function Esp32Visual() {
           alt: "ESP32 38-pin ESP-WROOM-32 development board",
           loading: "lazy",
           reveal: "auto",
-          orientation: MODEL_ORIENTATION,
-          "camera-orbit": `${BASE_THETA}deg ${BASE_PHI}deg ${CAMERA_RADIUS}%`,
-          "field-of-view": "30deg",
+          orientation: modelOrientation,
+          "camera-orbit": `${tuning.theta}deg ${tuning.phi}deg ${tuning.radius}%`,
+          "field-of-view": `${tuning.fov}deg`,
           "camera-target": "auto auto auto",
           "interaction-prompt": "none",
           "environment-image": "neutral",
@@ -207,6 +285,86 @@ export function Esp32Visual() {
           Model unavailable
         </div>
       )}
+
+      <div
+        className="absolute bottom-3 left-3 z-20 w-[286px] border border-white/[0.1] bg-black/75 p-3 shadow-[0_12px_36px_rgba(0,0,0,.42)] backdrop-blur-md"
+        onPointerMove={(event) => event.stopPropagation()}
+        onPointerLeave={(event) => event.stopPropagation()}
+        onPointerDown={(event) => event.stopPropagation()}
+      >
+        <div className="mb-2 flex items-center justify-between gap-3 border-b border-white/[0.08] pb-2">
+          <div>
+            <p className="font-mono text-[0.52rem] uppercase tracking-[0.15em] text-[#d8c076]">
+              ESP32 tuning
+            </p>
+            <p className="mt-0.5 font-mono text-[0.43rem] uppercase tracking-[0.1em] text-white/25">
+              Screenshot these values
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={resetTuning}
+            className="border border-white/[0.1] px-2 py-1 font-mono text-[0.45rem] uppercase tracking-[0.12em] text-white/45 transition-colors hover:border-[#daa000]/50 hover:text-[#d8c076]"
+          >
+            Reset
+          </button>
+        </div>
+
+        <div className="space-y-1.5">
+          <TuningSlider
+            label="Model X"
+            value={tuning.modelX}
+            min={-180}
+            max={180}
+            onChange={(value) => updateTuning("modelX", value)}
+          />
+          <TuningSlider
+            label="Model Y"
+            value={tuning.modelY}
+            min={-180}
+            max={180}
+            onChange={(value) => updateTuning("modelY", value)}
+          />
+          <TuningSlider
+            label="Model Z"
+            value={tuning.modelZ}
+            min={-180}
+            max={180}
+            onChange={(value) => updateTuning("modelZ", value)}
+          />
+          <div className="my-2 border-t border-white/[0.07]" />
+          <TuningSlider
+            label="Azimuth"
+            value={tuning.theta}
+            min={0}
+            max={360}
+            onChange={(value) => updateTuning("theta", value)}
+          />
+          <TuningSlider
+            label="Elevation"
+            value={tuning.phi}
+            min={20}
+            max={100}
+            onChange={(value) => updateTuning("phi", value)}
+          />
+          <TuningSlider
+            label="Distance"
+            value={tuning.radius}
+            min={65}
+            max={130}
+            suffix="%"
+            onChange={(value) => updateTuning("radius", value)}
+          />
+          <TuningSlider
+            label="FOV"
+            value={tuning.fov}
+            min={18}
+            max={45}
+            suffix="°"
+            onChange={(value) => updateTuning("fov", value)}
+          />
+        </div>
+      </div>
     </div>
   )
 }
