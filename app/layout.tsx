@@ -42,6 +42,36 @@ const landingFrameScript = `
   var seenKey = "esap-landing-animation-seen";
   var currentShell = null;
   var captureToken = 0;
+  var isLandingReload = false;
+
+  try {
+    if (window.location.pathname === "/") {
+      var navEntries = performance.getEntriesByType
+        ? performance.getEntriesByType("navigation")
+        : [];
+      if (navEntries && navEntries.length) {
+        isLandingReload = navEntries[0].type === "reload";
+      } else if (performance.navigation) {
+        isLandingReload = performance.navigation.type === 1;
+      }
+    }
+  } catch (e) {}
+
+  if (isLandingReload) {
+    // Safari can briefly paint a restored scroll position before the landing page
+    // is reset to its intended reload position. Disable restoration before body
+    // paint, pin the reload to the top, then hand control back after pageshow.
+    try { history.scrollRestoration = "manual"; } catch (e) {}
+    try { window.scrollTo(0, 0); } catch (e) {}
+
+    window.addEventListener("pageshow", function () {
+      try { window.scrollTo(0, 0); } catch (e) {}
+      requestAnimationFrame(function () {
+        try { window.scrollTo(0, 0); } catch (e) {}
+        try { history.scrollRestoration = "auto"; } catch (e) {}
+      });
+    }, { once: true });
+  }
 
   function readPoster() {
     try { return sessionStorage.getItem(posterKey); } catch (e) { return null; }
@@ -57,8 +87,6 @@ const landingFrameScript = `
 
   var bootPoster = readPoster();
   if (bootPoster) {
-    // Cached visits are already in the final visual state before React mounts.
-    // Leave native browser scroll restoration completely untouched.
     activatePoster(bootPoster);
   } else {
     // A "seen" flag without the current poster cannot provide a stable first paint.
@@ -131,6 +159,10 @@ const landingFrameScript = `
   }
 
   function start() {
+    if (isLandingReload) {
+      try { window.scrollTo(0, 0); } catch (e) {}
+    }
+
     syncLandingShell();
     var observer = new MutationObserver(syncLandingShell);
     observer.observe(document.body, { childList: true, subtree: true });
