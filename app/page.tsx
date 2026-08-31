@@ -28,6 +28,8 @@ const disciplines = [
   },
 ]
 
+const WIDE_RAIL = "mx-auto w-full lg:w-[calc(100%_-_48px)] 2xl:w-[calc(100%_-_80px)]"
+
 function SignalLabel({ children }: { children: ReactNode }) {
   return (
     <div className="flex items-center gap-3 font-mono text-[0.62rem] uppercase tracking-[0.18em] text-[#aaa398]">
@@ -68,7 +70,7 @@ export default function HomePage() {
         className="bg-[#0c0c0b] opacity-[var(--landing-content-opacity)] transition-opacity duration-[1100ms] ease-out"
       >
         <section className="border-b border-white/[0.08] bg-[#0c0c0b]">
-          <div className="mx-auto max-w-[1440px] lg:border-x lg:border-white/[0.06]">
+          <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
             <div className="flex flex-col gap-5 px-5 py-9 sm:px-8 sm:py-10 lg:flex-row lg:items-end lg:justify-between lg:px-12 lg:py-12 xl:px-16">
               <div>
                 <SignalLabel>Selected work</SignalLabel>
@@ -128,7 +130,7 @@ export default function HomePage() {
         </section>
 
         <section className="border-b border-white/[0.08] bg-[#11100d]">
-          <div className="mx-auto max-w-[1440px] lg:grid lg:grid-cols-[0.5fr_repeat(3,1fr)] lg:border-x lg:border-white/[0.06]">
+          <div className={`${WIDE_RAIL} lg:grid lg:grid-cols-[0.5fr_repeat(3,1fr)] lg:border-x lg:border-white/[0.06]`}>
             <div className="flex items-center border-b border-white/[0.08] px-5 py-6 sm:px-8 lg:border-b-0 lg:border-r lg:px-10 xl:px-12">
               <SignalLabel>Capabilities</SignalLabel>
             </div>
@@ -151,20 +153,20 @@ export default function HomePage() {
         </section>
 
         <section className="border-b border-white/[0.08] bg-[#0c0c0b]">
-          <div className="mx-auto grid max-w-[1440px] lg:grid-cols-[1.08fr_0.92fr] lg:border-x lg:border-white/[0.06]">
+          <div className={`${WIDE_RAIL} grid lg:grid-cols-[1.12fr_0.88fr] lg:border-x lg:border-white/[0.06]`}>
             <div className="relative min-h-[390px] overflow-hidden border-b border-white/[0.08] lg:min-h-[500px] lg:border-b-0 lg:border-r">
               <Image
                 src="/industry_ins.jpg"
                 alt="Embedded Systems @ Purdue workshop"
                 fill
-                sizes="(max-width: 1024px) 100vw, 54vw"
+                sizes="(max-width: 1024px) 100vw, 56vw"
                 className="object-cover opacity-[0.82] grayscale-[8%]"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/14" />
             </div>
 
-            <div className="flex items-center px-5 py-10 sm:px-8 sm:py-12 lg:px-10 lg:py-10 xl:px-12">
-              <div className="w-full">
+            <div className="flex items-center px-5 py-10 sm:px-8 sm:py-12 lg:px-10 lg:py-10 xl:px-12 2xl:px-16">
+              <div className="w-full max-w-2xl">
                 <SignalLabel>Workshops</SignalLabel>
                 <h2 className="mt-4 max-w-lg text-[clamp(2.45rem,4vw,4.15rem)] font-medium leading-[0.93] tracking-[-0.05em]">
                   Learn on real hardware.
@@ -212,7 +214,7 @@ export default function HomePage() {
         </section>
 
         <section className="relative border-b border-white/[0.08] bg-[#0a0a09]">
-          <div className="relative mx-auto min-h-[370px] max-w-[1440px] overflow-hidden lg:border-x lg:border-white/[0.06]">
+          <div className={`${WIDE_RAIL} relative min-h-[370px] overflow-hidden lg:border-x lg:border-white/[0.06]`}>
             <Image
               src="/founders.jpeg"
               alt="Embedded Systems @ Purdue community"
@@ -220,10 +222,10 @@ export default function HomePage() {
               sizes="100vw"
               className="object-cover object-center opacity-[0.52] grayscale-[10%]"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a09] via-[#0a0a09]/70 to-[#0a0a09]/8" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a09] via-[#0a0a09]/68 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a09]/82 via-transparent to-[#0a0a09]/14" />
 
-            <div className="relative flex min-h-[370px] items-end px-5 py-10 sm:px-8 sm:py-12 lg:px-12 xl:px-16">
+            <div className="relative flex min-h-[370px] items-end px-5 py-10 sm:px-8 sm:py-12 lg:px-12 xl:px-16 2xl:px-20">
               <div className="max-w-2xl">
                 <SignalLabel>Community</SignalLabel>
                 <h2 className="mt-4 text-balance text-[clamp(2.65rem,4.8vw,4.7rem)] font-medium leading-[0.91] tracking-[-0.055em]">
@@ -242,39 +244,41 @@ export default function HomePage() {
         </section>
 
         <section className="border-b border-white/[0.08] bg-[#0c0c0b]">
-          <div className="mx-auto grid max-w-[1440px] lg:grid-cols-2 lg:border-x lg:border-white/[0.06]">
-            <div className="border-b border-white/[0.08] px-5 py-10 sm:px-8 sm:py-12 lg:border-b-0 lg:border-r lg:px-12 xl:px-16">
-              <SignalLabel>Schedule</SignalLabel>
-              <h2 className="mt-4 text-4xl font-medium tracking-[-0.05em] sm:text-5xl">What&apos;s next</h2>
+          <div className={`${WIDE_RAIL} grid lg:grid-cols-[0.92fr_1.08fr] lg:border-x lg:border-white/[0.06]`}>
+            <div className="border-b border-white/[0.08] px-5 py-10 sm:px-8 sm:py-12 lg:border-b-0 lg:border-r lg:px-12 xl:px-16 2xl:px-20">
+              <div className="max-w-2xl">
+                <SignalLabel>Schedule</SignalLabel>
+                <h2 className="mt-4 text-4xl font-medium tracking-[-0.05em] sm:text-5xl">What&apos;s next</h2>
 
-              <div className="mt-6 border-t border-white/[0.08]">
-                <a
-                  href="https://calendar.google.com/calendar/render?cid=embedded%40purdue.edu"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center justify-between gap-6 border-b border-white/[0.08] py-4"
-                >
-                  <div>
-                    <p className="text-base font-medium">Events and meetings</p>
-                    <p className="mt-1 text-sm text-[#77736b]">Google Calendar</p>
-                  </div>
-                  <ArrowUpRight className="h-4 w-4 text-[#a9a397] transition-colors group-hover:text-[#f2c34f]" aria-hidden="true" />
-                </a>
-                <a
-                  href="https://calendar.google.com/calendar/ical/embedded%40purdue.edu/public/basic.ics"
-                  className="group flex items-center justify-between gap-6 py-4"
-                >
-                  <div>
-                    <p className="text-base font-medium">Subscribe</p>
-                    <p className="mt-1 text-sm text-[#77736b]">iCal feed</p>
-                  </div>
-                  <ArrowUpRight className="h-4 w-4 text-[#a9a397] transition-colors group-hover:text-[#f2c34f]" aria-hidden="true" />
-                </a>
+                <div className="mt-6 border-t border-white/[0.08]">
+                  <a
+                    href="https://calendar.google.com/calendar/render?cid=embedded%40purdue.edu"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex items-center justify-between gap-6 border-b border-white/[0.08] py-4"
+                  >
+                    <div>
+                      <p className="text-base font-medium">Events and meetings</p>
+                      <p className="mt-1 text-sm text-[#77736b]">Google Calendar</p>
+                    </div>
+                    <ArrowUpRight className="h-4 w-4 text-[#a9a397] transition-colors group-hover:text-[#f2c34f]" aria-hidden="true" />
+                  </a>
+                  <a
+                    href="https://calendar.google.com/calendar/ical/embedded%40purdue.edu/public/basic.ics"
+                    className="group flex items-center justify-between gap-6 py-4"
+                  >
+                    <div>
+                      <p className="text-base font-medium">Subscribe</p>
+                      <p className="mt-1 text-sm text-[#77736b]">iCal feed</p>
+                    </div>
+                    <ArrowUpRight className="h-4 w-4 text-[#a9a397] transition-colors group-hover:text-[#f2c34f]" aria-hidden="true" />
+                  </a>
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center px-5 py-10 sm:px-8 sm:py-12 lg:px-12 xl:px-16">
-              <div className="max-w-xl">
+            <div className="flex items-center px-5 py-10 sm:px-8 sm:py-12 lg:px-12 xl:px-16 2xl:px-20">
+              <div className="max-w-2xl">
                 <SignalLabel>Join</SignalLabel>
                 <h2 className="mt-4 text-[clamp(2.85rem,5vw,5.2rem)] font-medium leading-[0.9] tracking-[-0.06em]">
                   Build with us.
