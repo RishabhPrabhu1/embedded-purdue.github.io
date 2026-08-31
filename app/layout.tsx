@@ -70,40 +70,6 @@ const landingFrameScript = `
     } catch (e) {}
   }
 
-  function waitForFinalCanvas(shell, token) {
-    function check() {
-      if (token !== captureToken || !shell.isConnected) return;
-
-      var hero = shell.querySelector("section:first-of-type");
-      var canvas = hero && hero.querySelector("canvas");
-      if (!hero || !canvas) {
-        requestAnimationFrame(check);
-        return;
-      }
-
-      var dpr = Math.min(window.devicePixelRatio || 1, 1.1);
-      var expectedWidth = Math.round(Math.max(1, hero.getBoundingClientRect().width) * dpr);
-      var expectedHeight = Math.round(Math.max(1, window.innerHeight) * dpr);
-      var settled = hero.className.indexOf("h-[min(66svh,600px)]") !== -1;
-      var sized = Math.abs(canvas.width - expectedWidth) <= 2 && Math.abs(canvas.height - expectedHeight) <= 2;
-
-      if (!settled || !sized) {
-        requestAnimationFrame(check);
-        return;
-      }
-
-      // resize() and draw(animationEnd) run synchronously in the hero. Waiting one
-      // more frame guarantees the finished canvas is painted before the poster leaves.
-      requestAnimationFrame(function () {
-        if (token === captureToken && shell.isConnected) {
-          root.setAttribute("data-esap-return-canvas-ready", "1");
-        }
-      });
-    }
-
-    requestAnimationFrame(check);
-  }
-
   function capturePoster(shell, token) {
     function check() {
       if (token !== captureToken || !shell.isConnected) return;
@@ -118,8 +84,8 @@ const landingFrameScript = `
       }
 
       try {
-        // Cache a high-resolution version of the real finished canvas. It is still
-        // smaller than the live DPR canvas, but sharp enough to bridge hydration.
+        // Capture the real finished canvas once. Return visits keep this exact visual
+        // for the whole visit; there is no cached-image -> live-canvas handoff.
         var poster = document.createElement("canvas");
         poster.width = Math.min(1280, canvas.width);
         poster.height = Math.max(1, Math.round(canvas.height * poster.width / canvas.width));
@@ -135,7 +101,7 @@ const landingFrameScript = `
 
         sessionStorage.setItem(posterKey, frame);
         sessionStorage.setItem(seenKey, "1");
-        // Do not activate it on this visit. The live canvas remains untouched.
+        // First visit remains the live canvas. This image is only for later visits.
       } catch (e) {}
     }
 
@@ -148,15 +114,12 @@ const landingFrameScript = `
 
     currentShell = shell;
     captureToken += 1;
-    root.removeAttribute("data-esap-return-canvas-ready");
-
     if (!shell) return;
 
     var token = captureToken;
     var poster = readPoster();
     if (poster) {
       activatePoster(poster);
-      waitForFinalCanvas(shell, token);
     } else {
       root.removeAttribute("data-esap-return-poster");
       root.style.removeProperty("--esap-return-poster");
@@ -179,7 +142,7 @@ const landingFrameScript = `
 `;
 
 const landingFrameStyle = `
-/* Cached returns only override visibility/paint state; normal landing layout CSS stays intact. */
+/* Cached returns are a single static final state. No image -> canvas handoff. */
 html[data-esap-return-poster="1"] [data-landing-shell] {
   --landing-nav-opacity: 1 !important;
   --landing-content-opacity: 1 !important;
@@ -193,10 +156,6 @@ html[data-esap-return-poster="1"] [data-landing-shell] > section:first-of-type {
 
 html[data-esap-return-poster="1"] [data-landing-shell] > section:first-of-type canvas {
   visibility: hidden !important;
-}
-
-html[data-esap-return-poster="1"][data-esap-return-canvas-ready="1"] [data-landing-shell] > section:first-of-type canvas {
-  visibility: visible !important;
 }
 
 html[data-esap-return-poster="1"] [data-landing-shell] > section:first-of-type::before {
@@ -229,17 +188,12 @@ html[data-esap-return-poster="1"] [data-landing-shell] > section:first-of-type::
   pointer-events: none !important;
 }
 
-html[data-esap-return-poster="1"][data-esap-return-canvas-ready="1"] [data-landing-shell] > section:first-of-type::after {
-  display: none !important;
-}
-
 html[data-esap-return-poster="1"] #hero-intro {
   border-color: rgba(255,255,255,.08) !important;
   background: #0b0b0a !important;
   transition: none !important;
 }
 
-/* Resolve the intro's existing final visual state immediately, without changing its dimensions or fonts. */
 html[data-esap-return-poster="1"] #hero-intro > div:first-child {
   opacity: 1 !important;
   transition: none !important;
