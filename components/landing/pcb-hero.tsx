@@ -251,7 +251,6 @@ export function PcbHero() {
   const heroRef = useRef<HTMLElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [copyVisible, setCopyVisible] = useState(false)
-  const [stageLocked, setStageLocked] = useState(true)
 
   useEffect(() => {
     const hero = heroRef.current
@@ -268,11 +267,13 @@ export function PcbHero() {
     const formationContext = formationLayer.getContext("2d", { alpha: true })
 
     let frame = 0
+    let handoffFrame = 0
     let cancelled = false
     let complete = false
     let copyShown = false
     let navShown = false
     let pageShown = false
+    let handoffStarted = false
     let startTime = 0
     let dpr = 1
     let cssWidth = 1
@@ -305,14 +306,41 @@ export function PcbHero() {
       scrollLocked = false
     }
 
-    const releaseStage = () => {
-      restoreScroll()
-      setStageLocked(false)
+    const getHandoffTarget = () => {
+      const viewport = window.innerHeight
+      const oldHeroHeight = Math.max(600, Math.min(viewport * .78, 760))
+      return Math.max(0, viewport - oldHeroHeight)
     }
 
-    if (reducedMotion) {
-      setStageLocked(false)
-    } else {
+    const startHandoffScroll = () => {
+      if (handoffStarted) return
+      handoffStarted = true
+      restoreScroll()
+
+      if (reducedMotion) return
+
+      const from = window.scrollY
+      const to = getHandoffTarget()
+      if (to <= from + 1) return
+
+      const started = performance.now()
+      const duration = 900
+
+      const step = (now: number) => {
+        if (cancelled) return
+        const progress = clamp01((now - started) / duration)
+        const eased = progress < .5
+          ? 4 * progress * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2
+
+        window.scrollTo(0, from + (to - from) * eased)
+        if (progress < 1) handoffFrame = requestAnimationFrame(step)
+      }
+
+      handoffFrame = requestAnimationFrame(step)
+    }
+
+    if (!reducedMotion) {
       window.scrollTo(0, 0)
       root.style.overflowY = "hidden"
       root.style.overscrollBehaviorY = "none"
@@ -558,7 +586,7 @@ export function PcbHero() {
       if (elapsed >= animationEnd) {
         complete = true
         revealEverything()
-        releaseStage()
+        startHandoffScroll()
         return
       }
 
@@ -601,7 +629,7 @@ export function PcbHero() {
             draw(animationEnd)
             complete = true
             revealEverything()
-            releaseStage()
+            restoreScroll()
           } else {
             frame = requestAnimationFrame(tick)
           }
@@ -615,7 +643,7 @@ export function PcbHero() {
             draw(animationEnd)
             complete = true
             revealEverything()
-            releaseStage()
+            restoreScroll()
           } else {
             frame = requestAnimationFrame(tick)
           }
@@ -623,7 +651,7 @@ export function PcbHero() {
         image.src = "/logo.svg"
       } catch {
         revealEverything()
-        releaseStage()
+        restoreScroll()
       }
     }
 
@@ -633,6 +661,7 @@ export function PcbHero() {
     return () => {
       cancelled = true
       cancelAnimationFrame(frame)
+      cancelAnimationFrame(handoffFrame)
       restoreScroll()
       window.removeEventListener("resize", resize)
     }
@@ -642,11 +671,7 @@ export function PcbHero() {
     <>
       <section
         ref={heroRef}
-        className={`relative isolate overflow-hidden bg-black transition-all duration-700 ease-out ${
-          stageLocked
-            ? "h-[100svh] min-h-[100svh]"
-            : "h-[min(78svh,760px)] min-h-[600px]"
-        }`}
+        className="relative isolate h-[100svh] min-h-[100svh] overflow-hidden bg-black"
       >
         <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 z-[1] h-full w-full" aria-hidden="true" />
       </section>
