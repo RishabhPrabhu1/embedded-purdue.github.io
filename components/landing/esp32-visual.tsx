@@ -169,8 +169,8 @@ export function Esp32Visual() {
 
       {shouldLoadModel && viewerReady && !modelFailed &&
         createElement("model-viewer", {
-          ref: (node: ModelViewerElement | null) => {
-            modelRef.current = node
+          ref: (node: HTMLElement | null) => {
+            modelRef.current = node as ModelViewerElement | null
           },
           src: ESP32_MODEL,
           alt: "ESP32 38-pin ESP-WROOM-32 development board",
