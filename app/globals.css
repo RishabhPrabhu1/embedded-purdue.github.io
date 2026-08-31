@@ -171,18 +171,39 @@
 [data-landing-shell] > section:first-of-type::before {
   top: 0;
   transform-origin: bottom;
+  -webkit-mask-image: linear-gradient(to top, black 42%, rgba(0,0,0,.72) 72%, transparent 100%);
   mask-image: linear-gradient(to top, black 42%, rgba(0,0,0,.72) 72%, transparent 100%);
 }
 
 [data-landing-shell] > section:first-of-type::after {
   bottom: 0;
   transform-origin: top;
+  -webkit-mask-image: linear-gradient(to bottom, black 42%, rgba(0,0,0,.72) 72%, transparent 100%);
   mask-image: linear-gradient(to bottom, black 42%, rgba(0,0,0,.72) 72%, transparent 100%);
 }
 
 [data-landing-shell][style*="--landing-content-opacity: 1"] > section:first-of-type::before,
 [data-landing-shell][style*="--landing-content-opacity: 1"] > section:first-of-type::after {
   opacity: 0;
+}
+
+#hero-intro [data-hero-intro-grid] > div:first-child p {
+  display: none;
+}
+
+#hero-intro a[href*="discord.gg"] {
+  border-radius: 0;
+  background: #daa000;
+  color: #11110f;
+  font-family: var(--font-geist-mono);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+#hero-intro a[href*="discord.gg"]:hover {
+  background: #efbd27;
 }
 
 @media (prefers-reduced-motion: reduce) {
