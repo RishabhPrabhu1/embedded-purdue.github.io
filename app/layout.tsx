@@ -36,31 +36,84 @@ export const metadata: Metadata = {
 };
 
 const landingFrameScript = `
-try {
-  var frame = sessionStorage.getItem("esap-landing-final-frame");
-  if (frame) {
-    document.documentElement.setAttribute("data-esap-return-frame", "1");
-    document.documentElement.style.setProperty("--esap-return-frame", 'url("' + frame + '")');
+(function () {
+  var root = document.documentElement;
+  var frameKey = "esap-landing-final-frame";
+  var seenKey = "esap-landing-animation-seen";
+
+  function activateFrame(frame) {
+    if (!frame) return;
+    root.style.setProperty("--esap-return-frame", 'url("' + frame + '")');
+    root.setAttribute("data-esap-return-frame", "1");
+    try { sessionStorage.setItem(seenKey, "1"); } catch (e) {}
   }
-} catch (e) {}
+
+  var bootFrame = null;
+  try { bootFrame = sessionStorage.getItem(frameKey); } catch (e) {}
+
+  if (bootFrame) {
+    activateFrame(bootFrame);
+    return;
+  }
+
+  try {
+    if (sessionStorage.getItem(seenKey) === "1") sessionStorage.removeItem(seenKey);
+  } catch (e) {}
+
+  function beginCapture() {
+    var shell = document.querySelector("[data-landing-shell]");
+    if (!shell) return;
+
+    function captureWhenSettled() {
+      var hero = shell.querySelector("section:first-of-type");
+      var canvas = hero && hero.querySelector("canvas");
+      var settled = hero && hero.className.indexOf("h-[min(66svh,600px)]") !== -1;
+
+      if (!hero || !canvas || !settled || canvas.width < 2 || canvas.height < 2) {
+        requestAnimationFrame(captureWhenSettled);
+        return;
+      }
+
+      try {
+        var frame = canvas.toDataURL("image/webp", 0.92);
+        if (!frame || frame === "data:,") return;
+
+        sessionStorage.setItem(frameKey, frame);
+        sessionStorage.setItem(seenKey, "1");
+
+        // The first visit keeps the live canvas. Once its normal settle transition is over,
+        // switching to the identical cached bitmap is visually inert and primes client-side returns.
+        window.setTimeout(function () { activateFrame(frame); }, 760);
+      } catch (e) {}
+    }
+
+    requestAnimationFrame(captureWhenSettled);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", beginCapture, { once: true });
+  } else {
+    beginCapture();
+  }
+})();
 `;
 
 const landingFrameStyle = `
-html[data-esap-return-frame="1"] [data-pcb-hero] {
+html[data-esap-return-frame="1"] [data-landing-shell] > section:first-of-type {
   height: min(66svh, 600px) !important;
   min-height: 500px !important;
   transition: none !important;
 }
 
-html[data-esap-return-frame="1"] [data-pcb-hero] canvas {
+html[data-esap-return-frame="1"] [data-landing-shell] > section:first-of-type canvas {
   visibility: hidden !important;
 }
 
-html[data-esap-return-frame="1"] [data-pcb-hero]::before {
+html[data-esap-return-frame="1"] [data-landing-shell] > section:first-of-type::before {
   display: none !important;
 }
 
-html[data-esap-return-frame="1"] [data-pcb-hero]::after {
+html[data-esap-return-frame="1"] [data-landing-shell] > section:first-of-type::after {
   content: "" !important;
   display: block !important;
   position: absolute !important;
