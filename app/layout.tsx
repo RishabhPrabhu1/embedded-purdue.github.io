@@ -38,7 +38,7 @@ export const metadata: Metadata = {
 const landingFrameScript = `
 (function () {
   var root = document.documentElement;
-  var posterKey = "esap-landing-final-poster-v3";
+  var posterKey = "esap-landing-final-poster-v4";
   var seenKey = "esap-landing-animation-seen";
   var currentShell = null;
   var captureToken = 0;
@@ -59,13 +59,14 @@ const landingFrameScript = `
   if (bootPoster) {
     activatePoster(bootPoster);
   } else {
-    // A "seen" flag without a poster cannot provide a stable first paint.
-    // Replay the animation once and create the poster instead.
+    // A "seen" flag without the current poster cannot provide a stable first paint.
+    // Replay the animation once and create the current poster instead.
     try {
       sessionStorage.removeItem(seenKey);
       sessionStorage.removeItem("esap-landing-final-frame");
       sessionStorage.removeItem("esap-landing-final-frame-v2");
       sessionStorage.removeItem("esap-landing-final-poster-v2");
+      sessionStorage.removeItem("esap-landing-final-poster-v3");
     } catch (e) {}
   }
 
@@ -117,10 +118,10 @@ const landingFrameScript = `
       }
 
       try {
-        // Cache only a tiny version of the real finished canvas. It is small enough
-        // for Safari to decode immediately and exists solely to bridge hydration.
+        // Cache a high-resolution version of the real finished canvas. It is still
+        // smaller than the live DPR canvas, but sharp enough to bridge hydration.
         var poster = document.createElement("canvas");
-        poster.width = Math.min(192, canvas.width);
+        poster.width = Math.min(1280, canvas.width);
         poster.height = Math.max(1, Math.round(canvas.height * poster.width / canvas.width));
         var context = poster.getContext("2d", { alpha: false });
         if (!context) return;
@@ -129,7 +130,7 @@ const landingFrameScript = `
         context.fillRect(0, 0, poster.width, poster.height);
         context.drawImage(canvas, 0, 0, poster.width, poster.height);
 
-        var frame = poster.toDataURL("image/jpeg", 0.58);
+        var frame = poster.toDataURL("image/jpeg", 0.86);
         if (!frame || frame === "data:,") return;
 
         sessionStorage.setItem(posterKey, frame);
@@ -238,14 +239,16 @@ html[data-esap-return-poster="1"] #hero-intro {
   transition: none !important;
 }
 
-/* Preserve the normal intro dimensions. Remove only the return-visit movement. */
-html[data-esap-return-poster="1"] #hero-intro > div:first-child,
-html[data-esap-return-poster="1"] #hero-intro [data-hero-intro-grid] {
+/* Resolve the intro's existing final visual state immediately, without changing its dimensions or fonts. */
+html[data-esap-return-poster="1"] #hero-intro > div:first-child {
+  opacity: 1 !important;
   transition: none !important;
 }
 
 html[data-esap-return-poster="1"] #hero-intro [data-hero-intro-grid] {
+  opacity: 1 !important;
   transform: none !important;
+  transition: none !important;
 }
 `;
 
