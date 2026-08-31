@@ -10,19 +10,21 @@ export type WorkshopMeta = {
   location?: string
   summary?: string
   tags?: string[]
+  cover?: string
+  image?: string
 }
 type Meta = {
-  title: string;
-  summary?: string;
-  cover?: string;
-  image?: string;
-  slug: string;
-};
+  title: string
+  summary?: string
+  cover?: string
+  image?: string
+  slug: string
+}
 
 type WorkshopEntry = {
-  meta: Meta;
-  content: string;
-};
+  meta: Meta
+  content: string
+}
 const WORKSHOPS_DIR = path.join(process.cwd(), "content", "workshops")
 
 export function getAllWorkshops(): WorkshopMeta[] {
@@ -40,6 +42,8 @@ export function getAllWorkshops(): WorkshopMeta[] {
       location: (data.location as string) ?? undefined,
       summary: (data.summary as string) ?? "",
       tags: Array.isArray(data.tags) ? (data.tags as string[]) : [],
+      cover: (data.cover as string) ?? undefined,
+      image: (data.image as string) ?? undefined,
     }
   })
   return list.sort((a, b) => (a.date && b.date ? (a.date < b.date ? 1 : -1) : 0))
