@@ -1,6 +1,6 @@
 "use client"
 
-import { createElement, useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 const MODEL_VIEWER_SCRIPT =
   "https://ajax.googleapis.com/ajax/libs/model-viewer/4.3.1/model-viewer.min.js"
@@ -28,6 +28,7 @@ type ModelViewerElement = HTMLElement & {
   fieldOfView: string
   loaded?: boolean
   jumpCameraToGoal?: () => void
+  updateFraming?: () => Promise<void>
 }
 
 type ModelViewerConstructor = CustomElementConstructor & {
@@ -53,10 +54,6 @@ function TuningSlider({
   suffix = "°",
   onChange,
 }: TuningSliderProps) {
-  const handleValue = (event: React.FormEvent<HTMLInputElement>) => {
-    onChange(Number(event.currentTarget.value))
-  }
-
   return (
     <label className="grid grid-cols-[72px_1fr_58px] items-center gap-2">
       <span className="font-mono text-[0.48rem] uppercase tracking-[0.12em] text-white/45">
@@ -68,8 +65,8 @@ function TuningSlider({
         max={max}
         step={step}
         value={value}
-        onInput={handleValue}
-        onChange={handleValue}
+        onInput={(event) => onChange(Number(event.currentTarget.value))}
+        onChange={(event) => onChange(Number(event.currentTarget.value))}
         className="h-4 w-full cursor-ew-resize accent-[#daa000]"
       />
       <div className="relative">
@@ -93,32 +90,23 @@ function TuningSlider({
 
 export function Esp32Visual() {
   const viewerRef = useRef<HTMLDivElement>(null)
+  const modelHostRef = useRef<HTMLDivElement>(null)
   const modelRef = useRef<ModelViewerElement | null>(null)
   const frameRef = useRef<number | null>(null)
   const hoverRef = useRef({ x: 0, y: 0 })
   const tuningRef = useRef<TuningValues>({ ...DEFAULT_TUNING })
-  const pendingOrbitRef = useRef(
-    `${DEFAULT_TUNING.theta}deg ${DEFAULT_TUNING.phi}deg ${DEFAULT_TUNING.radius}%`
-  )
 
   const [tuning, setTuning] = useState<TuningValues>({ ...DEFAULT_TUNING })
-  const [shouldLoadModel, setShouldLoadModel] = useState(false)
-  const [viewerReady, setViewerReady] = useState(false)
+  const [shouldMountModel, setShouldMountModel] = useState(false)
+  const [runtimeReady, setRuntimeReady] = useState(false)
   const [modelLoaded, setModelLoaded] = useState(false)
   const [modelFailed, setModelFailed] = useState(false)
 
-  // Start downloading the relatively large GLB during the hero animation so the
-  // eventual model-viewer request can be fulfilled from the browser HTTP cache.
+  // Begin downloading the GLB while the hero animation is still playing. The
+  // actual WebGL viewer remains deferred until this section approaches view.
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      fetch(ESP32_MODEL, { cache: "force-cache" })
-        .then((response) => {
-          if (!response.ok) throw new Error("ESP32 preload failed")
-          return response.arrayBuffer()
-        })
-        .catch(() => {
-          // The normal model-viewer request still gets a chance to load it later.
-        })
+      fetch(ESP32_MODEL, { cache: "force-cache" }).catch(() => {})
     }, 250)
 
     return () => window.clearTimeout(timer)
@@ -129,14 +117,14 @@ export function Esp32Visual() {
     if (!viewer) return
 
     if (!("IntersectionObserver" in window)) {
-      setShouldLoadModel(true)
+      setShouldMountModel(true)
       return
     }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (!entry.isIntersecting) return
-        setShouldLoadModel(true)
+        setShouldMountModel(true)
         observer.disconnect()
       },
       { rootMargin: "700px 0px" }
@@ -146,8 +134,8 @@ export function Esp32Visual() {
     return () => observer.disconnect()
   }, [])
 
-  // Warm the model-viewer runtime immediately; only WebGL/model presentation is
-  // deferred until the workshops section approaches the viewport.
+  // Warm the model-viewer runtime immediately. Keeping the custom element out of
+  // React's rendered tree avoids Safari custom-element hydration/ref races.
   useEffect(() => {
     const markReady = () => {
       const ModelViewer = customElements.get(
@@ -156,7 +144,7 @@ export function Esp32Visual() {
       if (!ModelViewer) return false
 
       ModelViewer.minimumRenderScale = 1
-      setViewerReady(true)
+      setRuntimeReady(true)
       return true
     }
 
@@ -195,87 +183,131 @@ export function Esp32Visual() {
     }
   }, [])
 
+  const cameraOrbitFor = (values: TuningValues) => {
+    const hover = hoverRef.current
+    return `${(values.theta + hover.x * HORIZONTAL_ORBIT).toFixed(3)}deg ${(
+      values.phi -
+      hover.y * VERTICAL_ORBIT
+    ).toFixed(3)}deg ${values.radius}%`
+  }
+
+  const applyCamera = (
+    model: ModelViewerElement,
+    values: TuningValues,
+    snap = false
+  ) => {
+    const orbit = cameraOrbitFor(values)
+    const fov = `${values.fov}deg`
+
+    // Set both the public property and reflected attribute. Doing this outside
+    // React makes the tuner deterministic across Safari/Chrome.
+    model.cameraOrbit = orbit
+    model.fieldOfView = fov
+    model.setAttribute("camera-orbit", orbit)
+    model.setAttribute("field-of-view", fov)
+
+    if (snap) model.jumpCameraToGoal?.()
+  }
+
+  const applyOrientation = (
+    model: ModelViewerElement,
+    values: TuningValues,
+    snap = false
+  ) => {
+    const orientation = `${values.modelX}deg ${values.modelY}deg ${values.modelZ}deg`
+    model.orientation = orientation
+    model.setAttribute("orientation", orientation)
+
+    // Recalculate framing after changing the model transform, then restore the
+    // camera values selected by the tuner.
+    const framing = model.updateFraming?.()
+    if (framing) {
+      void framing.then(() => {
+        if (modelRef.current !== model) return
+        applyCamera(model, tuningRef.current, snap)
+      })
+    } else {
+      applyCamera(model, values, snap)
+    }
+  }
+
+  useEffect(() => {
+    if (!runtimeReady || !shouldMountModel || modelFailed) return
+
+    const host = modelHostRef.current
+    if (!host || modelRef.current) return
+
+    const model = document.createElement("model-viewer") as ModelViewerElement
+    modelRef.current = model
+
+    model.setAttribute("src", ESP32_MODEL)
+    model.setAttribute("alt", "ESP32 38-pin ESP-WROOM-32 development board")
+    model.setAttribute("loading", "eager")
+    model.setAttribute("reveal", "auto")
+    model.setAttribute(
+      "orientation",
+      `${DEFAULT_TUNING.modelX}deg ${DEFAULT_TUNING.modelY}deg ${DEFAULT_TUNING.modelZ}deg`
+    )
+    model.setAttribute(
+      "camera-orbit",
+      `${DEFAULT_TUNING.theta}deg ${DEFAULT_TUNING.phi}deg ${DEFAULT_TUNING.radius}%`
+    )
+    model.setAttribute("field-of-view", `${DEFAULT_TUNING.fov}deg`)
+    model.setAttribute("camera-target", "auto auto auto")
+    model.setAttribute("interaction-prompt", "none")
+    model.setAttribute("environment-image", "neutral")
+    model.setAttribute("tone-mapping", "neutral")
+    model.setAttribute("exposure", "0.82")
+    model.setAttribute("shadow-intensity", "0")
+    model.setAttribute("interpolation-decay", "72")
+
+    Object.assign(model.style, {
+      position: "absolute",
+      inset: "0",
+      width: "100%",
+      height: "100%",
+      background: "transparent",
+      pointerEvents: "none",
+    })
+
+    const handleLoad = () => {
+      setModelLoaded(true)
+      setModelFailed(false)
+      applyOrientation(model, tuningRef.current, true)
+    }
+
+    const handleError = () => {
+      setModelLoaded(false)
+      setModelFailed(true)
+    }
+
+    model.addEventListener("load", handleLoad)
+    model.addEventListener("error", handleError)
+    host.appendChild(model)
+
+    return () => {
+      model.removeEventListener("load", handleLoad)
+      model.removeEventListener("error", handleError)
+      if (model.parentNode === host) host.removeChild(model)
+      if (modelRef.current === model) modelRef.current = null
+    }
+  }, [runtimeReady, shouldMountModel, modelFailed])
+
   useEffect(() => {
     return () => {
       if (frameRef.current !== null) cancelAnimationFrame(frameRef.current)
     }
   }, [])
 
-  const applyValuesToModel = useCallback(
-    (model: ModelViewerElement, values: TuningValues, snapCamera = false) => {
-      const hover = hoverRef.current
+  const queueHoverCamera = () => {
+    if (frameRef.current !== null) return
 
-      try {
-        // These are model-viewer's public reactive properties. Applying them on
-        // the element avoids React/custom-element attribute lifecycle races.
-        model.orientation = `${values.modelX}deg ${values.modelY}deg ${values.modelZ}deg`
-        model.fieldOfView = `${values.fov}deg`
-        model.cameraOrbit = `${(
-          values.theta +
-          hover.x * HORIZONTAL_ORBIT
-        ).toFixed(3)}deg ${(
-          values.phi -
-          hover.y * VERTICAL_ORBIT
-        ).toFixed(3)}deg ${values.radius}%`
-
-        if (snapCamera) model.jumpCameraToGoal?.()
-      } catch {
-        // If the internal scene is not constructed yet, the latest state is
-        // applied again by the load handler below.
-      }
-    },
-    []
-  )
-
-  const setModelNode = useCallback(
-    (node: HTMLElement | null) => {
-      const model = node as ModelViewerElement | null
-      modelRef.current = model
-      if (!model) {
-        setModelLoaded(false)
-        return
-      }
-
-      const markLoaded = () => {
-        setModelLoaded(true)
-        applyValuesToModel(model, tuningRef.current, true)
-      }
-
-      if (model.loaded) markLoaded()
-      else model.addEventListener("load", markLoaded, { once: true })
-    },
-    [applyValuesToModel]
-  )
-
-  const flushOrbit = () => {
-    frameRef.current = null
-    const model = modelRef.current
-    if (!model) return
-
-    try {
-      model.cameraOrbit = pendingOrbitRef.current
-    } catch {
-      // Model is still warming; the next pointer/tuning update will retry.
-    }
-  }
-
-  const queueOrbit = (theta: number, phi: number, radius: number) => {
-    pendingOrbitRef.current = `${theta.toFixed(3)}deg ${phi.toFixed(
-      3
-    )}deg ${radius}%`
-
-    if (frameRef.current === null) {
-      frameRef.current = requestAnimationFrame(flushOrbit)
-    }
-  }
-
-  const applyCurrentOrbit = (values = tuningRef.current) => {
-    const hover = hoverRef.current
-    queueOrbit(
-      values.theta + hover.x * HORIZONTAL_ORBIT,
-      values.phi - hover.y * VERTICAL_ORBIT,
-      values.radius
-    )
+    frameRef.current = requestAnimationFrame(() => {
+      frameRef.current = null
+      const model = modelRef.current
+      if (!model) return
+      applyCamera(model, tuningRef.current)
+    })
   }
 
   const updateTuning = (key: TuningKey, value: number) => {
@@ -286,7 +318,13 @@ export function Esp32Visual() {
     setTuning(next)
 
     const model = modelRef.current
-    if (model) applyValuesToModel(model, next, true)
+    if (!model || !modelLoaded) return
+
+    if (key === "modelX" || key === "modelY" || key === "modelZ") {
+      applyOrientation(model, next, true)
+    } else {
+      applyCamera(model, next, true)
+    }
   }
 
   const resetTuning = () => {
@@ -296,7 +334,7 @@ export function Esp32Visual() {
     setTuning(next)
 
     const model = modelRef.current
-    if (model) applyValuesToModel(model, next, true)
+    if (model && modelLoaded) applyOrientation(model, next, true)
   }
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -316,12 +354,12 @@ export function Esp32Visual() {
       ),
     }
 
-    applyCurrentOrbit()
+    queueHoverCamera()
   }
 
   const handlePointerLeave = () => {
     hoverRef.current = { x: 0, y: 0 }
-    applyCurrentOrbit()
+    queueHoverCamera()
   }
 
   return (
@@ -334,35 +372,9 @@ export function Esp32Visual() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_47%,rgba(218,160,0,0.055),transparent_36%),linear-gradient(to_bottom,rgba(255,255,255,.012),transparent_24%,transparent_74%,rgba(0,0,0,.38))]" />
       <div className="pointer-events-none absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(255,255,255,.022)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.022)_1px,transparent_1px)] [background-size:38px_38px]" />
 
-      {shouldLoadModel && viewerReady && !modelFailed &&
-        createElement("model-viewer", {
-          ref: setModelNode,
-          src: ESP32_MODEL,
-          alt: "ESP32 38-pin ESP-WROOM-32 development board",
-          loading: "eager",
-          reveal: "auto",
-          orientation: `${DEFAULT_TUNING.modelX}deg ${DEFAULT_TUNING.modelY}deg ${DEFAULT_TUNING.modelZ}deg`,
-          "camera-orbit": `${DEFAULT_TUNING.theta}deg ${DEFAULT_TUNING.phi}deg ${DEFAULT_TUNING.radius}%`,
-          "field-of-view": `${DEFAULT_TUNING.fov}deg`,
-          "camera-target": "auto auto auto",
-          "interaction-prompt": "none",
-          "environment-image": "neutral",
-          "tone-mapping": "neutral",
-          exposure: "0.82",
-          "shadow-intensity": "0",
-          "interpolation-decay": "72",
-          onError: () => setModelFailed(true),
-          style: {
-            position: "absolute",
-            inset: "0",
-            width: "100%",
-            height: "100%",
-            background: "transparent",
-            pointerEvents: "none",
-          },
-        })}
+      <div ref={modelHostRef} className="pointer-events-none absolute inset-0" />
 
-      {shouldLoadModel && !viewerReady && !modelFailed && (
+      {shouldMountModel && !modelLoaded && !modelFailed && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center font-mono text-[0.52rem] uppercase tracking-[0.16em] text-white/20">
           Loading model
         </div>
@@ -408,58 +420,14 @@ export function Esp32Visual() {
         </div>
 
         <div className="space-y-1.5">
-          <TuningSlider
-            label="Model X"
-            value={tuning.modelX}
-            min={-180}
-            max={180}
-            onChange={(value) => updateTuning("modelX", value)}
-          />
-          <TuningSlider
-            label="Model Y"
-            value={tuning.modelY}
-            min={-180}
-            max={180}
-            onChange={(value) => updateTuning("modelY", value)}
-          />
-          <TuningSlider
-            label="Model Z"
-            value={tuning.modelZ}
-            min={-180}
-            max={180}
-            onChange={(value) => updateTuning("modelZ", value)}
-          />
+          <TuningSlider label="Model X" value={tuning.modelX} min={-180} max={180} onChange={(value) => updateTuning("modelX", value)} />
+          <TuningSlider label="Model Y" value={tuning.modelY} min={-180} max={180} onChange={(value) => updateTuning("modelY", value)} />
+          <TuningSlider label="Model Z" value={tuning.modelZ} min={-180} max={180} onChange={(value) => updateTuning("modelZ", value)} />
           <div className="my-2 border-t border-white/[0.07]" />
-          <TuningSlider
-            label="Azimuth"
-            value={tuning.theta}
-            min={0}
-            max={360}
-            onChange={(value) => updateTuning("theta", value)}
-          />
-          <TuningSlider
-            label="Elevation"
-            value={tuning.phi}
-            min={20}
-            max={100}
-            onChange={(value) => updateTuning("phi", value)}
-          />
-          <TuningSlider
-            label="Distance"
-            value={tuning.radius}
-            min={65}
-            max={130}
-            suffix="%"
-            onChange={(value) => updateTuning("radius", value)}
-          />
-          <TuningSlider
-            label="FOV"
-            value={tuning.fov}
-            min={18}
-            max={45}
-            suffix="°"
-            onChange={(value) => updateTuning("fov", value)}
-          />
+          <TuningSlider label="Azimuth" value={tuning.theta} min={0} max={360} onChange={(value) => updateTuning("theta", value)} />
+          <TuningSlider label="Elevation" value={tuning.phi} min={20} max={100} onChange={(value) => updateTuning("phi", value)} />
+          <TuningSlider label="Distance" value={tuning.radius} min={65} max={130} suffix="%" onChange={(value) => updateTuning("radius", value)} />
+          <TuningSlider label="FOV" value={tuning.fov} min={18} max={45} onChange={(value) => updateTuning("fov", value)} />
         </div>
       </div>
     </div>
