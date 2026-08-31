@@ -6,11 +6,13 @@ const MODEL_VIEWER_SCRIPT =
   "https://ajax.googleapis.com/ajax/libs/model-viewer/4.3.1/model-viewer.min.js"
 const ESP32_MODEL = "/models/esp32/esp32-38pin.glb"
 
-const BASE_THETA = 164
-const BASE_PHI = 62
-const CAMERA_RADIUS = 103
-const HORIZONTAL_ORBIT = 9
-const VERTICAL_ORBIT = 5.5
+// Product-shot baseline: the board sits horizontally, the pin rows read below
+// the PCB, and the front edge is biased slightly toward the viewer.
+const BASE_THETA = 178
+const BASE_PHI = 74
+const CAMERA_RADIUS = 94
+const HORIZONTAL_ORBIT = 6.5
+const VERTICAL_ORBIT = 4.25
 
 type ModelViewerElement = HTMLElement & {
   cameraOrbit: string
@@ -62,9 +64,8 @@ export function Esp32Visual() {
       ) as ModelViewerConstructor | undefined
       if (!ModelViewer) return false
 
-      // model-viewer normally lowers its internal DPR under GPU load. A single,
-      // lightweight product model looks noticeably cleaner if we keep it at the
-      // browser's full device-pixel ratio instead of pulsing resolution in motion.
+      // Keep full render resolution during motion. model-viewer otherwise lowers
+      // its internal render scale under load, which is visible as a quality pulse.
       ModelViewer.minimumRenderScale = 1
       setViewerReady(true)
       return true
@@ -123,9 +124,8 @@ export function Esp32Visual() {
       3
     )}deg ${CAMERA_RADIUS}%`
 
-    // Pointer events can arrive faster than display refresh. Only hand one goal
-    // to model-viewer per frame; its own critically damped camera interpolation
-    // handles the visible motion from there.
+    // Collapse pointer bursts to one camera goal per display frame. model-viewer
+    // supplies the visible damping, so the response stays direct rather than floaty.
     if (frameRef.current === null) {
       frameRef.current = requestAnimationFrame(flushOrbit)
     }
@@ -137,19 +137,21 @@ export function Esp32Visual() {
     const rect = event.currentTarget.getBoundingClientRect()
     if (!rect.width || !rect.height) return
 
-    const rawX = ((event.clientX - rect.left) / rect.width) * 2 - 1
-    const rawY = ((event.clientY - rect.top) / rect.height) * 2 - 1
-    const x = Math.max(-1, Math.min(1, rawX))
-    const y = Math.max(-1, Math.min(1, rawY))
+    const x = Math.max(
+      -1,
+      Math.min(1, ((event.clientX - rect.left) / rect.width) * 2 - 1)
+    )
+    const y = Math.max(
+      -1,
+      Math.min(1, ((event.clientY - rect.top) / rect.height) * 2 - 1)
+    )
 
-    // Slight sine easing gives useful movement near the middle without making
-    // the outer corners snap to an exaggerated angle.
-    const easedX = Math.sin((x * Math.PI) / 2)
-    const easedY = Math.sin((y * Math.PI) / 2)
-
+    // Match the first visual's feel: the board continuously follows cursor
+    // position across the panel. Vertical response is inverted so moving the
+    // cursor down tips the near edge toward the viewer rather than away.
     queueOrbit(
-      BASE_THETA + easedX * HORIZONTAL_ORBIT,
-      BASE_PHI + easedY * VERTICAL_ORBIT
+      BASE_THETA + x * HORIZONTAL_ORBIT,
+      BASE_PHI - y * VERTICAL_ORBIT
     )
   }
 
@@ -177,14 +179,14 @@ export function Esp32Visual() {
           loading: "lazy",
           reveal: "auto",
           "camera-orbit": `${BASE_THETA}deg ${BASE_PHI}deg ${CAMERA_RADIUS}%`,
-          "field-of-view": "27deg",
+          "field-of-view": "25.5deg",
           "camera-target": "auto auto auto",
           "interaction-prompt": "none",
           "environment-image": "neutral",
           "tone-mapping": "agx",
           exposure: "1.1",
           "shadow-intensity": "0",
-          "interpolation-decay": "82",
+          "interpolation-decay": "72",
           onError: () => setModelFailed(true),
           style: {
             position: "absolute",
