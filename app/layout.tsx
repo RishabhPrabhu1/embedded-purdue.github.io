@@ -44,34 +44,17 @@ try {
     style.id = "esap-returning-landing-style";
     style.textContent = [
       'html[data-esap-landing-seen="1"] [data-landing-shell]{--landing-nav-opacity:1!important;--landing-content-opacity:1!important}',
-      'html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type{height:min(66svh,600px)!important;min-height:500px!important}',
-      'html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type canvas{top:calc(50% + 34px)!important}',
+      'html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type{height:min(66svh,600px)!important;min-height:500px!important;transition:none!important}',
+      'html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type canvas{top:calc(50% + 34px)!important;opacity:0!important;transition:none!important}',
+      'html[data-esap-landing-seen="1"][data-esap-canvas-ready="1"] [data-landing-shell]>section:first-of-type canvas{opacity:1!important}',
+      'html[data-esap-landing-seen="1"] [data-returning-logo-fallback]{display:block!important;opacity:1!important}',
+      'html[data-esap-landing-seen="1"][data-esap-canvas-ready="1"] [data-returning-logo-fallback]{opacity:0!important}',
       'html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type::before,html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type::after{display:none!important}',
-      'html[data-esap-landing-seen="1"] #hero-intro{border-color:rgba(255,255,255,.08)!important;background:#0b0b0a!important}',
-      'html[data-esap-landing-seen="1"] #hero-intro>div:first-child{opacity:1!important}',
-      'html[data-esap-landing-seen="1"] #hero-intro [data-hero-intro-grid]{opacity:1!important;transform:translateY(0)!important}'
+      'html[data-esap-landing-seen="1"] #hero-intro{border-color:rgba(255,255,255,.08)!important;background:#0b0b0a!important;transition:none!important}',
+      'html[data-esap-landing-seen="1"] #hero-intro>div:first-child{opacity:1!important;transition:none!important}',
+      'html[data-esap-landing-seen="1"] #hero-intro [data-hero-intro-grid]{opacity:1!important;transform:translateY(0)!important;transition:none!important}'
     ].join('');
     document.head.appendChild(style);
-
-    var logoFallback = document.createElement("style");
-    logoFallback.id = "esap-returning-logo-fallback-style";
-    logoFallback.textContent = [
-      'html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type{',
-      'background-color:#000!important;',
-      'background-image:url("/logo.svg")!important;',
-      'background-repeat:no-repeat!important;',
-      'background-position:center calc(50% + 34px)!important;',
-      'background-size:66.25% auto!important;',
-      '}'
-    ].join('');
-    document.head.appendChild(logoFallback);
-
-    window.addEventListener("load", function () {
-      window.setTimeout(function () {
-        var fallback = document.getElementById("esap-returning-logo-fallback-style");
-        if (fallback) fallback.remove();
-      }, 700);
-    }, { once: true });
   }
 } catch (e) {}
 `;
@@ -84,6 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <head>
+        <link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" />
         <script dangerouslySetInnerHTML={{ __html: returningLandingScript }} />
       </head>
       <body className="min-h-screen font-sans antialiased bg-background text-foreground">
