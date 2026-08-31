@@ -157,7 +157,7 @@
   right: 0;
   height: max(0px, calc((100svh - clamp(600px, 78svh, 760px)) / 2 + 3px));
   pointer-events: none;
-  opacity: calc((1 - var(--landing-content-opacity, 0)) * 0.68);
+  opacity: 0.68;
   background-image:
     linear-gradient(to right, transparent calc(20% - 0.7px), rgba(218,160,0,.58) calc(20% - 0.7px), rgba(244,198,77,.88) 20%, rgba(218,160,0,.58) calc(20% + 0.7px), transparent calc(20% + 0.7px)),
     linear-gradient(to right, transparent calc(40% - 0.7px), rgba(218,160,0,.58) calc(40% - 0.7px), rgba(244,198,77,.88) 40%, rgba(218,160,0,.58) calc(40% + 0.7px), transparent calc(40% + 0.7px)),
@@ -178,6 +178,11 @@
   bottom: 0;
   transform-origin: top;
   mask-image: linear-gradient(to bottom, black 42%, rgba(0,0,0,.72) 72%, transparent 100%);
+}
+
+[data-landing-shell][style*="--landing-content-opacity: 1"] > section:first-of-type::before,
+[data-landing-shell][style*="--landing-content-opacity: 1"] > section:first-of-type::after {
+  opacity: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
