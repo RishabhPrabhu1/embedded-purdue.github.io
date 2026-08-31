@@ -35,6 +35,26 @@ export const metadata: Metadata = {
   generator: "esap-web",
 };
 
+const returningLandingScript = `
+try {
+  if (sessionStorage.getItem("esap-landing-animation-seen") === "1") {
+    document.documentElement.setAttribute("data-esap-landing-seen", "1");
+    var style = document.createElement("style");
+    style.id = "esap-returning-landing-style";
+    style.textContent = [
+      'html[data-esap-landing-seen="1"] [data-landing-shell]{--landing-nav-opacity:1!important;--landing-content-opacity:1!important}',
+      'html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type{height:min(66svh,600px)!important;min-height:500px!important}',
+      'html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type canvas{top:calc(50% + 34px)!important}',
+      'html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type::before,html[data-esap-landing-seen="1"] [data-landing-shell]>section:first-of-type::after{display:none!important}',
+      'html[data-esap-landing-seen="1"] #hero-intro{border-color:rgba(255,255,255,.08)!important;background:#0b0b0a!important}',
+      'html[data-esap-landing-seen="1"] #hero-intro>div:first-child{opacity:1!important}',
+      'html[data-esap-landing-seen="1"] #hero-intro [data-hero-intro-grid]{opacity:1!important;transform:translateY(0)!important}'
+    ].join('');
+    document.head.appendChild(style);
+  }
+} catch (e) {}
+`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
@@ -43,12 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              'try{if(sessionStorage.getItem("esap-landing-animation-seen")==="1"){document.documentElement.setAttribute("data-esap-landing-seen","1")}}catch(e){}',
-          }}
-        />
+        <script dangerouslySetInnerHTML={{ __html: returningLandingScript }} />
       </head>
       <body className="min-h-screen font-sans antialiased bg-background text-foreground">
         <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
