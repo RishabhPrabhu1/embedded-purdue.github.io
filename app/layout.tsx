@@ -43,6 +43,7 @@ const returningLandingScript = `
   var seenKey = "esap-landing-animation-seen";
   var currentShell = null;
   var settleObserver = null;
+  var returnViewportHeight = 0;
 
   function readFrame() {
     try {
@@ -60,8 +61,20 @@ const returningLandingScript = `
     } catch (e) {}
   }
 
+  function setReturnGeometry() {
+    var viewportHeight = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 760);
+    var heroHeight = Math.max(500, Math.min(viewportHeight * 0.66, 600));
+    var introHeight = Math.max(0, Math.min(276, viewportHeight - heroHeight));
+
+    returnViewportHeight = viewportHeight;
+    root.style.setProperty("--esap-return-vh", viewportHeight + "px");
+    root.style.setProperty("--esap-return-hero-height", heroHeight + "px");
+    root.style.setProperty("--esap-return-intro-height", introHeight + "px");
+  }
+
   function activateFrame(frame) {
     if (!frame) return false;
+    setReturnGeometry();
     root.style.setProperty("--esap-landing-final-frame", 'url("' + frame + '")');
     root.setAttribute("data-esap-landing-seen", "1");
     return true;
@@ -124,6 +137,9 @@ const returningLandingScript = `
 
     root.removeAttribute("data-esap-landing-seen");
     root.style.removeProperty("--esap-landing-final-frame");
+    root.style.removeProperty("--esap-return-vh");
+    root.style.removeProperty("--esap-return-hero-height");
+    root.style.removeProperty("--esap-return-intro-height");
     clearInvalidSeenState();
     cacheSettledCanvas(shell);
   }
@@ -134,6 +150,13 @@ const returningLandingScript = `
   } else {
     clearInvalidSeenState();
   }
+
+  window.addEventListener("resize", function () {
+    if (!root.hasAttribute("data-esap-landing-seen")) return;
+    var nextHeight = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 760);
+    if (Math.abs(nextHeight - returnViewportHeight) < 48) return;
+    setReturnGeometry();
+  }, { passive: true });
 
   function startLandingObserver() {
     syncLandingMount();
