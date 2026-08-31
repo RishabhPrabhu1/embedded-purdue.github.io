@@ -4,7 +4,7 @@ import { createElement, useEffect, useRef, useState } from "react"
 
 const MODEL_VIEWER_SCRIPT =
   "https://ajax.googleapis.com/ajax/libs/model-viewer/4.3.1/model-viewer.min.js"
-const ESP32_MODEL = "/models/esp32/esp32-38pin.glb?v=2"
+const ESP32_MODEL = "/models/esp32/esp32-38pin.glb?v=3"
 
 // The converted CAD arrives with its PCB plane standing vertically. Rotate the
 // model itself onto a tabletop-like pose, then use a modest camera orbit around
