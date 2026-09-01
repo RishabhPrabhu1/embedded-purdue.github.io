@@ -5,6 +5,7 @@ import { ArrowRight, ArrowUpRight } from "lucide-react"
 
 import { Esp32Visual } from "@/components/landing/esp32-visual"
 import { LandingFooter } from "@/components/landing/landing-footer"
+import { LandingInteractionGate } from "@/components/landing/landing-interaction-gate"
 import { LandingNavigation } from "@/components/landing/landing-navigation"
 import { LandingStyles } from "@/components/landing/landing-styles"
 import { PcbHero } from "@/components/landing/pcb-hero"
@@ -86,11 +87,13 @@ export default function HomePage() {
       }
     >
       <LandingStyles />
+      <LandingInteractionGate />
       <LandingNavigation />
       <PcbHero />
 
       <main
         id="landing-content"
+        inert
         className="bg-[#0c0c0b] opacity-[var(--landing-content-opacity)] transition-opacity duration-[1100ms] ease-out"
       >
         <section className="border-b border-white/[0.08] bg-[#0c0c0b]">
@@ -316,7 +319,7 @@ export default function HomePage() {
 
                 <div className="mt-7 flex flex-wrap gap-3">
                   <a
-                    href="https://discord.gg/E9XYmSptnN"
+                    href="https://discord.gg/MkPv9s9cj3"
                     target="_blank"
                     rel="noopener noreferrer"
                     data-landing-lift="button"
