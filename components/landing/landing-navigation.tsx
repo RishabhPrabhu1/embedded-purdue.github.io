@@ -32,6 +32,8 @@ export function LandingNavigation() {
 
   return (
     <nav
+      data-landing-navigation
+      inert
       className={`${
         onHome
           ? "fixed top-0 border-b border-white/[0.07] bg-[#090908]/90 opacity-[var(--landing-nav-opacity,1)] backdrop-blur-md transition-opacity duration-700 ease-out"
@@ -87,7 +89,7 @@ export function LandingNavigation() {
               <button
                 type="button"
                 className="grid h-10 w-10 place-items-center border border-white/[0.09] bg-black/30 text-[#d6d1c7] transition-colors hover:border-[#daa000]/45 hover:text-[#f2c34f]"
-                aria-label="Open navigation"
+                aria-label={isOpen ? "Close navigation" : "Open navigation"}
               >
                 {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
               </button>
