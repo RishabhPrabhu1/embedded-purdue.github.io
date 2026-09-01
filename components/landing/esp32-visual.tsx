@@ -13,8 +13,8 @@ const CAMERA_RADIUS = 80
 const FIELD_OF_VIEW = 30
 const HORIZONTAL_ORBIT = 8.25
 const VERTICAL_ORBIT = 5.5
-const HOVER_SCALE_BASE = 1.012
-const HOVER_SCALE_RANGE = 0.018
+const HOVER_RADIUS_BASE_DELTA = 1.5
+const HOVER_RADIUS_RANGE = 4.5
 
 type ModelViewerElement = HTMLElement & {
   cameraOrbit: string
@@ -159,10 +159,6 @@ export function Esp32Visual() {
       height: "100%",
       background: "transparent",
       pointerEvents: "none",
-      transform: "scale(1)",
-      transformOrigin: "50% 50%",
-      transition: "transform 90ms ease-out",
-      willChange: "transform",
     })
 
     const handleLoad = () => {
@@ -202,19 +198,19 @@ export function Esp32Visual() {
       if (!model) return
 
       const hover = hoverRef.current
+      const hoverIntensity = Math.min(1, Math.hypot(hover.x, hover.y))
+      const radius = hoverActiveRef.current
+        ? CAMERA_RADIUS -
+          (HOVER_RADIUS_BASE_DELTA + hoverIntensity * HOVER_RADIUS_RANGE)
+        : CAMERA_RADIUS
+
       model.cameraOrbit = `${(
         BASE_THETA -
         hover.x * HORIZONTAL_ORBIT
       ).toFixed(3)}deg ${(
         BASE_PHI -
         hover.y * VERTICAL_ORBIT
-      ).toFixed(3)}deg ${CAMERA_RADIUS}%`
-
-      const hoverIntensity = Math.min(1, Math.hypot(hover.x, hover.y))
-      const hoverScale = hoverActiveRef.current
-        ? HOVER_SCALE_BASE + hoverIntensity * HOVER_SCALE_RANGE
-        : 1
-      model.style.transform = `scale(${hoverScale.toFixed(4)})`
+      ).toFixed(3)}deg ${radius.toFixed(3)}%`
     })
   }
 
