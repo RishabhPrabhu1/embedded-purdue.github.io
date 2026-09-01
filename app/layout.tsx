@@ -45,6 +45,7 @@ const landingFrameScript = `
   var currentShell = null;
   var captureToken = 0;
   var isLandingReload = false;
+  var isRestoredLandingTab = false;
 
   try {
     if (window.location.pathname === "/") {
@@ -52,12 +53,39 @@ const landingFrameScript = `
         ? performance.getEntriesByType("navigation")
         : [];
       if (navEntries && navEntries.length) {
-        isLandingReload = navEntries[0].type === "reload";
+        var navEntry = navEntries[0];
+        isLandingReload = navEntry.type === "reload";
+
+        if (
+          navEntry.type === "back_forward" &&
+          typeof navEntry.notRestoredReasons !== "undefined"
+        ) {
+          var notRestored = navEntry.notRestoredReasons;
+          if (notRestored === null) {
+            isRestoredLandingTab = true;
+          } else if (notRestored && Array.isArray(notRestored.reasons)) {
+            isRestoredLandingTab = notRestored.reasons.some(function (reason) {
+              return reason && reason.reason === "session-restored";
+            });
+          }
+        }
       } else if (performance.navigation) {
         isLandingReload = performance.navigation.type === 1;
       }
     }
   } catch (e) {}
+
+  if (isRestoredLandingTab) {
+    // Undo-close-tab/session restoration carries sessionStorage forward. Treat
+    // that as a fresh viewing session so the cinematic runs again instead of
+    // immediately showing the cached settled poster.
+    try {
+      sessionStorage.removeItem(posterKey);
+      sessionStorage.removeItem(seenKey);
+    } catch (e) {}
+    root.removeAttribute("data-esap-return-poster");
+    root.style.removeProperty("--esap-return-poster");
+  }
 
   if (isLandingReload) {
     // Safari can briefly paint a restored scroll position before the landing page
