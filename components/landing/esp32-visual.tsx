@@ -13,8 +13,8 @@ const CAMERA_RADIUS = 80
 const FIELD_OF_VIEW = 30
 const HORIZONTAL_ORBIT = 8.25
 const VERTICAL_ORBIT = 5.5
-const HOVER_RADIUS_BASE_DELTA = 1.5
-const HOVER_RADIUS_RANGE = 4.5
+const HOVER_RADIUS_BASE_DELTA = 2
+const HOVER_RADIUS_RANGE = 6
 
 type ModelViewerElement = HTMLElement & {
   cameraOrbit: string
