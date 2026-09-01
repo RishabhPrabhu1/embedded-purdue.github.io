@@ -153,12 +153,11 @@ export function Esp32Visual() {
 
     Object.assign(model.style, {
       position: "absolute",
-      inset: "0",
+      inset: "-12% 0 -10%",
       width: "100%",
-      height: "100%",
       background: "transparent",
       pointerEvents: "none",
-      transform: "translateY(-5%)",
+      transform: "translateY(-2%)",
     })
 
     const handleLoad = () => {
