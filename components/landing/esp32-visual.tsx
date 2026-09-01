@@ -14,7 +14,7 @@ const HOVER_CAMERA_RADIUS = 68
 const FIELD_OF_VIEW = 30
 const HORIZONTAL_ORBIT = 8.25
 const VERTICAL_ORBIT = 5.5
-const CAMERA_TARGET_LIFT = 0.04
+const CAMERA_TARGET_LIFT = 0.05
 
 type ModelViewerVector3 = {
   x: number
