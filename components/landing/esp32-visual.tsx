@@ -10,11 +10,10 @@ const MODEL_ORIENTATION = "0deg 90deg 0deg"
 const BASE_THETA = 65
 const BASE_PHI = 50
 const CAMERA_RADIUS = 80
+const HOVER_CAMERA_RADIUS = 68
 const FIELD_OF_VIEW = 30
 const HORIZONTAL_ORBIT = 8.25
 const VERTICAL_ORBIT = 5.5
-const HOVER_RADIUS_BASE_DELTA = 2
-const HOVER_RADIUS_RANGE = 6
 
 type ModelViewerElement = HTMLElement & {
   cameraOrbit: string
@@ -198,11 +197,7 @@ export function Esp32Visual() {
       if (!model) return
 
       const hover = hoverRef.current
-      const hoverIntensity = Math.min(1, Math.hypot(hover.x, hover.y))
-      const radius = hoverActiveRef.current
-        ? CAMERA_RADIUS -
-          (HOVER_RADIUS_BASE_DELTA + hoverIntensity * HOVER_RADIUS_RANGE)
-        : CAMERA_RADIUS
+      const radius = hoverActiveRef.current ? HOVER_CAMERA_RADIUS : CAMERA_RADIUS
 
       model.cameraOrbit = `${(
         BASE_THETA -
@@ -210,7 +205,7 @@ export function Esp32Visual() {
       ).toFixed(3)}deg ${(
         BASE_PHI -
         hover.y * VERTICAL_ORBIT
-      ).toFixed(3)}deg ${radius.toFixed(3)}%`
+      ).toFixed(3)}deg ${radius}%`
     })
   }
 
