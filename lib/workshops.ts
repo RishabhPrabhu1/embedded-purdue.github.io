@@ -10,23 +10,20 @@ export type WorkshopMeta = {
   location?: string
   summary?: string
   tags?: string[]
-  cover?: string
-  image?: string
 }
 type Meta = {
-  title: string
-  summary?: string
-  cover?: string
-  image?: string
-  slug: string
-}
+  title: string;
+  summary?: string;
+  cover?: string;
+  image?: string;
+  slug: string;
+};
 
+type WorkshopEntry = {
+  meta: Meta;
+  content: string;
+};
 const WORKSHOPS_DIR = path.join(process.cwd(), "content", "workshops")
-
-function firstLocalMarkdownImage(markdown: string) {
-  const match = markdown.match(/!\[[^\]]*\]\((\/[^)\s]+)(?:\s+"[^"]*")?\)/)
-  return match?.[1]
-}
 
 export function getAllWorkshops(): WorkshopMeta[] {
   if (!fs.existsSync(WORKSHOPS_DIR)) return []
@@ -34,11 +31,8 @@ export function getAllWorkshops(): WorkshopMeta[] {
   const list = files.map((file) => {
     const full = path.join(WORKSHOPS_DIR, file)
     const src = fs.readFileSync(full, "utf8")
-    const { data, content } = matter(src)
+    const { data } = matter(src)
     const slug = (data.slug as string) ?? file.replace(/\.(md|mdx)$/, "")
-    const explicitImage = (data.cover as string) ?? (data.image as string) ?? undefined
-    const discoveredImage = firstLocalMarkdownImage(content)
-
     return {
       title: (data.title as string) ?? slug,
       slug,
@@ -46,8 +40,6 @@ export function getAllWorkshops(): WorkshopMeta[] {
       location: (data.location as string) ?? undefined,
       summary: (data.summary as string) ?? "",
       tags: Array.isArray(data.tags) ? (data.tags as string[]) : [],
-      cover: explicitImage ?? discoveredImage,
-      image: (data.image as string) ?? undefined,
     }
   })
   return list.sort((a, b) => (a.date && b.date ? (a.date < b.date ? 1 : -1) : 0))

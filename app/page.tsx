@@ -3,15 +3,21 @@ import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, ArrowUpRight } from "lucide-react"
 
-import { Footer } from "@/components/footer"
-import { Navigation } from "@/components/navigation"
 import { Esp32Visual } from "@/components/landing/esp32-visual"
+import { LandingFooter } from "@/components/landing/landing-footer"
+import { LandingNavigation } from "@/components/landing/landing-navigation"
+import { LandingStyles } from "@/components/landing/landing-styles"
 import { PcbHero } from "@/components/landing/pcb-hero"
 import { projects } from "@/app/projects/_data"
 import { getAllWorkshops } from "@/lib/workshops"
 
 const featuredSlugs = new Set(["harmonicore", "slayterhil", "bb8"])
 const featuredProjects = projects.filter((project) => featuredSlugs.has(project.slug))
+const featuredProjectImages: Record<string, string> = {
+  harmonicore: "/projects/harmonicore/harmonicore-1.jpg",
+  slayterhil: "/projects/slayterhil/slayterHIL-1.jpg",
+  bb8: "/projects/bb8/bb8-1.jpg",
+}
 const featuredWorkshops = getAllWorkshops().slice(0, 3)
 
 const workAreas = [
@@ -79,7 +85,8 @@ export default function HomePage() {
         } as CSSProperties
       }
     >
-      <Navigation />
+      <LandingStyles />
+      <LandingNavigation />
       <PcbHero />
 
       <main
@@ -119,7 +126,7 @@ export default function HomePage() {
                     }`}
                   >
                     <Image
-                      src={project.image || "/projects/logo.png"}
+                      src={featuredProjectImages[project.slug] || project.image || "/projects/logo.png"}
                       alt={project.title}
                       fill
                       sizes={index === 0 ? "(max-width: 768px) 100vw, 58vw" : "(max-width: 768px) 100vw, 42vw"}
@@ -333,7 +340,7 @@ export default function HomePage() {
         </section>
       </main>
 
-      <Footer />
+      <LandingFooter />
     </div>
   )
 }

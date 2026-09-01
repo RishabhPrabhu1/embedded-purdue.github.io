@@ -1,131 +1,135 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import Image from "next/image"
+import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ArrowUpRight, Menu, X } from "lucide-react"
-
+import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Menu, Home, Users, FolderOpen, Mail, UserSquare2 } from "lucide-react"
+import { DiscordIcon } from "@/components/icons/discord-icon"
+import Image from "next/image"
+import { FaDiscord } from "react-icons/fa";
+
 
 const navigation = [
-  { name: "About", href: "/about" },
-  { name: "Projects", href: "/projects" },
-  { name: "Workshops", href: "/workshops" },
-  { name: "Team", href: "/team" },
-  { name: "Sponsors", href: "/sponsors" },
+  { name: "Home", href: "/", icon: Home },
+  { name: "About", href: "/about", icon: Users },
+  { name: "Projects", href: "/projects", icon: FolderOpen },
+  { name: "Workshops", href: "/workshops", icon: Mail },
+  { name: "Team", href: "/team", icon: UserSquare2 },
 ]
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
-  const onHome = pathname === "/"
-
-  useEffect(() => {
-    if (!onHome) return
-
-    window.scrollTo(0, 0)
-    const frame = window.requestAnimationFrame(() => window.scrollTo(0, 0))
-
-    return () => window.cancelAnimationFrame(frame)
-  }, [onHome])
 
   return (
-    <nav
-      className={`${
-        onHome
-          ? "fixed top-0 border-b border-white/[0.07] bg-[#090908]/90 opacity-[var(--landing-nav-opacity,1)] backdrop-blur-md transition-opacity duration-700 ease-out"
-          : "sticky top-0 border-b border-white/[0.08] bg-[#0c0c0b]/92 backdrop-blur-xl"
-      } z-50 w-full`}
-    >
-      <div className="relative mx-auto flex h-[68px] w-full items-center justify-between px-5 sm:px-8 lg:w-[calc(100%_-_48px)] lg:border-x lg:border-white/[0.05] lg:px-8 xl:px-10 2xl:w-[calc(100%_-_80px)] 2xl:px-12">
-        <Link href="/" className="flex items-center gap-4" aria-label="Embedded Systems @ Purdue home">
-          <Image
-            src="/logo.svg"
-            alt="Embedded Systems @ Purdue"
-            width={72}
-            height={23}
-            className="h-auto w-[72px] object-contain"
-            priority
-          />
-          <span className="hidden border-l border-white/[0.09] pl-4 font-mono text-[0.58rem] uppercase tracking-[0.17em] text-[#9b968d] sm:block">
-            Embedded Systems @ Purdue
-          </span>
-        </Link>
-
-        <div className="hidden items-center gap-7 md:flex lg:gap-9">
-          {navigation.map((item) => {
-            const active = pathname === item.href
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`relative py-2 font-mono text-[0.62rem] uppercase tracking-[0.15em] transition-colors ${
-                  active ? "text-[#f0ece2]" : "text-[#89857d] hover:text-[#f0ece2]"
-                }`}
-              >
-                {item.name}
-                {active && <span className="absolute inset-x-0 -bottom-[17px] h-px bg-[#daa000]" />}
-              </Link>
-            )
-          })}
-
-          <Link
-            href="https://discord.gg/MkPv9s9cj3"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group inline-flex h-9 items-center gap-2 border border-[#7289ff]/35 bg-[#5865F2] px-4 font-mono text-[0.61rem] font-semibold uppercase tracking-[0.14em] text-white shadow-[0_6px_20px_rgba(88,101,242,.16)] transition-colors hover:border-[#8b96ff] hover:bg-[#6875f5]"
-          >
-            Discord
-            <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
+    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* allow height to grow instead of hard-capping at h-16 */}
+        <div className="flex justify-between items-center min-h-16 py-2">
+          {/* Logo + brand */}
+          <Link href="/" className="flex items-center space-x-2">
+            <Image
+              src="/logo.svg"
+              alt="Embedded Systems @ Purdue logo"
+              width={70}
+              height={40}
+              className="object-contain"
+              priority
+            />
+            {/* Short label on xs, full on md+; prevent wrap on small to avoid overlap */}
+            {/* <span className="font-bold text-lg text-foreground lg:hidden">
+              ES@P
+            </span> */}
+            <span className="hidden lg:inline font-bold text-lg text-foreground whitespace-nowrap">
+              Embedded Systems at Purdue
+            </span>
           </Link>
-        </div>
 
-        <div className="md:hidden">
-          <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild>
-              <button
-                type="button"
-                className="grid h-10 w-10 place-items-center border border-white/[0.09] bg-black/30 text-[#d6d1c7] transition-colors hover:border-[#daa000]/45 hover:text-[#f2c34f]"
-                aria-label="Open navigation"
-              >
-                {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-              </button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[88vw] max-w-[360px] border-l border-white/[0.08] bg-[#0d0d0b] p-0 text-[#f3efe6]">
-              <div className="border-b border-white/[0.08] px-6 py-6 font-mono text-[0.58rem] uppercase tracking-[0.16em] text-[#a8a197]">
-                Embedded Systems @ Purdue
-              </div>
-              <div className="flex flex-col">
-                {navigation.map((item) => {
-                  const active = pathname === item.href
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      onClick={() => setIsOpen(false)}
-                      className={`flex min-h-16 items-center border-b border-white/[0.07] px-6 text-xl font-medium tracking-[-0.03em] transition-colors ${
-                        active ? "text-[#f2c34f]" : "text-[#d4cfc5] hover:bg-white/[0.025] hover:text-white"
-                      }`}
-                    >
-                      {item.name}
-                    </Link>
-                  )
-                })}
-              </div>
-              <div className="p-6">
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center space-x-8">
+            {navigation.map((item) => {
+              const active = pathname === item.href
+              return (
                 <Link
-                  href="https://discord.gg/MkPv9s9cj3"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex h-11 w-full items-center justify-between bg-[#5865F2] px-4 font-mono text-[0.64rem] font-semibold uppercase tracking-[0.15em] text-white transition-colors hover:bg-[#6875f5]"
+                  key={item.name}
+                  href={item.href}
+                  className={`font-medium transition-colors ${active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                    }`}
                 >
-                  Discord
-                  <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                  {item.name}
                 </Link>
-              </div>
-            </SheetContent>
-          </Sheet>
+              )
+            })}
+            <Button
+              variant="ghost"
+              size="lg" // larger touch target
+              asChild
+              className="flex items-center justify-start space-x-3 py-3 px-4 text-lg"
+            >
+              <Link
+                href="https://discord.gg/MkPv9s9cj3"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Discord"
+                className="flex items-center"
+              >
+                <span className="font-medium">Discord</span>
+
+                <FaDiscord className="w-6 h-6 mr-3 text-indigo-500" />
+              </Link>
+            </Button>
+          </div>
+
+          {/* Mobile nav */}
+          <div className="flex items-center md:hidden">
+            <Button asChild variant="ghost" size="icon" aria-label="Join our Discord">
+              <Link href="https://discord.gg/MkPv9s9cj3" target="_blank" rel="noopener noreferrer">
+                <FaDiscord className="w-6 h-6 mr-3 text-indigo-500" />
+              </Link>
+            </Button>
+
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Toggle menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[300px] sm:w-[300px]">
+                <div className="flex flex-col space-y-4 mt-8">
+                  {navigation.map((item) => {
+                    const Icon = item.icon
+                    const active = pathname === item.href
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={`flex items-center space-x-3 p-2 rounded-lg transition-colors ${active ? "text-foreground bg-muted" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                          }`}
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <Icon className="h-5 w-5" />
+                        <span className="font-medium">{item.name}</span>
+                      </Link>
+                    )
+                  })}
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link
+                      href="https://discord.gg/MkPv9s9cj3"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Join our Discord"
+                    >
+                    <FaDiscord className="w-6 h-6 mr-3 text-indigo-500" />
+                      <span>Discord</span>
+                    </Link>
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </div>
     </nav>
