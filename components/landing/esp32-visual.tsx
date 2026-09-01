@@ -240,7 +240,7 @@ export function Esp32Visual() {
   return (
     <div
       ref={viewerRef}
-      className="relative h-full min-h-[390px] w-full overflow-hidden bg-[#050606] lg:min-h-[500px]"
+      className="relative h-full min-h-[420px] w-full overflow-hidden bg-[#050606] lg:min-h-[540px]"
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
     >
