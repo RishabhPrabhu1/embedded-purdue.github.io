@@ -14,13 +14,46 @@ const HOVER_CAMERA_RADIUS = 68
 const FIELD_OF_VIEW = 30
 const HORIZONTAL_ORBIT = 8.25
 const VERTICAL_ORBIT = 5.5
+const CAMERA_TARGET_LIFT = 0.04
+
+type ModelViewerVector3 = {
+  x: number
+  y: number
+  z: number
+}
 
 type ModelViewerElement = HTMLElement & {
   cameraOrbit: string
+  cameraTarget: string
+  getBoundingBoxCenter: () => ModelViewerVector3
+  getDimensions: () => ModelViewerVector3
+  jumpCameraToGoal: () => void
 }
 
 type ModelViewerConstructor = CustomElementConstructor & {
   minimumRenderScale: number
+}
+
+function raisedCameraTarget(model: ModelViewerElement) {
+  const center = model.getBoundingBoxCenter()
+  const dimensions = model.getDimensions()
+  const offset =
+    Math.max(dimensions.x, dimensions.y, dimensions.z) * CAMERA_TARGET_LIFT
+  const theta = (BASE_THETA * Math.PI) / 180
+  const phi = (BASE_PHI * Math.PI) / 180
+
+  // Shift the camera target down along the camera's screen-up axis. The model
+  // therefore renders slightly higher inside the unchanged 100% viewport,
+  // preserving its scale while creating extra clearance for lower rotations.
+  const screenUp = {
+    x: -Math.cos(phi) * Math.sin(theta),
+    y: Math.sin(phi),
+    z: -Math.cos(phi) * Math.cos(theta),
+  }
+
+  return `${center.x - screenUp.x * offset}m ${
+    center.y - screenUp.y * offset
+  }m ${center.z - screenUp.z * offset}m`
 }
 
 export function Esp32Visual() {
@@ -153,14 +186,16 @@ export function Esp32Visual() {
 
     Object.assign(model.style, {
       position: "absolute",
-      inset: "-12% 0 -10%",
+      inset: "0",
       width: "100%",
+      height: "100%",
       background: "transparent",
       pointerEvents: "none",
-      transform: "translateY(-2%)",
     })
 
     const handleLoad = () => {
+      model.cameraTarget = raisedCameraTarget(model)
+      model.jumpCameraToGoal()
       setModelLoaded(true)
       setModelFailed(false)
     }
