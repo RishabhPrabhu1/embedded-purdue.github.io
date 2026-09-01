@@ -14,8 +14,19 @@ const FIELD_OF_VIEW = 30
 const HORIZONTAL_ORBIT = 6.5
 const VERTICAL_ORBIT = 4.25
 
+type ModelViewerMaterial = {
+  index: number
+  pbrMetallicRoughness: {
+    setMetallicFactor: (value: number) => void
+    setRoughnessFactor: (value: number) => void
+  }
+}
+
 type ModelViewerElement = HTMLElement & {
   cameraOrbit: string
+  model?: {
+    materials: ModelViewerMaterial[]
+  }
 }
 
 type ModelViewerConstructor = CustomElementConstructor & {
@@ -144,8 +155,8 @@ export function Esp32Visual() {
     model.setAttribute("camera-target", "auto auto auto")
     model.setAttribute("interaction-prompt", "none")
     model.setAttribute("environment-image", "neutral")
-    model.setAttribute("tone-mapping", "neutral")
-    model.setAttribute("exposure", "0.82")
+    model.setAttribute("tone-mapping", "agx")
+    model.setAttribute("exposure", "1.1")
     model.setAttribute("shadow-intensity", "0")
     model.setAttribute("interpolation-decay", "72")
 
@@ -159,6 +170,15 @@ export function Esp32Visual() {
     })
 
     const handleLoad = () => {
+      const pcbMaterial = model.model?.materials.find(
+        (material) => material.index === 1
+      )
+
+      if (pcbMaterial) {
+        pcbMaterial.pbrMetallicRoughness.setMetallicFactor(0.02)
+        pcbMaterial.pbrMetallicRoughness.setRoughnessFactor(0.82)
+      }
+
       setModelLoaded(true)
       setModelFailed(false)
     }
