@@ -196,7 +196,7 @@ export function Esp32Visual() {
 
       const hover = hoverRef.current
       model.cameraOrbit = `${(
-        BASE_THETA +
+        BASE_THETA -
         hover.x * HORIZONTAL_ORBIT
       ).toFixed(3)}deg ${(
         BASE_PHI -
