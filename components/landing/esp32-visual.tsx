@@ -158,7 +158,7 @@ export function Esp32Visual() {
       height: "100%",
       background: "transparent",
       pointerEvents: "none",
-      transform: "translateY(-2.5%)",
+      transform: "translateY(-5%)",
     })
 
     const handleLoad = () => {
