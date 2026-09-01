@@ -11,8 +11,10 @@ const BASE_THETA = 65
 const BASE_PHI = 50
 const CAMERA_RADIUS = 80
 const FIELD_OF_VIEW = 30
-const HORIZONTAL_ORBIT = 6.5
-const VERTICAL_ORBIT = 4.25
+const HORIZONTAL_ORBIT = 8.25
+const VERTICAL_ORBIT = 5.5
+const HOVER_SCALE_BASE = 1.012
+const HOVER_SCALE_RANGE = 0.018
 
 type ModelViewerElement = HTMLElement & {
   cameraOrbit: string
@@ -28,6 +30,7 @@ export function Esp32Visual() {
   const modelRef = useRef<ModelViewerElement | null>(null)
   const frameRef = useRef<number | null>(null)
   const hoverRef = useRef({ x: 0, y: 0 })
+  const hoverActiveRef = useRef(false)
 
   const [shouldMountModel, setShouldMountModel] = useState(false)
   const [runtimeReady, setRuntimeReady] = useState(false)
@@ -147,7 +150,7 @@ export function Esp32Visual() {
     model.setAttribute("tone-mapping", "neutral")
     model.setAttribute("exposure", "0.82")
     model.setAttribute("shadow-intensity", "0")
-    model.setAttribute("interpolation-decay", "72")
+    model.setAttribute("interpolation-decay", "45")
 
     Object.assign(model.style, {
       position: "absolute",
@@ -156,6 +159,10 @@ export function Esp32Visual() {
       height: "100%",
       background: "transparent",
       pointerEvents: "none",
+      transform: "scale(1)",
+      transformOrigin: "50% 50%",
+      transition: "transform 90ms ease-out",
+      willChange: "transform",
     })
 
     const handleLoad = () => {
@@ -202,6 +209,12 @@ export function Esp32Visual() {
         BASE_PHI -
         hover.y * VERTICAL_ORBIT
       ).toFixed(3)}deg ${CAMERA_RADIUS}%`
+
+      const hoverIntensity = Math.min(1, Math.hypot(hover.x, hover.y))
+      const hoverScale = hoverActiveRef.current
+        ? HOVER_SCALE_BASE + hoverIntensity * HOVER_SCALE_RANGE
+        : 1
+      model.style.transform = `scale(${hoverScale.toFixed(4)})`
     })
   }
 
@@ -211,6 +224,7 @@ export function Esp32Visual() {
     const rect = event.currentTarget.getBoundingClientRect()
     if (!rect.width || !rect.height) return
 
+    hoverActiveRef.current = true
     hoverRef.current = {
       x: Math.max(
         -1,
@@ -226,6 +240,7 @@ export function Esp32Visual() {
   }
 
   const handlePointerLeave = () => {
+    hoverActiveRef.current = false
     hoverRef.current = { x: 0, y: 0 }
     queueHoverCamera()
   }
