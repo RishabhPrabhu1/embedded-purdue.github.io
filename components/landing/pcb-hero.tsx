@@ -16,7 +16,8 @@ const CIRCUIT_SPEED = 1280
 
 type Point = readonly [number, number]
 type Route = readonly Point[]
-type PreparedRoute = { points: Route; segments: number[]; total: number }
+type PreparedRoute = { points: Route; segments: number[]; total: number; path: Path2D }
+type PreparedTrace = { path: Path2D; head: Point }
 
 type CircuitSpec = {
   pathIndex: number
@@ -81,7 +82,10 @@ function smoothstep(value: number) {
 
 function prepareRoute(points: Route): PreparedRoute {
   const segments: number[] = []
+  const path = new Path2D()
   let total = 0
+
+  path.moveTo(points[0][0], points[0][1])
 
   for (let index = 1; index < points.length; index++) {
     const length = Math.hypot(
@@ -90,25 +94,30 @@ function prepareRoute(points: Route): PreparedRoute {
     )
     segments.push(length)
     total += length
+    path.lineTo(points[index][0], points[index][1])
   }
 
-  return { points, segments, total }
+  return { points, segments, total, path }
 }
 
-function drawPrepared(
-  ctx: CanvasRenderingContext2D,
-  route: PreparedRoute,
-  progress: number,
-  stroke: string,
-  width: number
-): Point {
-  if (progress <= 0) return route.points[0]
+function tracePrepared(route: PreparedRoute, progress: number): PreparedTrace {
+  const clampedProgress = clamp01(progress)
+  const first = route.points[0]
 
-  let remaining = route.total * clamp01(progress)
-  let head: Point = route.points[0]
+  if (clampedProgress <= 0) {
+    const path = new Path2D()
+    path.moveTo(first[0], first[1])
+    return { path, head: first }
+  }
 
-  ctx.beginPath()
-  ctx.moveTo(route.points[0][0], route.points[0][1])
+  if (clampedProgress >= 1) {
+    return { path: route.path, head: route.points[route.points.length - 1] }
+  }
+
+  let remaining = route.total * clampedProgress
+  let head: Point = first
+  const path = new Path2D()
+  path.moveTo(first[0], first[1])
 
   for (let index = 1; index < route.points.length; index++) {
     const [x0, y0] = route.points[index - 1]
@@ -116,7 +125,7 @@ function drawPrepared(
     const segment = route.segments[index - 1]
 
     if (remaining >= segment) {
-      ctx.lineTo(x1, y1)
+      path.lineTo(x1, y1)
       remaining -= segment
       head = route.points[index]
       continue
@@ -125,37 +134,73 @@ function drawPrepared(
     const ratio = segment === 0 ? 0 : remaining / segment
     const x = x0 + (x1 - x0) * ratio
     const y = y0 + (y1 - y0) * ratio
-    ctx.lineTo(x, y)
+    path.lineTo(x, y)
     head = [x, y]
     break
   }
 
+  return { path, head }
+}
+
+function strokePrepared(
+  ctx: CanvasRenderingContext2D,
+  trace: PreparedTrace,
+  stroke: string,
+  width: number
+) {
   ctx.strokeStyle = stroke
   ctx.lineWidth = width
   ctx.lineCap = "round"
   ctx.lineJoin = "round"
-  ctx.stroke()
-  return head
+  ctx.stroke(trace.path)
+}
+
+function createLightPoolSprite() {
+  const size = 384
+  const sprite = document.createElement("canvas")
+  sprite.width = size
+  sprite.height = size
+  const ctx = sprite.getContext("2d", { alpha: true })
+  if (!ctx) return null
+
+  const center = size / 2
+  const gradient = ctx.createRadialGradient(center, center, 0, center, center, center)
+  gradient.addColorStop(0, "rgba(244,198,77,.42)")
+  gradient.addColorStop(.12, "rgba(218,160,0,.25)")
+  gradient.addColorStop(.42, "rgba(218,160,0,.095)")
+  gradient.addColorStop(.72, "rgba(148,104,0,.025)")
+  gradient.addColorStop(1, "rgba(218,160,0,0)")
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, size, size)
+  return sprite
 }
 
 function drawLightPool(
   ctx: CanvasRenderingContext2D,
+  sprite: HTMLCanvasElement | null,
   [x, y]: Point,
   radius: number,
   intensity: number
 ) {
   if (intensity <= 0) return
-  const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius)
-  gradient.addColorStop(0, `rgba(244,198,77,${.42 * intensity})`)
-  gradient.addColorStop(.12, `rgba(218,160,0,${.25 * intensity})`)
-  gradient.addColorStop(.42, `rgba(218,160,0,${.095 * intensity})`)
-  gradient.addColorStop(.72, `rgba(148,104,0,${.025 * intensity})`)
-  gradient.addColorStop(1, "rgba(218,160,0,0)")
 
   ctx.save()
   ctx.globalCompositeOperation = "lighter"
-  ctx.fillStyle = gradient
-  ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2)
+
+  if (sprite) {
+    ctx.globalAlpha *= intensity
+    ctx.drawImage(sprite, x - radius, y - radius, radius * 2, radius * 2)
+  } else {
+    const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius)
+    gradient.addColorStop(0, `rgba(244,198,77,${.42 * intensity})`)
+    gradient.addColorStop(.12, `rgba(218,160,0,${.25 * intensity})`)
+    gradient.addColorStop(.42, `rgba(218,160,0,${.095 * intensity})`)
+    gradient.addColorStop(.72, `rgba(148,104,0,${.025 * intensity})`)
+    gradient.addColorStop(1, "rgba(218,160,0,0)")
+    ctx.fillStyle = gradient
+    ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2)
+  }
+
   ctx.restore()
 }
 
@@ -272,10 +317,15 @@ export function PcbHero() {
     const context = canvas.getContext("2d", { alpha: true })
     if (!context) return
 
+    const lightPoolSprite = createLightPoolSprite()
     const formationLayer = document.createElement("canvas")
     formationLayer.width = VW
     formationLayer.height = VH
     const formationContext = formationLayer.getContext("2d", { alpha: true })
+    if (formationContext) {
+      formationContext.imageSmoothingEnabled = true
+      formationContext.imageSmoothingQuality = "high"
+    }
 
     let frame = 0
     let cancelled = false
@@ -283,6 +333,7 @@ export function PcbHero() {
     let copyShown = false
     let navShown = false
     let pageShown = false
+    let formationSettled = false
     let startTime = 0
     let dpr = 1
     let cssWidth = 1
@@ -430,9 +481,13 @@ export function PcbHero() {
       scaleY = legacyHeroHeight / VH
       renderOffsetY = (cssHeight - legacyHeroHeight) / 2
 
-      dpr = Math.min(window.devicePixelRatio || 1, 1.1)
+      const nativeDpr = window.devicePixelRatio || 1
+      const pixelBudgetDpr = Math.sqrt(2_600_000 / (cssWidth * cssHeight))
+      dpr = Math.min(nativeDpr, 1.35, Math.max(1.1, pixelBudgetDpr))
       canvas.width = Math.round(cssWidth * dpr)
       canvas.height = Math.round(cssHeight * dpr)
+      context.imageSmoothingEnabled = true
+      context.imageSmoothingQuality = "high"
       if (complete) draw(animationEnd)
     }
 
@@ -477,7 +532,7 @@ export function PcbHero() {
           ? clamp01((time - (circuit.spec.delay - .08)) / .32)
           : 0
 
-        drawLightPool(context, spec.port, 48 + activation * 22, .28 + activation * .72)
+        drawLightPool(context, lightPoolSprite, spec.port, 48 + activation * 22, .28 + activation * .72)
 
         context.beginPath()
         context.arc(x, y, 10.5, 0, Math.PI * 2)
@@ -515,34 +570,41 @@ export function PcbHero() {
     const drawLogoFormation = (time: number) => {
       if (!logoImage || !formationContext) return
 
-      formationContext.setTransform(1, 0, 0, 1, 0, 0)
-      formationContext.clearRect(0, 0, VW, VH)
-      formationContext.globalCompositeOperation = "source-over"
+      if (!formationSettled) {
+        formationContext.setTransform(1, 0, 0, 1, 0, 0)
+        formationContext.clearRect(0, 0, VW, VH)
+        formationContext.globalCompositeOperation = "source-over"
 
-      circuits.forEach((circuit) => {
-        const logoProgress = getLogoProgress(circuit, time)
-        if (logoProgress <= 0) return
+        circuits.forEach((circuit) => {
+          const logoProgress = getLogoProgress(circuit, time)
+          if (logoProgress <= 0) return
 
-        const bloomProgress = clamp01(logoProgress + .045)
-        formationContext.save()
-        formationContext.globalAlpha = .22
-        drawPrepared(formationContext, circuit.logoRoute, bloomProgress, "#ffffff", 126)
-        formationContext.globalAlpha = .68
-        drawPrepared(formationContext, circuit.logoRoute, logoProgress, "#ffffff", 86)
+          const bloomProgress = clamp01(logoProgress + .045)
+          const bloomTrace = tracePrepared(circuit.logoRoute, bloomProgress)
+          const coreTrace = tracePrepared(circuit.logoRoute, logoProgress)
+
+          formationContext.save()
+          formationContext.globalAlpha = .22
+          strokePrepared(formationContext, bloomTrace, "#ffffff", 126)
+          formationContext.globalAlpha = .68
+          strokePrepared(formationContext, coreTrace, "#ffffff", 86)
+          formationContext.globalAlpha = 1
+          strokePrepared(formationContext, coreTrace, "#ffffff", 44)
+
+          formationContext.beginPath()
+          formationContext.arc(coreTrace.head[0], coreTrace.head[1], 34, 0, Math.PI * 2)
+          formationContext.fillStyle = "rgba(255,255,255,.96)"
+          formationContext.fill()
+          formationContext.restore()
+        })
+
+        formationContext.globalCompositeOperation = "source-in"
         formationContext.globalAlpha = 1
-        const head = drawPrepared(formationContext, circuit.logoRoute, logoProgress, "#ffffff", 44)
+        formationContext.drawImage(logoImage, LOGO.x, LOGO.y, LOGO.width, LOGO.height)
+        formationContext.globalCompositeOperation = "source-over"
 
-        formationContext.beginPath()
-        formationContext.arc(head[0], head[1], 34, 0, Math.PI * 2)
-        formationContext.fillStyle = "rgba(255,255,255,.96)"
-        formationContext.fill()
-        formationContext.restore()
-      })
-
-      formationContext.globalCompositeOperation = "source-in"
-      formationContext.globalAlpha = 1
-      formationContext.drawImage(logoImage, LOGO.x, LOGO.y, LOGO.width, LOGO.height)
-      formationContext.globalCompositeOperation = "source-over"
+        if (time >= fillStart) formationSettled = true
+      }
 
       context.save()
       context.globalCompositeOperation = "lighter"
@@ -572,35 +634,37 @@ export function PcbHero() {
 
         const settledProgress = smoothstep((time - circuit.end) / .34)
         const energy = 1 - settledProgress * .82
+        const trace = tracePrepared(circuit.route, progress)
 
         context.save()
         context.globalCompositeOperation = "lighter"
         context.globalAlpha = .018 * energy
-        drawPrepared(context, circuit.route, progress, "rgba(218,160,0,1)", 64)
+        strokePrepared(context, trace, "rgba(218,160,0,1)", 64)
         context.globalAlpha = .052 * energy
-        drawPrepared(context, circuit.route, progress, "rgba(218,160,0,1)", 30)
+        strokePrepared(context, trace, "rgba(218,160,0,1)", 30)
         context.globalAlpha = .14 * energy
-        drawPrepared(context, circuit.route, progress, "rgba(244,198,77,1)", 10)
+        strokePrepared(context, trace, "rgba(244,198,77,1)", 10)
         context.restore()
 
         context.globalAlpha = 1 - settledProgress * .74
-        const head = drawPrepared(context, circuit.route, progress, GOLD, 2.35)
+        strokePrepared(context, trace, GOLD, 2.35)
         context.globalAlpha = 1
-        drawLightPool(context, head, 112, progress < 1 ? .88 * energy : .22 * energy)
+        drawLightPool(context, lightPoolSprite, trace.head, 112, progress < 1 ? .88 * energy : .22 * energy)
 
         const logoProgress = getLogoProgress(circuit, time)
         if (logoProgress > 0 && logoProgress < 1) {
-          const logoHead = drawPrepared(context, circuit.logoRoute, logoProgress, BRIGHT, 2.15)
-          drawLightPool(context, logoHead, 142, 1)
+          const logoTrace = tracePrepared(circuit.logoRoute, logoProgress)
+          strokePrepared(context, logoTrace, BRIGHT, 2.15)
+          drawLightPool(context, lightPoolSprite, logoTrace.head, 142, 1)
           context.beginPath()
-          context.arc(logoHead[0], logoHead[1], 4.2, 0, Math.PI * 2)
+          context.arc(logoTrace.head[0], logoTrace.head[1], 4.2, 0, Math.PI * 2)
           context.fillStyle = BRIGHT
           context.fill()
         }
 
         if (progress < 1) {
           context.beginPath()
-          context.arc(head[0], head[1], 3, 0, Math.PI * 2)
+          context.arc(trace.head[0], trace.head[1], 3, 0, Math.PI * 2)
           context.fillStyle = BRIGHT
           context.fill()
         }
