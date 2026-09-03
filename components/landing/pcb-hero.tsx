@@ -12,30 +12,26 @@ const GOLD = "#daa000"
 const BRIGHT = "#f4c64d"
 const LOGO = { x: 270, y: 211, width: 1060, height: 338 }
 const LOGO_SCALE = LOGO.width / 1920
-const CIRCUIT_SPEED = 880
+
+const BRANCH_SPEED = 520
+const RAIL_DURATION = .52
+const BUS_SPEED = 1180
+const LOGO_DRAW_DURATION = 1.04
 
 type Point = readonly [number, number]
 type Route = readonly Point[]
-type PreparedRoute = { points: Route; segments: number[]; total: number; path: Path2D }
-type PreparedTrace = { path: Path2D; head: Point }
+type Side = "left" | "top" | "right" | "bottom"
 
-type CircuitSpec = {
-  pathIndex: number
-  from: number
-  to: number
-  port: Point
-  bends: Route
-  delay: number
+type PreparedRoute = {
+  points: Route
+  segments: number[]
+  total: number
+  path: Path2D
 }
 
-type CircuitRuntime = {
-  spec: CircuitSpec
-  feederRoute: PreparedRoute
-  logoRoute: PreparedRoute
-  total: number
-  duration: number
-  feederEndTime: number
-  end: number
+type PreparedTrace = {
+  path: Path2D
+  head: Point
 }
 
 type MeasuredLogoPath = {
@@ -44,26 +40,70 @@ type MeasuredLogoPath = {
   centerX: number
 }
 
-const circuitSpecs: CircuitSpec[] = [
-  { pathIndex: 0, from: .00, to: .29, port: [42, 152], bends: [[150,152],[150,210],[240,210]], delay: .28 },
-  { pathIndex: 0, from: .24, to: .54, port: [42, 304], bends: [[150,304],[150,350],[240,350]], delay: .36 },
-  { pathIndex: 0, from: .49, to: .79, port: [320, 42], bends: [[320,120],[410,120],[410,215]], delay: .44 },
-  { pathIndex: 0, from: .74, to: 1.00, port: [640, 42], bends: [[640,120],[590,120],[590,215]], delay: .52 },
+type GroupSpec = {
+  pathIndex: number
+  side: Side
+  ports: readonly Point[]
+  rail: Route
+  collector: Point
+  delay: number
+}
 
-  { pathIndex: 1, from: .00, to: .29, port: [960, 42], bends: [[960,120],[1010,120],[1010,215]], delay: .32 },
-  { pathIndex: 1, from: .24, to: .54, port: [42, 456], bends: [[150,456],[150,410],[240,410]], delay: .40 },
-  { pathIndex: 1, from: .49, to: .79, port: [1558, 456], bends: [[1450,456],[1450,410],[1360,410]], delay: .48 },
-  { pathIndex: 1, from: .74, to: 1.00, port: [320, 718], bends: [[320,640],[410,640],[410,550]], delay: .56 },
+type BranchRuntime = {
+  port: Point
+  route: PreparedRoute
+  start: number
+  duration: number
+}
 
-  { pathIndex: 2, from: .00, to: .29, port: [1558, 152], bends: [[1450,152],[1450,210],[1360,210]], delay: .34 },
-  { pathIndex: 2, from: .24, to: .54, port: [1558, 304], bends: [[1450,304],[1450,350],[1360,350]], delay: .42 },
-  { pathIndex: 2, from: .49, to: .79, port: [960, 718], bends: [[960,640],[1010,640],[1010,550]], delay: .50 },
-  { pathIndex: 2, from: .74, to: 1.00, port: [640, 718], bends: [[640,640],[590,640],[590,550]], delay: .58 },
+type GroupRuntime = {
+  spec: GroupSpec
+  branches: BranchRuntime[]
+  railRoute: PreparedRoute
+  railStart: number
+  railDuration: number
+  busRoute: PreparedRoute
+  busStart: number
+  busDuration: number
+  logoRoute: PreparedRoute
+  logoStart: number
+  logoDuration: number
+  end: number
+}
 
-  { pathIndex: 3, from: .00, to: .29, port: [1280, 42], bends: [[1280,120],[1190,120],[1190,215]], delay: .38 },
-  { pathIndex: 3, from: .24, to: .54, port: [1558, 608], bends: [[1450,608],[1450,550],[1360,550]], delay: .46 },
-  { pathIndex: 3, from: .49, to: .79, port: [1280, 718], bends: [[1280,640],[1190,640],[1190,550]], delay: .54 },
-  { pathIndex: 3, from: .74, to: 1.00, port: [42, 608], bends: [[150,608],[150,550],[240,550]], delay: .62 },
+const groupSpecs: readonly GroupSpec[] = [
+  {
+    pathIndex: 0,
+    side: "left",
+    ports: [[42, 152], [42, 304], [42, 456], [42, 608]],
+    rail: [[170, 152], [170, 608]],
+    collector: [170, 380],
+    delay: .28,
+  },
+  {
+    pathIndex: 1,
+    side: "top",
+    ports: [[320, 42], [640, 42], [960, 42], [1280, 42]],
+    rail: [[320, 134], [1280, 134]],
+    collector: [800, 134],
+    delay: .35,
+  },
+  {
+    pathIndex: 2,
+    side: "bottom",
+    ports: [[320, 718], [640, 718], [960, 718], [1280, 718]],
+    rail: [[320, 626], [1280, 626]],
+    collector: [800, 626],
+    delay: .42,
+  },
+  {
+    pathIndex: 3,
+    side: "right",
+    ports: [[1558, 152], [1558, 304], [1558, 456], [1558, 608]],
+    rail: [[1430, 152], [1430, 608]],
+    collector: [1430, 380],
+    delay: .49,
+  },
 ]
 
 function clamp01(value: number) {
@@ -73,6 +113,11 @@ function clamp01(value: number) {
 function smoothstep(value: number) {
   const x = clamp01(value)
   return x * x * (3 - 2 * x)
+}
+
+function easeOutCubic(value: number) {
+  const x = clamp01(value)
+  return 1 - Math.pow(1 - x, 3)
 }
 
 function prepareRoute(points: Route): PreparedRoute {
@@ -160,7 +205,7 @@ function createLightPoolSprite() {
 
   const center = size / 2
   const gradient = ctx.createRadialGradient(center, center, 0, center, center, center)
-  gradient.addColorStop(0, "rgba(244,198,77,.40)")
+  gradient.addColorStop(0, "rgba(244,198,77,.42)")
   gradient.addColorStop(.14, "rgba(218,160,0,.22)")
   gradient.addColorStop(.46, "rgba(218,160,0,.07)")
   gradient.addColorStop(1, "rgba(218,160,0,0)")
@@ -186,7 +231,7 @@ function drawLightPool(
     ctx.drawImage(sprite, x - radius, y - radius, radius * 2, radius * 2)
   } else {
     const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius)
-    gradient.addColorStop(0, "rgba(244,198,77,.40)")
+    gradient.addColorStop(0, "rgba(244,198,77,.42)")
     gradient.addColorStop(.14, "rgba(218,160,0,.22)")
     gradient.addColorStop(.46, "rgba(218,160,0,.07)")
     gradient.addColorStop(1, "rgba(218,160,0,0)")
@@ -214,8 +259,8 @@ function measureLogoPath(d: string): MeasuredLogoPath {
   let minX = Number.POSITIVE_INFINITY
   let maxX = Number.NEGATIVE_INFINITY
 
-  for (let index = 0; index <= 28; index++) {
-    const point = path.getPointAtLength(length * (index / 28))
+  for (let index = 0; index <= 32; index++) {
+    const point = path.getPointAtLength(length * (index / 32))
     minX = Math.min(minX, point.x)
     maxX = Math.max(maxX, point.x)
   }
@@ -223,17 +268,14 @@ function measureLogoPath(d: string): MeasuredLogoPath {
   return { d, length, centerX: (minX + maxX) / 2 }
 }
 
-function sampleLogoSegment(d: string, from: number, to: number): Point[] {
+function sampleLogoPath(d: string): Point[] {
   const path = createSvgPath(d)
   const total = path.getTotalLength()
-  const span = Math.abs(to - from) * total
-  const samples = Math.max(24, Math.min(120, Math.ceil(span / 8)))
+  const samples = Math.max(72, Math.min(180, Math.ceil(total / 7)))
   const points: Point[] = []
 
   for (let index = 0; index <= samples; index++) {
-    const ratio = index / samples
-    const fraction = from + (to - from) * ratio
-    const point = path.getPointAtLength(total * fraction)
+    const point = path.getPointAtLength(total * (index / samples))
     points.push(logoPoint([point.x, point.y]))
   }
 
@@ -245,28 +287,62 @@ function orthogonalJoin(from: Point, to: Point, horizontalFirst: boolean): Point
   return [[from[0], to[1]], to]
 }
 
-function buildCircuit(spec: CircuitSpec, logoPaths: readonly string[]): CircuitRuntime {
-  const logoSegment = sampleLogoSegment(logoPaths[spec.pathIndex], spec.from, spec.to)
-  const firstLogo = logoSegment[0]
-  const feeder: Point[] = [spec.port, ...spec.bends]
-  const lastFeeder = feeder[feeder.length - 1]
-  const entersFromSide = spec.port[0] <= 60 || spec.port[0] >= VW - 60
-  feeder.push(...orthogonalJoin(lastFeeder, firstLogo, entersFromSide))
+function branchRoute(side: Side, port: Point): Route {
+  const [x, y] = port
+  switch (side) {
+    case "left":
+      return [port, [170, y]]
+    case "top":
+      return [port, [x, 134]]
+    case "right":
+      return [port, [1430, y]]
+    case "bottom":
+      return [port, [x, 626]]
+  }
+}
 
-  const feederRoute = prepareRoute(feeder)
-  const logoRoute = prepareRoute(logoSegment)
-  const total = feederRoute.total + logoRoute.total
-  const duration = total / CIRCUIT_SPEED
-  const feederDuration = feederRoute.total / CIRCUIT_SPEED
+function buildGroup(spec: GroupSpec, logoPaths: readonly string[]): GroupRuntime {
+  const logoRoute = prepareRoute(sampleLogoPath(logoPaths[spec.pathIndex]))
+  const logoStartPoint = logoRoute.points[0]
+  const horizontalEntry = spec.side === "left" || spec.side === "right"
+  const busRoute = prepareRoute([
+    spec.collector,
+    ...orthogonalJoin(spec.collector, logoStartPoint, horizontalEntry),
+  ])
+
+  const branches = spec.ports.map((port, index) => {
+    const route = prepareRoute(branchRoute(spec.side, port))
+    const start = spec.delay + index * .045
+    return {
+      port,
+      route,
+      start,
+      duration: Math.max(.26, route.total / BRANCH_SPEED),
+    }
+  })
+
+  const railRoute = prepareRoute(spec.rail)
+  const railStart = spec.delay + .14
+  const railDuration = RAIL_DURATION
+  const lastBranchEnd = Math.max(...branches.map((branch) => branch.start + branch.duration))
+  const busStart = Math.max(lastBranchEnd, railStart + railDuration) - .10
+  const busDuration = Math.max(.44, Math.min(.78, busRoute.total / BUS_SPEED))
+  const logoStart = busStart + busDuration - .035
+  const logoDuration = LOGO_DRAW_DURATION
 
   return {
     spec,
-    feederRoute,
+    branches,
+    railRoute,
+    railStart,
+    railDuration,
+    busRoute,
+    busStart,
+    busDuration,
     logoRoute,
-    total,
-    duration,
-    feederEndTime: spec.delay + feederDuration,
-    end: spec.delay + duration,
+    logoStart,
+    logoDuration,
+    end: logoStart + logoDuration,
   }
 }
 
@@ -297,6 +373,7 @@ export function PcbHero() {
     const hero = heroRef.current
     const canvas = canvasRef.current
     if (!hero || !canvas) return
+
     const shell = hero.closest("[data-landing-shell]") as HTMLElement | null
 
     if (document.documentElement.hasAttribute("data-esap-return-poster")) {
@@ -313,9 +390,19 @@ export function PcbHero() {
     formationLayer.width = VW
     formationLayer.height = VH
     const formationContext = formationLayer.getContext("2d", { alpha: true })
+
+    const sweepLayer = document.createElement("canvas")
+    sweepLayer.width = LOGO.width
+    sweepLayer.height = LOGO.height
+    const sweepContext = sweepLayer.getContext("2d", { alpha: true })
+
     if (formationContext) {
       formationContext.imageSmoothingEnabled = true
       formationContext.imageSmoothingQuality = "high"
+    }
+    if (sweepContext) {
+      sweepContext.imageSmoothingEnabled = true
+      sweepContext.imageSmoothingQuality = "high"
     }
 
     let frame = 0
@@ -333,7 +420,7 @@ export function PcbHero() {
     let scaleY = 1
     let renderOffsetY = 0
     let logoImage: HTMLImageElement | null = null
-    let circuits: CircuitRuntime[] = []
+    let groups: GroupRuntime[] = []
     let lockStart = 0
     let navStart = 0
     let copyStart = 0
@@ -347,7 +434,7 @@ export function PcbHero() {
     try {
       skipAnimation = skipAnimation || window.sessionStorage.getItem("esap-landing-animation-seen") === "1"
     } catch {
-      // Storage can be unavailable in hardened/private browser contexts.
+      // Session storage can be unavailable in hardened/private browser contexts.
     }
 
     const root = document.documentElement
@@ -467,10 +554,10 @@ export function PcbHero() {
       cssWidth = Math.max(1, rect.width)
       cssHeight = Math.max(1, window.innerHeight)
 
-      const legacyHeroHeight = Math.max(600, Math.min(cssHeight * .78, 760))
+      const heroHeight = Math.max(600, Math.min(cssHeight * .78, 760))
       scaleX = cssWidth / VW
-      scaleY = legacyHeroHeight / VH
-      renderOffsetY = (cssHeight - legacyHeroHeight) / 2
+      scaleY = heroHeight / VH
+      renderOffsetY = (cssHeight - heroHeight) / 2
 
       const nativeDpr = window.devicePixelRatio || 1
       const pixelBudgetDpr = Math.sqrt(2_600_000 / (cssWidth * cssHeight))
@@ -479,30 +566,22 @@ export function PcbHero() {
       canvas.height = Math.round(cssHeight * dpr)
       context.imageSmoothingEnabled = true
       context.imageSmoothingQuality = "high"
+
       if (complete) draw(animationEnd)
     }
 
-    const getCircuitProgress = (circuit: CircuitRuntime, time: number) => {
-      const travelled = clamp01((time - circuit.spec.delay) / circuit.duration) * circuit.total
-      const feederProgress = clamp01(travelled / Math.max(1, circuit.feederRoute.total))
-      const logoProgress = clamp01(
-        (travelled - circuit.feederRoute.total) / Math.max(1, circuit.logoRoute.total)
-      )
-      return { feederProgress, logoProgress }
-    }
-
-    const getNetworkOpacity = (time: number) => .46 + .54 * (1 - smoothstep((time - lockStart) / .72))
-
-    const drawAmbientLight = (time: number) => {
-      const settle = smoothstep((time - lockStart) / .72)
-      if (settle <= 0) return
+    const drawAmbient = (time: number) => {
+      const convergence = smoothstep((time - .78) / .95)
+      const settle = smoothstep((time - lockStart) / .7)
+      const intensity = convergence * (1 - settle * .55)
+      if (intensity <= 0) return
 
       const centerX = LOGO.x + LOGO.width / 2
       const centerY = LOGO.y + LOGO.height / 2
-      const gradient = context.createRadialGradient(centerX, centerY, 40, centerX, centerY, 690)
-      gradient.addColorStop(0, `rgba(244,198,77,${.07 * settle})`)
-      gradient.addColorStop(.34, `rgba(218,160,0,${.035 * settle})`)
-      gradient.addColorStop(.72, `rgba(218,160,0,${.01 * settle})`)
+      const gradient = context.createRadialGradient(centerX, centerY, 40, centerX, centerY, 720)
+      gradient.addColorStop(0, `rgba(244,198,77,${.055 * intensity})`)
+      gradient.addColorStop(.36, `rgba(218,160,0,${.026 * intensity})`)
+      gradient.addColorStop(.72, `rgba(218,160,0,${.008 * intensity})`)
       gradient.addColorStop(1, "rgba(218,160,0,0)")
 
       context.save()
@@ -513,54 +592,100 @@ export function PcbHero() {
     }
 
     const drawPorts = (time: number) => {
-      const networkOpacity = getNetworkOpacity(time)
-      const settledOpacity = .24 + networkOpacity * .76
+      groups.forEach((group) => {
+        group.branches.forEach((branch) => {
+          const activation = smoothstep((time - (branch.start - .12)) / .18)
+          const pulse = clamp01((time - (branch.start - .10)) / .32)
 
-      circuitSpecs.forEach((spec, index) => {
-        const [x, y] = spec.port
-        const circuit = circuits[index]
-        const activation = circuit
-          ? smoothstep((time - (circuit.spec.delay - .12)) / .16)
-          : 0
-        const pulse = circuit
-          ? clamp01((time - (circuit.spec.delay - .12)) / .34)
-          : 0
+          drawLightPool(
+            context,
+            lightPoolSprite,
+            branch.port,
+            40 + activation * 18,
+            .10 + activation * .34
+          )
 
-        drawLightPool(
-          context,
-          lightPoolSprite,
-          spec.port,
-          42 + activation * 18,
-          (.12 + activation * .46) * settledOpacity
-        )
-
-        context.save()
-        context.globalAlpha = settledOpacity
-        context.beginPath()
-        context.arc(x, y, 9.5, 0, Math.PI * 2)
-        context.fillStyle = "rgba(0,0,0,.98)"
-        context.fill()
-        context.strokeStyle = `rgba(218,160,0,${.48 + activation * .42})`
-        context.lineWidth = 1.35
-        context.stroke()
-
-        context.beginPath()
-        context.arc(x, y, 3.25 + activation * .45, 0, Math.PI * 2)
-        context.fillStyle = BRIGHT
-        context.globalAlpha *= .55 + activation * .45
-        context.fill()
-        context.restore()
-
-        if (pulse > 0 && pulse < 1 && networkOpacity > .05) {
           context.save()
-          context.globalAlpha = networkOpacity
+          context.globalAlpha = .40 + activation * .60
           context.beginPath()
-          context.arc(x, y, 11 + pulse * 25, 0, Math.PI * 2)
-          context.strokeStyle = `rgba(244,198,77,${.24 * (1 - pulse)})`
-          context.lineWidth = 1
+          context.arc(branch.port[0], branch.port[1], 9.5, 0, Math.PI * 2)
+          context.fillStyle = "rgba(0,0,0,.98)"
+          context.fill()
+          context.strokeStyle = `rgba(218,160,0,${.46 + activation * .46})`
+          context.lineWidth = 1.35
           context.stroke()
+
+          context.beginPath()
+          context.arc(branch.port[0], branch.port[1], 3.2 + activation * .5, 0, Math.PI * 2)
+          context.fillStyle = BRIGHT
+          context.fill()
           context.restore()
-        }
+
+          if (pulse > 0 && pulse < 1) {
+            context.save()
+            context.beginPath()
+            context.arc(branch.port[0], branch.port[1], 11 + pulse * 24, 0, Math.PI * 2)
+            context.strokeStyle = `rgba(244,198,77,${.20 * (1 - pulse)})`
+            context.lineWidth = 1
+            context.stroke()
+            context.restore()
+          }
+        })
+      })
+    }
+
+    const drawPoweredRoute = (
+      route: PreparedRoute,
+      progress: number,
+      active: boolean,
+      settledAlpha: number,
+      headRadius: number
+    ) => {
+      if (progress <= 0) return
+
+      const trace = tracePrepared(route, progress)
+
+      if (active) {
+        context.save()
+        context.globalCompositeOperation = "lighter"
+        context.globalAlpha = .018
+        strokePrepared(context, trace, GOLD, 34)
+        context.globalAlpha = .06
+        strokePrepared(context, trace, GOLD, 14)
+        context.globalAlpha = .17
+        strokePrepared(context, trace, BRIGHT, 5)
+        context.restore()
+      }
+
+      context.save()
+      context.globalAlpha = active ? .92 : settledAlpha
+      strokePrepared(context, trace, active ? BRIGHT : GOLD, active ? 2.35 : 1.85)
+      context.restore()
+
+      if (active) {
+        drawLightPool(context, lightPoolSprite, trace.head, headRadius, .88)
+        context.beginPath()
+        context.arc(trace.head[0], trace.head[1], 3.4, 0, Math.PI * 2)
+        context.fillStyle = BRIGHT
+        context.fill()
+      }
+    }
+
+    const drawNetwork = (time: number) => {
+      groups.forEach((group) => {
+        group.branches.forEach((branch) => {
+          const raw = (time - branch.start) / branch.duration
+          const progress = easeOutCubic(raw)
+          drawPoweredRoute(branch.route, progress, raw > 0 && raw < 1, .25, 70)
+        })
+
+        const railRaw = (time - group.railStart) / group.railDuration
+        const railProgress = smoothstep(railRaw)
+        drawPoweredRoute(group.railRoute, railProgress, railRaw > 0 && railRaw < 1, .23, 74)
+
+        const busRaw = (time - group.busStart) / group.busDuration
+        const busProgress = smoothstep(busRaw)
+        drawPoweredRoute(group.busRoute, busProgress, busRaw > 0 && busRaw < 1, .43, 105)
       })
     }
 
@@ -572,20 +697,20 @@ export function PcbHero() {
         formationContext.clearRect(0, 0, VW, VH)
         formationContext.globalCompositeOperation = "source-over"
 
-        circuits.forEach((circuit) => {
-          const { logoProgress } = getCircuitProgress(circuit, time)
-          if (logoProgress <= 0) return
+        groups.forEach((group) => {
+          const progress = smoothstep((time - group.logoStart) / group.logoDuration)
+          if (progress <= 0) return
 
-          const bloomTrace = tracePrepared(circuit.logoRoute, clamp01(logoProgress + .035))
-          const coreTrace = tracePrepared(circuit.logoRoute, logoProgress)
+          const bloomTrace = tracePrepared(group.logoRoute, clamp01(progress + .025))
+          const coreTrace = tracePrepared(group.logoRoute, progress)
 
           formationContext.save()
-          formationContext.globalAlpha = .16
-          strokePrepared(formationContext, bloomTrace, "#ffffff", 112)
-          formationContext.globalAlpha = .55
-          strokePrepared(formationContext, coreTrace, "#ffffff", 72)
+          formationContext.globalAlpha = .12
+          strokePrepared(formationContext, bloomTrace, "#ffffff", 108)
+          formationContext.globalAlpha = .54
+          strokePrepared(formationContext, coreTrace, "#ffffff", 66)
           formationContext.globalAlpha = 1
-          strokePrepared(formationContext, coreTrace, "#ffffff", 38)
+          strokePrepared(formationContext, coreTrace, "#ffffff", 34)
           formationContext.restore()
         })
 
@@ -599,73 +724,76 @@ export function PcbHero() {
 
       context.save()
       context.globalCompositeOperation = "lighter"
-      context.globalAlpha = .10
+      context.globalAlpha = .09
       context.drawImage(formationLayer, -2, -2, VW + 4, VH + 4)
       context.restore()
       context.drawImage(formationLayer, 0, 0)
+
+      groups.forEach((group) => {
+        const raw = (time - group.logoStart) / group.logoDuration
+        const progress = smoothstep(raw)
+        if (progress <= 0 || progress >= 1) return
+
+        const trace = tracePrepared(group.logoRoute, progress)
+        context.save()
+        context.globalCompositeOperation = "lighter"
+        context.globalAlpha = .80
+        strokePrepared(context, trace, BRIGHT, 2.0)
+        context.restore()
+        drawLightPool(context, lightPoolSprite, trace.head, 122, .92)
+        context.beginPath()
+        context.arc(trace.head[0], trace.head[1], 4.0, 0, Math.PI * 2)
+        context.fillStyle = BRIGHT
+        context.fill()
+      })
     }
 
     const drawLogoLock = (time: number) => {
       if (!logoImage) return
-      const solid = smoothstep((time - lockStart) / .56)
+      const solid = smoothstep((time - (lockStart - .08)) / .34)
       if (solid <= 0) return
 
       context.save()
-      context.globalAlpha = solid * .97
+      context.globalAlpha = solid * .98
       context.drawImage(logoImage, LOGO.x, LOGO.y, LOGO.width, LOGO.height)
       context.restore()
     }
 
-    const drawCircuits = (time: number) => {
-      const networkOpacity = getNetworkOpacity(time)
-      if (networkOpacity <= .002) return
+    const drawLockSweep = (time: number) => {
+      if (!logoImage || !sweepContext) return
 
-      circuits.forEach((circuit) => {
-        const { feederProgress, logoProgress } = getCircuitProgress(circuit, time)
-        if (feederProgress <= 0) return
+      const raw = (time - (lockStart + .02)) / .56
+      if (raw <= 0 || raw >= 1) return
 
-        const feederTrace = tracePrepared(circuit.feederRoute, feederProgress)
-        const feederActive = logoProgress <= 0 && feederProgress < 1
-        const feederEnergy = feederActive ? 1 : .58
+      const progress = smoothstep(raw)
+      const x = -120 + (LOGO.width + 240) * progress
 
-        context.save()
-        context.globalCompositeOperation = "lighter"
-        context.globalAlpha = .025 * feederEnergy * networkOpacity
-        strokePrepared(context, feederTrace, GOLD, 38)
-        context.globalAlpha = .075 * feederEnergy * networkOpacity
-        strokePrepared(context, feederTrace, GOLD, 14)
-        context.globalAlpha = .16 * feederEnergy * networkOpacity
-        strokePrepared(context, feederTrace, BRIGHT, 5)
-        context.restore()
+      sweepContext.setTransform(1, 0, 0, 1, 0, 0)
+      sweepContext.clearRect(0, 0, LOGO.width, LOGO.height)
+      sweepContext.globalCompositeOperation = "source-over"
+      sweepContext.drawImage(logoImage, 0, 0, LOGO.width, LOGO.height)
+      sweepContext.globalCompositeOperation = "source-in"
 
-        context.save()
-        context.globalAlpha = (.88 * feederEnergy + .12) * networkOpacity
-        strokePrepared(context, feederTrace, GOLD, 2.15)
-        context.restore()
+      const gradient = sweepContext.createLinearGradient(x - 120, 0, x + 120, 0)
+      gradient.addColorStop(0, "rgba(255,255,255,0)")
+      gradient.addColorStop(.42, "rgba(255,255,255,.18)")
+      gradient.addColorStop(.50, "rgba(255,255,255,.92)")
+      gradient.addColorStop(.58, "rgba(255,255,255,.18)")
+      gradient.addColorStop(1, "rgba(255,255,255,0)")
+      sweepContext.fillStyle = gradient
+      sweepContext.fillRect(0, 0, LOGO.width, LOGO.height)
+      sweepContext.globalCompositeOperation = "source-over"
 
-        if (feederActive) {
-          drawLightPool(context, lightPoolSprite, feederTrace.head, 92, .74 * networkOpacity)
-          context.save()
-          context.globalAlpha = networkOpacity
-          context.beginPath()
-          context.arc(feederTrace.head[0], feederTrace.head[1], 3.1, 0, Math.PI * 2)
-          context.fillStyle = BRIGHT
-          context.fill()
-          context.restore()
-        }
+      context.save()
+      context.globalCompositeOperation = "lighter"
+      context.globalAlpha = .82
+      context.drawImage(sweepLayer, LOGO.x, LOGO.y)
+      context.restore()
 
-        if (logoProgress > 0 && logoProgress < 1) {
-          const logoTrace = tracePrepared(circuit.logoRoute, logoProgress)
-          drawLightPool(context, lightPoolSprite, logoTrace.head, 112, .92 * networkOpacity)
-          context.save()
-          context.globalAlpha = networkOpacity
-          context.beginPath()
-          context.arc(logoTrace.head[0], logoTrace.head[1], 4.1, 0, Math.PI * 2)
-          context.fillStyle = BRIGHT
-          context.fill()
-          context.restore()
-        }
-      })
+      const worldX = LOGO.x + x
+      if (worldX >= LOGO.x - 40 && worldX <= LOGO.x + LOGO.width + 40) {
+        drawLightPool(context, lightPoolSprite, [worldX, LOGO.y + LOGO.height / 2], 180, .24)
+      }
     }
 
     const draw = (time: number) => {
@@ -675,11 +803,21 @@ export function PcbHero() {
       context.save()
       context.translate(0, renderOffsetY)
       context.scale(scaleX, scaleY)
-      drawAmbientLight(time)
+
+      const focusIn = smoothstep((time - .78) / .52)
+      const focusOut = smoothstep((time - lockStart) / .66)
+      const focus = focusIn * (1 - focusOut)
+      const sceneScale = 1 + .014 * focus
+      context.translate(VW / 2, VH / 2 - 4 * focus)
+      context.scale(sceneScale, sceneScale)
+      context.translate(-VW / 2, -VH / 2)
+
+      drawAmbient(time)
+      drawNetwork(time)
       drawPorts(time)
-      drawCircuits(time)
       drawLogoFormation(time)
       drawLogoLock(time)
+      drawLockSweep(time)
       context.restore()
     }
 
@@ -701,6 +839,7 @@ export function PcbHero() {
 
       if (elapsed >= animationEnd) {
         complete = true
+        draw(animationEnd)
         revealEverything()
         finishHandoff()
         return
@@ -714,14 +853,14 @@ export function PcbHero() {
         const logoPaths = await loadLogoPaths()
         if (cancelled) return
 
-        circuits = circuitSpecs.map((spec) => buildCircuit(spec, logoPaths))
-        const lastDeposit = Math.max(...circuits.map((circuit) => circuit.end))
+        groups = groupSpecs.map((spec) => buildGroup(spec, logoPaths))
+        const lastLogoEnd = Math.max(...groups.map((group) => group.end))
 
-        lockStart = lastDeposit + .06
-        navStart = lockStart + .10
-        copyStart = lockStart + .24
-        pageStart = lockStart + .48
-        animationEnd = lockStart + 1.02
+        lockStart = lastLogoEnd + .055
+        navStart = lockStart + .18
+        copyStart = lockStart + .34
+        pageStart = lockStart + .62
+        animationEnd = lockStart + .98
 
         if (!skipAnimation) {
           try {
