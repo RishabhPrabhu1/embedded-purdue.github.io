@@ -451,12 +451,54 @@ function buildLogoAnchorBank(side: Side, candidates: readonly Point[], count: nu
   return chosen.sort((a, b) => sideAxis(side, a) - sideAxis(side, b))
 }
 
+function distanceToSegment(point: Point, start: Point, end: Point) {
+  const dx = end[0] - start[0]
+  const dy = end[1] - start[1]
+  const lengthSquared = dx * dx + dy * dy
+  if (!lengthSquared) return Math.hypot(point[0] - start[0], point[1] - start[1])
+
+  const projection = clamp01(
+    ((point[0] - start[0]) * dx + (point[1] - start[1]) * dy) / lengthSquared
+  )
+  const x = start[0] + dx * projection
+  const y = start[1] + dy * projection
+  return Math.hypot(point[0] - x, point[1] - y)
+}
+
+function railTapTime(groups: readonly GroupRuntime[], point: Point) {
+  let closestGroup = groups[0]
+  let closestDistance = Number.POSITIVE_INFINITY
+
+  groups.forEach((group) => {
+    const start = group.railRoute.points[0]
+    const end = group.railRoute.points[group.railRoute.points.length - 1]
+    const distance = distanceToSegment(point, start, end)
+    if (distance < closestDistance) {
+      closestDistance = distance
+      closestGroup = group
+    }
+  })
+
+  if (!closestGroup) return 0
+
+  const start = closestGroup.railRoute.points[0]
+  const end = closestGroup.railRoute.points[closestGroup.railRoute.points.length - 1]
+  const dx = end[0] - start[0]
+  const dy = end[1] - start[1]
+  const lengthSquared = dx * dx + dy * dy
+  const progress = lengthSquared
+    ? clamp01(((point[0] - start[0]) * dx + (point[1] - start[1]) * dy) / lengthSquared)
+    : 0
+
+  return closestGroup.railStart + closestGroup.railDuration * progress + .035
+}
+
 function buildAuxiliary(
   spec: AuxiliarySpec,
   anchor: Point,
-  arrivalTime: number,
-  arrivalOffset: number,
-  durationScale: number
+  startTime: number,
+  targetArrival: number,
+  speedScale: number
 ): AuxiliaryRuntime {
   const routePoints: Point[] = [...spec.route]
   const end = routePoints[routePoints.length - 1]
@@ -483,12 +525,12 @@ function buildAuxiliary(
   }
 
   const route = prepareRoute(routePoints)
-  const baseDuration = Math.max(.44, Math.min(.98, route.total / 760))
-  const duration = baseDuration * durationScale
+  const availableDuration = Math.max(.42, targetArrival - startTime)
+  const duration = availableDuration / speedScale
 
   return {
     route,
-    start: arrivalTime + arrivalOffset - duration,
+    start: startTime,
     duration,
   }
 }
@@ -496,6 +538,7 @@ function buildAuxiliary(
 function buildAuxiliaryNetwork(
   specs: readonly AuxiliarySpec[],
   logoAnchors: readonly Point[],
+  groups: readonly GroupRuntime[],
   arrivalTime: number
 ): AuxiliaryRuntime[] {
   const sides: readonly Side[] = ["left", "top", "right", "bottom"]
@@ -517,11 +560,16 @@ function buildAuxiliaryNetwork(
     })
   })
 
+  const speedPattern = [.98, 1.02, 1, 1.03, .97]
+
   return pending
     .map(({ spec, anchor }, index) => {
-      const arrivalOffset = ((index % 7) - 3) * .012
-      const durationScale = .96 + (index % 5) * .035
-      return buildAuxiliary(spec, anchor, arrivalTime, arrivalOffset, durationScale)
+      const source = spec.route[0]
+      const startTime = railTapTime(groups, source)
+      const arrivalOffset = ((index % 5) - 2) * .006
+      const targetArrival = arrivalTime + arrivalOffset
+      const speedScale = speedPattern[index % speedPattern.length]
+      return buildAuxiliary(spec, anchor, startTime, targetArrival, speedScale)
     })
     .sort((a, b) => a.start - b.start)
 }
@@ -855,34 +903,36 @@ export function PcbHero() {
     const drawAuxiliaryNetwork = (time: number) => {
       auxiliaryWires.forEach((wire) => {
         const raw = (time - wire.start) / wire.duration
-        const progress = smoothstep(raw)
+        const progress = clamp01(raw)
         if (progress <= 0) return
 
         const active = raw > 0 && raw < 1
+        const activation = smoothstep(progress / .10)
         const trace = tracePrepared(wire.route, progress)
         const completionPulse = raw >= 1 ? 1 - smoothstep((raw - 1) / .28) : 0
 
         if (active) {
           context.save()
           context.globalCompositeOperation = "lighter"
-          context.globalAlpha = .055
+          context.globalAlpha = .055 * activation
           strokePrepared(context, trace, GOLD, 16)
-          context.globalAlpha = .15
+          context.globalAlpha = .15 * activation
           strokePrepared(context, trace, GOLD, 7)
-          context.globalAlpha = .30
+          context.globalAlpha = .30 * activation
           strokePrepared(context, trace, BRIGHT, 3.8)
           context.restore()
         }
 
         context.save()
-        context.globalAlpha = active ? .86 : .34
+        context.globalAlpha = active ? .34 + .52 * activation : .34
         strokePrepared(context, trace, active ? BRIGHT : GOLD, active ? 1.95 : 1.42)
         context.restore()
 
         if (active) {
-          drawLightPool(context, lightPoolSprite, trace.head, 54, .40)
+          drawLightPool(context, lightPoolSprite, trace.head, 54, .40 * activation)
           context.save()
           context.globalCompositeOperation = "lighter"
+          context.globalAlpha = activation
           context.beginPath()
           context.arc(trace.head[0], trace.head[1], 2.4, 0, Math.PI * 2)
           context.fillStyle = BRIGHT
@@ -1083,8 +1133,13 @@ export function PcbHero() {
         const logoAnchors = logoPaths.flatMap(sampleLogoPath)
         groups = groupSpecs.map((spec) => buildGroup(spec, logoPaths))
         const lastLogoEnd = Math.max(...groups.map((group) => group.end))
-        const auxiliaryArrivalTime = lastLogoEnd - .22
-        auxiliaryWires = buildAuxiliaryNetwork(auxiliarySpecs, logoAnchors, auxiliaryArrivalTime)
+        const auxiliaryArrivalTime = lastLogoEnd - .30
+        auxiliaryWires = buildAuxiliaryNetwork(
+          auxiliarySpecs,
+          logoAnchors,
+          groups,
+          auxiliaryArrivalTime
+        )
         const lastAuxiliaryEnd = Math.max(
           ...auxiliaryWires.map((wire) => wire.start + wire.duration)
         )
