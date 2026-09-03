@@ -114,28 +114,55 @@ export default function SponsorsPage() {
         <section className="border-b border-white/[0.08] bg-black">
           <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
             <div className="grid lg:grid-cols-12">
-              <div className="border-b border-white/[0.08] px-5 py-9 sm:px-8 lg:col-span-8 lg:min-h-[390px] lg:border-b-0 lg:border-r lg:px-12 lg:py-11 xl:px-16">
+              <div className="border-b border-white/[0.08] px-5 py-9 sm:px-8 lg:col-span-7 lg:min-h-[430px] lg:border-b-0 lg:border-r lg:px-12 lg:py-11 xl:px-16">
                 <div className="flex h-full flex-col justify-between gap-10">
-                  <div className="flex items-center gap-3 font-mono text-[0.62rem] uppercase tracking-[0.18em] text-[#aaa398]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#f4c64d] shadow-[0_0_8px_rgba(244,198,77,0.38)]" />
-                    Industry partnerships
+                  <div className="flex items-center justify-between gap-5">
+                    <div className="flex items-center gap-3 font-mono text-[0.62rem] uppercase tracking-[0.18em] text-[#aaa398]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#f4c64d] shadow-[0_0_8px_rgba(244,198,77,0.38)]" />
+                      Industry partnerships
+                    </div>
+                    <span className="hidden font-mono text-[0.52rem] uppercase tracking-[0.16em] text-[#4f4b45] sm:block">
+                      Students ↔ industry
+                    </span>
                   </div>
 
                   <div>
-                    <p className="font-mono text-[0.6rem] uppercase tracking-[0.18em] text-[#625e57]">Sponsor ES@P / Build Purdue engineers</p>
-                    <h1 className="mt-4 text-[clamp(3.7rem,7.2vw,7.5rem)] font-medium leading-[0.82] tracking-[-0.07em]">
+                    <p className="font-mono text-[0.6rem] uppercase tracking-[0.18em] text-[#625e57]">Sponsor ES@P / build Purdue engineers</p>
+                    <h1 className="mt-4 text-[clamp(3.7rem,7vw,7.3rem)] font-medium leading-[0.82] tracking-[-0.07em]">
                       Back the
                       <span className="block text-[#d8aa27]">people who build.</span>
                     </h1>
                     <p className="mt-6 max-w-2xl text-base leading-7 text-[#8d887f]">
-                      ES@P gives students room to design, break, debug, and ship real embedded systems. Partners help us put better tools, harder problems, and stronger industry connections in front of them.
+                      Partners put better tools, harder problems, and stronger technical connections in front of students who are already designing and shipping real systems.
                     </p>
                   </div>
                 </div>
               </div>
 
-              <SiteTelemetry items={telemetry} />
+              <div className="relative min-h-[330px] overflow-hidden bg-[#080807] lg:col-span-5 lg:min-h-[430px]">
+                <img
+                  src="/industry_ins.jpg"
+                  alt="ES@P industry engagement"
+                  className="h-full w-full object-cover opacity-[0.7] grayscale-[18%] saturate-[0.78]"
+                />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.2),transparent_34%,rgba(0,0,0,.86))]" />
+                <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,.18),transparent_52%)]" />
+                <div className="absolute left-0 top-0 border-b border-r border-white/[0.09] bg-black/58 px-4 py-3 backdrop-blur-sm">
+                  <p className="font-mono text-[0.5rem] uppercase tracking-[0.16em] text-[#8d887f]">Partner interface</p>
+                </div>
+                <div className="absolute inset-x-0 bottom-0 border-t border-white/[0.1] bg-black/68 px-5 py-4 backdrop-blur-sm sm:px-7">
+                  <div className="flex items-end justify-between gap-6">
+                    <div>
+                      <p className="font-mono text-[0.5rem] uppercase tracking-[0.15em] text-[#756f67]">Partnership principle</p>
+                      <p className="mt-1 text-lg font-medium tracking-[-0.035em] text-[#e0dbd1]">Access should create technical value.</p>
+                    </div>
+                    <span className="font-mono text-[0.5rem] uppercase tracking-[0.14em] text-[#8d7328]">IND / 01</span>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            <SiteTelemetry items={telemetry} variant="rail" />
           </div>
         </section>
 
