@@ -46,69 +46,6 @@ const pendingRoles = [
 
 const WIDE_RAIL = "mx-auto w-full lg:w-[calc(100%_-_48px)] 2xl:w-[calc(100%_-_80px)]"
 
-function MemberCard({ member, index }: { member: Member; index: number }) {
-  const socialLinkClass =
-    "grid h-8 w-8 place-items-center border border-white/[0.07] text-[#777169] transition-colors hover:border-[#daa000]/30 hover:bg-[#daa000]/[0.05] hover:text-[#f2c34f]"
-
-  return (
-    <article data-site-lift="card" className="group flex h-full flex-col bg-[#0c0c0b] transition-colors hover:bg-[#11110f]">
-      <div className="relative aspect-[4/5] overflow-hidden border-b border-white/[0.08] bg-black">
-        {member.image ? (
-          <Image
-            src={member.image}
-            alt={member.name}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-            className="object-cover object-top opacity-[0.82] grayscale-[15%] transition duration-700 ease-out group-hover:scale-[1.015] group-hover:opacity-100 group-hover:grayscale-0"
-            placeholder="blur"
-          />
-        ) : null}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/82 via-transparent to-black/16" />
-        <span className="absolute left-4 top-4 font-mono text-[0.52rem] uppercase tracking-[0.14em] text-[#777169]">
-          E-{String(index + 1).padStart(2, "0")}
-        </span>
-      </div>
-
-      <div className="flex flex-1 flex-col px-5 py-5 sm:px-6">
-        <p className="font-mono text-[0.54rem] uppercase tracking-[0.15em] text-[#8d7328]">{member.role}</p>
-        <h3 className="mt-2 text-[1.65rem] font-medium leading-none tracking-[-0.05em] text-[#ebe6dc]">{member.name}</h3>
-
-        {(member.email || member.linkedin || member.github) && (
-          <div className="mt-auto flex items-center gap-2 pt-6">
-            {member.email && (
-              <a href={member.email} aria-label={`Email ${member.name}`} className={socialLinkClass}>
-                <Mail className="h-3.5 w-3.5" aria-hidden="true" />
-              </a>
-            )}
-            {member.linkedin && (
-              <a
-                href={member.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`${member.name} on LinkedIn`}
-                className={socialLinkClass}
-              >
-                <Linkedin className="h-3.5 w-3.5" aria-hidden="true" />
-              </a>
-            )}
-            {member.github && (
-              <a
-                href={member.github}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`${member.name} on GitHub`}
-                className={socialLinkClass}
-              >
-                <Github className="h-3.5 w-3.5" aria-hidden="true" />
-              </a>
-            )}
-          </div>
-        )}
-      </div>
-    </article>
-  )
-}
-
 function HeroPortrait({ member, className }: { member: Member; className?: string }) {
   return (
     <div className={`group relative min-h-0 overflow-hidden bg-[#090908] ${className ?? ""}`}>
@@ -128,6 +65,58 @@ function HeroPortrait({ member, className }: { member: Member; className?: strin
         <p className="mt-1 text-sm font-medium tracking-[-0.03em] text-[#e4ded4]">{member.name}</p>
       </div>
     </div>
+  )
+}
+
+function MemberDirectoryRow({ member, index }: { member: Member; index: number }) {
+  const socialLinkClass =
+    "grid h-8 w-8 place-items-center border border-white/[0.08] text-[#777169] transition-colors hover:border-[#daa000]/35 hover:text-[#f2c34f]"
+  const hasLinks = Boolean(member.email || member.linkedin || member.github)
+
+  return (
+    <article
+      data-site-lift="card"
+      className="group grid min-h-[96px] gap-4 border-b border-white/[0.08] px-5 py-5 transition-colors last:border-b-0 hover:bg-white/[0.018] sm:grid-cols-[56px_1.15fr_1fr_auto] sm:items-center sm:px-8 lg:px-10"
+    >
+      <span className="font-mono text-[0.52rem] uppercase tracking-[0.16em] text-[#5f5b55]">
+        E-{String(index + 1).padStart(2, "0")}
+      </span>
+      <div>
+        <h3 className="text-xl font-medium tracking-[-0.04em] text-[#e5dfd5]">{member.name}</h3>
+        <p className="mt-1 font-mono text-[0.49rem] uppercase tracking-[0.13em] text-[#5f5a53]">Executive board</p>
+      </div>
+      <p className="font-mono text-[0.54rem] uppercase tracking-[0.15em] text-[#9b7a24]">{member.role}</p>
+      <div className="flex min-w-[72px] items-center justify-start gap-2 sm:justify-end">
+        {member.email && (
+          <a href={member.email} aria-label={`Email ${member.name}`} className={socialLinkClass}>
+            <Mail className="h-3.5 w-3.5" aria-hidden="true" />
+          </a>
+        )}
+        {member.linkedin && (
+          <a
+            href={member.linkedin}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${member.name} on LinkedIn`}
+            className={socialLinkClass}
+          >
+            <Linkedin className="h-3.5 w-3.5" aria-hidden="true" />
+          </a>
+        )}
+        {member.github && (
+          <a
+            href={member.github}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${member.name} on GitHub`}
+            className={socialLinkClass}
+          >
+            <Github className="h-3.5 w-3.5" aria-hidden="true" />
+          </a>
+        )}
+        {!hasLinks && <span className="font-mono text-[0.47rem] uppercase tracking-[0.12em] text-[#4f4b45]">Record</span>}
+      </div>
+    </article>
   )
 }
 
@@ -188,27 +177,25 @@ export default function TeamPage() {
         <section className="border-b border-white/[0.08] bg-[#0c0c0b]">
           <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
             <div className="grid lg:grid-cols-12">
-              <div className="border-b border-white/[0.08] px-5 py-9 sm:px-8 lg:col-span-4 lg:border-b-0 lg:border-r lg:px-12 lg:py-12 xl:px-16">
+              <div className="border-b border-white/[0.08] px-5 py-8 sm:px-8 lg:col-span-4 lg:border-b-0 lg:border-r lg:px-12 lg:py-10 xl:px-16">
                 <div className="lg:sticky lg:top-[108px]">
                   <div className="flex items-center gap-3 font-mono text-[0.58rem] uppercase tracking-[0.17em] text-[#777169]">
                     <Shield className="h-4 w-4 text-[#8f7325]" aria-hidden="true" />
                     01 / Leadership / 2026
                   </div>
-                  <h2 className="mt-4 text-[clamp(2.8rem,4.5vw,4.8rem)] font-medium leading-[0.9] tracking-[-0.06em] text-[#ebe6dc]">
+                  <h2 className="mt-4 text-[clamp(2.65rem,4.2vw,4.5rem)] font-medium leading-[0.9] tracking-[-0.06em] text-[#ebe6dc]">
                     Executive Board
                   </h2>
                   <p className="mt-5 max-w-sm text-sm leading-6 text-[#817c74]">
-                    The people responsible for the organization, technical direction, operations, and continuity of ES@P.
+                    The hero establishes the people visually. This directory keeps the operational record compact and usable.
                   </p>
                 </div>
               </div>
 
               <div className="lg:col-span-8">
-                <div className="grid gap-px bg-white/[0.08] sm:grid-cols-2 xl:grid-cols-3">
-                  {executives.map((member, index) => (
-                    <MemberCard key={member.name} member={member} index={index} />
-                  ))}
-                </div>
+                {executives.map((member, index) => (
+                  <MemberDirectoryRow key={member.name} member={member} index={index} />
+                ))}
               </div>
             </div>
           </div>
