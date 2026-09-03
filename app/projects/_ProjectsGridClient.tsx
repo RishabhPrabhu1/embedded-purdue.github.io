@@ -17,12 +17,12 @@ type Project = Omit<DataProject, "description" | "image" | "icon"> & {
 const STATUS_ORDER: Record<string, number> = { Active: 0, Planned: 1, Completed: 2 }
 
 const TRIGGER_CLS =
-  "flex h-11 w-full items-center gap-2 border border-white/[0.1] bg-[#10100e] px-3.5 font-mono text-[0.61rem] uppercase tracking-[0.11em] text-[#aaa49a] outline-none transition-colors hover:border-[#daa000]/35 hover:text-[#e6e0d5] focus-visible:border-[#daa000]/60 sm:w-44"
+  "flex h-10 w-full items-center gap-2 border border-white/[0.1] bg-black/20 px-3.5 font-mono text-[0.6rem] uppercase tracking-[0.11em] text-[#aaa49a] outline-none transition-colors hover:border-[#daa000]/35 hover:text-[#e6e0d5] focus-visible:border-[#daa000]/60 sm:w-44"
 const TRIGGER_LABEL_CLS = "min-w-0 flex-1 truncate text-left"
 const MENU_CLS =
-  "absolute left-0 top-full z-50 mt-1 min-w-full border border-white/[0.1] bg-[#10100e] text-[#c7c1b7] shadow-[0_20px_50px_rgba(0,0,0,.38)]"
+  "absolute left-0 top-full z-50 mt-1 min-w-full border border-white/[0.1] bg-[#0b0b0a] text-[#c7c1b7] shadow-[0_20px_50px_rgba(0,0,0,.38)]"
 const MENU_ITEM_CLS =
-  "w-full px-3.5 py-2.5 text-left text-sm transition-colors hover:bg-[#daa000]/[0.09] hover:text-[#f2c34f]"
+  "w-full px-3.5 py-2.5 text-left text-sm transition-colors hover:bg-[#daa000]/[0.07] hover:text-[#f2c34f]"
 
 function resolveProjectImage(project: Project) {
   const raw = project.image || ""
@@ -114,7 +114,7 @@ function TechCheckboxDropdown({
           <ul className="max-h-72 overflow-y-auto py-1.5">
             {allTechs.map((tech) => (
               <li key={tech}>
-                <label className="flex cursor-pointer items-center gap-3 px-3.5 py-2 text-sm transition-colors hover:bg-[#daa000]/[0.08] hover:text-[#f2c34f]">
+                <label className="flex cursor-pointer items-center gap-3 px-3.5 py-2 text-sm transition-colors hover:bg-[#daa000]/[0.07] hover:text-[#f2c34f]">
                   <input
                     type="checkbox"
                     checked={selectedTechs.includes(tech)}
@@ -277,7 +277,7 @@ export default function ProjectsGridClient({ projects }: { projects: Project[] }
 
   return (
     <>
-      <div className="border-b border-white/[0.08] px-5 py-7 sm:px-8 lg:px-12 lg:py-8 xl:px-16">
+      <div className="border-b border-white/[0.08] px-5 py-6 sm:px-8 lg:px-12 lg:py-7 xl:px-16">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6e6961]" aria-hidden="true" />
@@ -288,7 +288,7 @@ export default function ProjectsGridClient({ projects }: { projects: Project[] }
               autoComplete="off"
               spellCheck={false}
               placeholder="Search projects, systems, technologies…"
-              className="h-11 w-full border border-white/[0.1] bg-[#10100e] py-2 pl-10 pr-4 text-sm text-[#e5dfd4] outline-none transition-colors placeholder:text-[#5f5a53] focus:border-[#daa000]/55"
+              className="h-10 w-full border border-white/[0.1] bg-black/20 py-2 pl-10 pr-4 text-sm text-[#e5dfd4] outline-none transition-colors placeholder:text-[#5f5a53] focus:border-[#daa000]/55"
             />
           </div>
 
@@ -313,7 +313,7 @@ export default function ProjectsGridClient({ projects }: { projects: Project[] }
           </div>
         </div>
 
-        <div className="mt-4 flex min-h-6 flex-wrap items-center justify-between gap-3 font-mono text-[0.57rem] uppercase tracking-[0.15em]">
+        <div className="mt-3 flex min-h-5 flex-wrap items-center justify-between gap-3 font-mono text-[0.56rem] uppercase tracking-[0.15em]">
           <span className="text-[#69645d]">
             {filtered.length} project{filtered.length === 1 ? "" : "s"}{hasFilters ? " matching filters" : " in archive"}
           </span>
@@ -327,10 +327,10 @@ export default function ProjectsGridClient({ projects }: { projects: Project[] }
       </div>
 
       {!filtered.length ? (
-        <div className="px-5 py-20 text-center sm:px-8 lg:px-12">
+        <div className="px-5 py-14 text-center sm:px-8 lg:px-12">
           <p className="font-mono text-[0.58rem] uppercase tracking-[0.17em] text-[#666159]">No matching systems</p>
-          <h2 className="mt-4 text-3xl font-medium tracking-[-0.05em] text-[#ded8cd]">Nothing fits those filters.</h2>
-          <Link href="/projects" className="mt-6 inline-flex items-center gap-2 text-sm text-[#b28c25] transition-colors hover:text-[#f2c34f]">
+          <h2 className="mt-3 text-3xl font-medium tracking-[-0.05em] text-[#ded8cd]">Nothing fits those filters.</h2>
+          <Link href="/projects" className="mt-5 inline-flex items-center gap-2 text-sm text-[#b28c25] transition-colors hover:text-[#f2c34f]">
             Reset project archive
             <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>
@@ -342,12 +342,12 @@ export default function ProjectsGridClient({ projects }: { projects: Project[] }
             const { href, external } = resolveProjectHref(project)
 
             const inner = (
-              <article className="group flex h-full min-h-[470px] flex-col bg-[#11110f] transition-colors hover:bg-[#151512]">
-                <div className="relative h-[225px] overflow-hidden border-b border-white/[0.08] bg-black">
+              <article className="group flex h-full min-h-[400px] flex-col bg-[#0c0c0b] transition-colors hover:bg-[#11110f]">
+                <div className="relative h-[190px] overflow-hidden border-b border-white/[0.08] bg-black">
                   <img
                     src={image}
                     alt={`${project.title} cover`}
-                    className="h-full w-full object-cover opacity-[0.7] grayscale-[18%] transition duration-700 ease-out group-hover:scale-[1.018] group-hover:opacity-[0.86] group-hover:grayscale-0"
+                    className="h-full w-full object-cover opacity-[0.72] grayscale-[16%] transition duration-700 ease-out group-hover:scale-[1.018] group-hover:opacity-[0.9] group-hover:grayscale-0"
                     loading="lazy"
                     onError={(event) => {
                       event.currentTarget.onerror = null
@@ -368,27 +368,25 @@ export default function ProjectsGridClient({ projects }: { projects: Project[] }
                   <ArrowUpRight className="absolute bottom-4 right-4 h-5 w-5 text-[#c4bfb5] transition-transform group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-[#f2c34f]" aria-hidden="true" />
                 </div>
 
-                <div className="flex flex-1 flex-col px-5 py-6 sm:px-6">
-                  <p className="font-mono text-[0.54rem] uppercase tracking-[0.16em] text-[#5e5a54]">Project / {project.slug}</p>
-                  <h2 className="mt-3 text-[1.7rem] font-medium leading-[1.02] tracking-[-0.05em] text-[#e9e4da]">{project.title}</h2>
+                <div className="flex flex-1 flex-col px-5 py-5 sm:px-6">
+                  <p className="font-mono text-[0.53rem] uppercase tracking-[0.16em] text-[#5e5a54]">Project / {project.slug}</p>
+                  <h2 className="mt-2.5 text-[1.65rem] font-medium leading-[1.02] tracking-[-0.05em] text-[#e9e4da]">{project.title}</h2>
                   {project.description && (
-                    <p className="mt-4 line-clamp-3 text-sm leading-6 text-[#817c74]">{project.description}</p>
+                    <p className="mt-3 line-clamp-3 text-sm leading-6 text-[#817c74]">{project.description}</p>
                   )}
 
-                  <div className="mt-auto pt-7">
-                    {!!project.technologies.length && (
-                      <div className="flex flex-wrap gap-x-3 gap-y-2 border-t border-white/[0.07] pt-4">
-                        {project.technologies.slice(0, 5).map((technology) => (
-                          <span key={`${project.slug}-${technology}`} className="font-mono text-[0.53rem] uppercase tracking-[0.13em] text-[#77726a]">
-                            {technology}
-                          </span>
-                        ))}
-                        {project.technologies.length > 5 && (
-                          <span className="font-mono text-[0.53rem] uppercase tracking-[0.13em] text-[#5c5852]">+{project.technologies.length - 5}</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  {!!project.technologies.length && (
+                    <div className="mt-auto flex flex-wrap gap-x-3 gap-y-2 border-t border-white/[0.07] pt-4">
+                      {project.technologies.slice(0, 5).map((technology) => (
+                        <span key={`${project.slug}-${technology}`} className="font-mono text-[0.52rem] uppercase tracking-[0.13em] text-[#77726a]">
+                          {technology}
+                        </span>
+                      ))}
+                      {project.technologies.length > 5 && (
+                        <span className="font-mono text-[0.52rem] uppercase tracking-[0.13em] text-[#5c5852]">+{project.technologies.length - 5}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </article>
             )
