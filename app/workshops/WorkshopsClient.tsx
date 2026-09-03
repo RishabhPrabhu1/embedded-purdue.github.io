@@ -1,219 +1,245 @@
-"use client";
+"use client"
 
-import { useSearchParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import Link from "next/link"
+import { useSearchParams } from "next/navigation"
+import { ArrowUpRight, CalendarDays, MapPin, X } from "lucide-react"
 
 type Workshop = {
-  slug: string;
-  title: string;
-  date?: string;
-  location?: string;
-  summary?: string;
-  tags?: string[];
-  cover?: string;
-  image?: string;
-};
-
-function parseDate(d?: string) {
-  if (!d) return null;
-  const dt = new Date(d);
-  return Number.isNaN(dt.getTime()) ? null : dt;
+  slug: string
+  title: string
+  date?: string
+  location?: string
+  summary?: string
+  tags?: string[]
+  cover?: string
+  image?: string
 }
 
-function fmtDate(d?: string) {
-  const dt = parseDate(d);
-  return dt
+function parseDate(date?: string) {
+  if (!date) return null
+  const parsed = new Date(date)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+function formatDate(date?: string) {
+  const parsed = parseDate(date)
+  return parsed
     ? new Intl.DateTimeFormat(undefined, {
         month: "short",
         day: "numeric",
         year: "numeric",
-      }).format(dt)
-    : d || "TBA";
+      }).format(parsed)
+    : date || "TBA"
+}
+
+function filterHref(when: "all" | "upcoming" | "past", tag: string) {
+  const params = new URLSearchParams()
+  if (when !== "all") params.set("when", when)
+  if (tag) params.set("tag", tag)
+  const query = params.toString()
+  return query ? `/workshops?${query}` : "/workshops"
 }
 
 export default function WorkshopsClient({ workshops }: { workshops: Workshop[] }) {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-
-  const allTags = [...new Set(workshops.flatMap((w) => w.tags ?? []))].sort((a, b) =>
+  const searchParams = useSearchParams()
+  const allTags = [...new Set(workshops.flatMap((workshop) => workshop.tags ?? []))].sort((a, b) =>
     a.localeCompare(b)
-  );
+  )
 
-  const tag = (searchParams.get("tag") ?? "").trim();
-  const whenParam = searchParams.get("when");
+  const tag = (searchParams.get("tag") ?? "").trim()
+  const whenParam = searchParams.get("when")
   const when: "all" | "upcoming" | "past" =
-    whenParam === "past" ? "past" : whenParam === "upcoming" ? "upcoming" : "all";
+    whenParam === "past" ? "past" : whenParam === "upcoming" ? "upcoming" : "all"
 
-  // Filter by tag
-  const filtered = tag ? workshops.filter((w) => (w.tags ?? []).includes(tag)) : workshops;
+  const tagFiltered = tag ? workshops.filter((workshop) => (workshop.tags ?? []).includes(tag)) : workshops
+  const now = Date.now()
+  const isUpcoming = (date?: string) => {
+    const parsed = parseDate(date)
+    return !parsed || parsed.getTime() >= now
+  }
 
-  // Separate upcoming and past
-  const now = Date.now();
-  const isUpcoming = (d?: string) => {
-    const dt = parseDate(d);
-    return !dt || dt.getTime() >= now;
-  };
-
-  const upcoming = filtered
-    .filter((w) => isUpcoming(w.date))
+  const upcoming = tagFiltered
+    .filter((workshop) => isUpcoming(workshop.date))
     .sort(
       (a, b) =>
-        (parseDate(a.date)?.getTime() ?? Infinity) -
-        (parseDate(b.date)?.getTime() ?? Infinity)
-    );
+        (parseDate(a.date)?.getTime() ?? Number.POSITIVE_INFINITY) -
+        (parseDate(b.date)?.getTime() ?? Number.POSITIVE_INFINITY)
+    )
 
-  const past = filtered
-    .filter((w) => !isUpcoming(w.date))
+  const past = tagFiltered
+    .filter((workshop) => !isUpcoming(workshop.date))
     .sort(
       (a, b) =>
         (parseDate(b.date)?.getTime() ?? 0) - (parseDate(a.date)?.getTime() ?? 0)
-    );
+    )
 
-  const list = when === "upcoming" ? upcoming : when === "past" ? past : filtered;
+  const all = [...tagFiltered].sort((a, b) => {
+    const aTime = parseDate(a.date)?.getTime()
+    const bTime = parseDate(b.date)?.getTime()
+    if (aTime == null && bTime == null) return a.title.localeCompare(b.title)
+    if (aTime == null) return -1
+    if (bTime == null) return 1
+    return bTime - aTime
+  })
+
+  const list = when === "upcoming" ? upcoming : when === "past" ? past : all
+  const hasFilters = when !== "all" || Boolean(tag)
 
   return (
     <>
-      {/* Filter tabs */}
-      <div className="mt-3 flex gap-2">
-        <Link
-          href={`/workshops${tag ? `?tag=${encodeURIComponent(tag)}` : ""}`}
-          className={`rounded-lg border px-3 py-1.5 text-sm ${
-            when === "all"
-              ? "border-primary text-primary"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          All ({filtered.length})
-        </Link>
-        <Link
-          href={`/workshops?when=upcoming${tag ? `&tag=${encodeURIComponent(tag)}` : ""}`}
-          className={`rounded-lg border px-3 py-1.5 text-sm ${
-            when === "upcoming"
-              ? "border-primary text-primary"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Upcoming ({upcoming.length})
-        </Link>
-        <Link
-          href={`/workshops?when=past${tag ? `&tag=${encodeURIComponent(tag)}` : ""}`}
-          className={`rounded-lg border px-3 py-1.5 text-sm ${
-            when === "past"
-              ? "border-primary text-primary"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Past ({past.length})
-        </Link>
-      </div>
+      <div className="border-b border-white/[0.08] px-5 py-7 sm:px-8 lg:px-12 lg:py-8 xl:px-16">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ["all", "All", tagFiltered.length],
+                ["upcoming", "Upcoming", upcoming.length],
+                ["past", "Past", past.length],
+              ] as const
+            ).map(([value, label, count]) => {
+              const active = when === value
+              return (
+                <Link
+                  key={value}
+                  href={filterHref(value, tag)}
+                  className={`inline-flex h-10 items-center border px-3.5 font-mono text-[0.58rem] uppercase tracking-[0.14em] transition-colors ${
+                    active
+                      ? "border-[#daa000]/55 bg-[#daa000]/[0.1] text-[#e3b93e]"
+                      : "border-white/[0.09] text-[#7f7a72] hover:border-white/[0.16] hover:text-[#d8d2c7]"
+                  }`}
+                >
+                  {label}
+                  <span className="ml-2 text-[#5e5a54]">{count}</span>
+                </Link>
+              )
+            })}
+          </div>
 
-      {/* Tag filters */}
-      {allTags.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Link
-            href={`/workshops${when === "past" ? "?when=past" : when === "upcoming" ? "?when=upcoming" : ""}`}
-            className={`rounded-full border px-3 py-1 text-sm ${
-              !tag
-                ? "border-primary text-primary"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            All tags
-          </Link>
-          {allTags.map((t) => {
-            const qs = new URLSearchParams();
-            if (when !== "all") qs.set("when", when);
-            qs.set("tag", t);
-            const active = tag === t;
-            return (
+          {hasFilters && (
+            <Link
+              href="/workshops"
+              className="inline-flex w-fit items-center gap-2 font-mono text-[0.56rem] uppercase tracking-[0.14em] text-[#777169] transition-colors hover:text-[#f2c34f]"
+            >
+              <X className="h-3 w-3" aria-hidden="true" />
+              Clear filters
+            </Link>
+          )}
+        </div>
+
+        {allTags.length > 0 && (
+          <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-white/[0.06] pt-4">
+            <Link
+              href={filterHref(when, "")}
+              className={`font-mono text-[0.55rem] uppercase tracking-[0.14em] transition-colors ${
+                !tag ? "text-[#e2b63a]" : "text-[#69645d] hover:text-[#bdb7ad]"
+              }`}
+            >
+              All topics
+            </Link>
+            {allTags.map((topic) => (
               <Link
-                key={t}
-                href={`/workshops?${qs.toString()}`}
-                className={`rounded-full border px-3 py-1 text-sm ${
-                  active
-                    ? "border-primary text-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                key={topic}
+                href={filterHref(when, topic)}
+                className={`font-mono text-[0.55rem] uppercase tracking-[0.14em] transition-colors ${
+                  tag === topic ? "text-[#e2b63a]" : "text-[#69645d] hover:text-[#bdb7ad]"
                 }`}
               >
-                {t}
+                {topic}
               </Link>
-            );
+            ))}
+          </div>
+        )}
+      </div>
+
+      {!list.length ? (
+        <div className="px-5 py-20 text-center sm:px-8 lg:px-12">
+          <p className="font-mono text-[0.58rem] uppercase tracking-[0.17em] text-[#666159]">No sessions found</p>
+          <h2 className="mt-4 text-3xl font-medium tracking-[-0.05em] text-[#ded8cd]">Nothing matches this view.</h2>
+          <Link
+            href="/workshops"
+            className="mt-6 inline-flex items-center gap-2 text-sm text-[#b28c25] transition-colors hover:text-[#f2c34f]"
+          >
+            Reset workshop archive
+            <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        </div>
+      ) : (
+        <div className="grid gap-px bg-white/[0.08] md:grid-cols-2">
+          {list.map((workshop, index) => {
+            const cover = workshop.cover ?? workshop.image
+            const upcomingSession = isUpcoming(workshop.date)
+
+            return (
+              <Link key={workshop.slug} href={`/workshops/${workshop.slug}`} className="group block min-h-[420px] bg-[#11110f] no-underline transition-colors hover:bg-[#151512]">
+                <article className="flex h-full flex-col">
+                  <div className="relative h-[220px] overflow-hidden border-b border-white/[0.08] bg-[#090908]">
+                    {cover ? (
+                      <img
+                        src={cover}
+                        alt={`${workshop.title} cover`}
+                        className="h-full w-full object-cover opacity-[0.7] grayscale-[16%] transition duration-700 ease-out group-hover:scale-[1.018] group-hover:opacity-[0.88] group-hover:grayscale-0"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.035)_1px,transparent_1px)] bg-[size:28px_28px]" />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-transparent to-black/20" />
+                    <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4">
+                      <span className={`border px-2.5 py-1 font-mono text-[0.52rem] uppercase tracking-[0.14em] backdrop-blur-sm ${
+                        upcomingSession
+                          ? "border-[#daa000]/40 bg-[#daa000]/[0.1] text-[#e0b43a]"
+                          : "border-white/[0.1] bg-black/55 text-[#8b857c]"
+                      }`}>
+                        {upcomingSession ? "Upcoming" : "Archive"}
+                      </span>
+                      <span className="font-mono text-[0.52rem] uppercase tracking-[0.14em] text-[#777169]">
+                        W-{String(index + 1).padStart(2, "0")}
+                      </span>
+                    </div>
+                    <ArrowUpRight className="absolute bottom-4 right-4 h-5 w-5 text-[#c4bfb5] transition-transform group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-[#f2c34f]" aria-hidden="true" />
+                  </div>
+
+                  <div className="flex flex-1 flex-col px-5 py-6 sm:px-7">
+                    <h2 className="text-[clamp(1.7rem,3vw,2.4rem)] font-medium leading-[0.98] tracking-[-0.05em] text-[#ebe6dc]">
+                      {workshop.title}
+                    </h2>
+                    {workshop.summary && (
+                      <p className="mt-4 max-w-xl text-sm leading-6 text-[#817c74]">{workshop.summary}</p>
+                    )}
+
+                    <div className="mt-auto pt-7">
+                      <div className="flex flex-col gap-3 border-t border-white/[0.07] pt-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-wrap gap-x-5 gap-y-2 font-mono text-[0.54rem] uppercase tracking-[0.13em] text-[#777169]">
+                          <span className="inline-flex items-center gap-2">
+                            <CalendarDays className="h-3.5 w-3.5 text-[#8d7328]" aria-hidden="true" />
+                            {formatDate(workshop.date)}
+                          </span>
+                          {workshop.location && (
+                            <span className="inline-flex items-center gap-2">
+                              <MapPin className="h-3.5 w-3.5 text-[#8d7328]" aria-hidden="true" />
+                              {workshop.location}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {!!workshop.tags?.length && (
+                        <div className="mt-4 flex flex-wrap gap-x-3 gap-y-2">
+                          {workshop.tags.slice(0, 5).map((topic) => (
+                            <span key={topic} className="font-mono text-[0.52rem] uppercase tracking-[0.13em] text-[#625e58]">
+                              {topic}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              </Link>
+            )
           })}
         </div>
       )}
-
-      {/* Empty state */}
-      {!list.length && (
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>No workshops found</CardTitle>
-            <CardDescription>
-              {tag ? (
-                <>
-                  No workshops match tag <code>{tag}</code>.{" "}
-                  <Link href="/workshops" className="underline">
-                    Clear filters
-                  </Link>
-                  .
-                </>
-              ) : when === "past" ? (
-                "No past workshops yet."
-              ) : (
-                <>
-                  Add markdown files under <code>content/workshops/</code> to publish
-                  the first one.
-                </>
-              )}
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      )}
-
-      {/* Workshop grid */}
-      <div className="mt-8 grid gap-6 md:grid-cols-2">
-        {list.map((w) => {
-          const cover = w.cover ?? w.image;
-          return (
-            <Link
-              key={w.slug}
-              href={`/workshops/${w.slug}`}
-              className="no-underline"
-            >
-              <Card className="h-full overflow-hidden transition-all hover:shadow-md">
-                {cover && (
-                  <img
-                    src={cover}
-                    alt={`${w.title} cover`}
-                    className="h-40 w-full object-cover"
-                    loading="lazy"
-                  />
-                )}
-                <CardHeader>
-                  <CardTitle className="leading-tight">{w.title}</CardTitle>
-                  {w.summary && <CardDescription>{w.summary}</CardDescription>}
-                </CardHeader>
-                <CardContent className="flex items-center justify-between gap-4">
-                  <div className="text-sm text-muted-foreground">
-                    {fmtDate(w.date)}
-                    {w.location ? ` • ${w.location}` : ""}
-                  </div>
-                  {!!w.tags?.length && (
-                    <div className="flex flex-wrap gap-2">
-                      {w.tags.slice(0, 3).map((t) => (
-                        <Badge key={t} variant="outline">
-                          {t}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </Link>
-          );
-        })}
-      </div>
     </>
-  );
+  )
 }
