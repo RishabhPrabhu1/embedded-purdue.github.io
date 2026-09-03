@@ -336,14 +336,32 @@ export default function ProjectsGridClient({ projects }: { projects: Project[] }
           </Link>
         </div>
       ) : (
-        <div className="grid gap-px bg-white/[0.08] md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((project) => {
+        <div className="grid gap-px bg-white/[0.08] md:grid-cols-2 xl:grid-cols-12">
+          {filtered.map((project, index) => {
             const image = resolveProjectImage(project)
             const { href, external } = resolveProjectHref(project)
+            const solo = filtered.length === 1
+            const featured = index === 0 && filtered.length > 1
+            const emphasized = solo || featured
+            const spanClass = solo
+              ? "md:col-span-2 xl:col-span-12"
+              : featured
+                ? "md:col-span-2 xl:col-span-8"
+                : "xl:col-span-4"
 
             const inner = (
-              <article className="group flex h-full min-h-[400px] flex-col bg-[#0c0c0b] transition-colors hover:bg-[#11110f]">
-                <div className="relative h-[190px] overflow-hidden border-b border-white/[0.08] bg-black">
+              <article
+                className={`group h-full min-h-[400px] bg-[#0c0c0b] transition-colors hover:bg-[#11110f] ${
+                  emphasized ? "flex flex-col xl:grid xl:grid-cols-[1.14fr_.86fr]" : "flex flex-col"
+                }`}
+              >
+                <div
+                  className={`relative overflow-hidden bg-black ${
+                    emphasized
+                      ? "min-h-[230px] border-b border-white/[0.08] xl:min-h-full xl:border-b-0 xl:border-r"
+                      : "h-[190px] border-b border-white/[0.08]"
+                  }`}
+                >
                   <img
                     src={image}
                     alt={`${project.title} cover`}
@@ -368,22 +386,32 @@ export default function ProjectsGridClient({ projects }: { projects: Project[] }
                   <ArrowUpRight className="absolute bottom-4 right-4 h-5 w-5 text-[#c4bfb5] transition-transform group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-[#f2c34f]" aria-hidden="true" />
                 </div>
 
-                <div className="flex flex-1 flex-col px-5 py-5 sm:px-6">
+                <div className={`flex flex-1 flex-col px-5 py-5 sm:px-6 ${emphasized ? "xl:px-8 xl:py-8" : ""}`}>
                   <p className="font-mono text-[0.53rem] uppercase tracking-[0.16em] text-[#5e5a54]">Project / {project.slug}</p>
-                  <h2 className="mt-2.5 text-[1.65rem] font-medium leading-[1.02] tracking-[-0.05em] text-[#e9e4da]">{project.title}</h2>
+                  <h2
+                    className={`mt-2.5 font-medium leading-[1.02] tracking-[-0.05em] text-[#e9e4da] ${
+                      emphasized ? "text-[clamp(1.9rem,3vw,2.7rem)]" : "text-[1.65rem]"
+                    }`}
+                  >
+                    {project.title}
+                  </h2>
                   {project.description && (
-                    <p className="mt-3 line-clamp-3 text-sm leading-6 text-[#817c74]">{project.description}</p>
+                    <p className={`mt-3 text-sm leading-6 text-[#817c74] ${emphasized ? "line-clamp-5" : "line-clamp-3"}`}>
+                      {project.description}
+                    </p>
                   )}
 
                   {!!project.technologies.length && (
                     <div className="mt-auto flex flex-wrap gap-x-3 gap-y-2 border-t border-white/[0.07] pt-4">
-                      {project.technologies.slice(0, 5).map((technology) => (
+                      {project.technologies.slice(0, emphasized ? 7 : 5).map((technology) => (
                         <span key={`${project.slug}-${technology}`} className="font-mono text-[0.52rem] uppercase tracking-[0.13em] text-[#77726a]">
                           {technology}
                         </span>
                       ))}
-                      {project.technologies.length > 5 && (
-                        <span className="font-mono text-[0.52rem] uppercase tracking-[0.13em] text-[#5c5852]">+{project.technologies.length - 5}</span>
+                      {project.technologies.length > (emphasized ? 7 : 5) && (
+                        <span className="font-mono text-[0.52rem] uppercase tracking-[0.13em] text-[#5c5852]">
+                          +{project.technologies.length - (emphasized ? 7 : 5)}
+                        </span>
                       )}
                     </div>
                   )}
@@ -398,12 +426,12 @@ export default function ProjectsGridClient({ projects }: { projects: Project[] }
                 target="_blank"
                 rel="noopener noreferrer"
                 data-site-lift="card"
-                className="block h-full no-underline"
+                className={`${spanClass} block h-full no-underline`}
               >
                 {inner}
               </a>
             ) : (
-              <Link key={project.slug} href={href} data-site-lift="card" className="block h-full no-underline">
+              <Link key={project.slug} href={href} data-site-lift="card" className={`${spanClass} block h-full no-underline`}>
                 {inner}
               </Link>
             )
