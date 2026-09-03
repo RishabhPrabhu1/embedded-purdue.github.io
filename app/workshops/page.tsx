@@ -1,3 +1,5 @@
+import Image from "next/image"
+
 import { getAllWorkshops } from "@/lib/workshops"
 import { SiteFooter } from "@/components/site/site-footer"
 import { SiteNavigation } from "@/components/site/site-navigation"
@@ -71,10 +73,13 @@ export default function WorkshopsPage() {
               </div>
 
               <div className="relative min-h-[330px] overflow-hidden bg-[#080807] lg:col-span-5 lg:min-h-[420px]">
-                <img
+                <Image
                   src="/workshops/microcontroller-breadboard.jpg"
                   alt="Microcontroller workshop hardware"
-                  className="h-full w-full object-cover opacity-[0.76] grayscale-[10%] saturate-[0.78]"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 42vw"
+                  className="object-cover opacity-[0.76] grayscale-[10%] saturate-[0.78]"
+                  priority
                 />
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.18),transparent_34%,rgba(0,0,0,.84))]" />
                 <div className="absolute left-0 top-0 border-b border-r border-white/[0.09] bg-black/58 px-4 py-3 backdrop-blur-sm">
