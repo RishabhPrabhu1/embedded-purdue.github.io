@@ -8,19 +8,19 @@ const explore = [
   ["Workshops", "/workshops"],
   ["Team", "/team"],
   ["Sponsors", "/sponsors"],
-]
+] as const
 
 const resources = [
   ["Forms", "/forms"],
   ["API", "/api"],
-]
+] as const
 
 const connect = [
   ["Discord", "https://discord.gg/MkPv9s9cj3"],
   ["GitHub", "https://github.com/embedded-purdue"],
   ["LinkedIn", "https://www.linkedin.com/company/embedded-purdue"],
   ["Email", "mailto:embedded@purdue.edu"],
-]
+] as const
 
 function FooterLinks({
   title,
