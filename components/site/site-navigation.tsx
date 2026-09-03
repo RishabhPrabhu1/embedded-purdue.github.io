@@ -62,7 +62,7 @@ export function SiteNavigation() {
         ref={navRef}
         id="site-top"
         data-site-navigation
-        className="relative sticky top-0 z-50 w-full border-b border-white/[0.08] bg-[#090908]/92 text-[#f3efe6] shadow-[0_8px_28px_rgba(0,0,0,.12)] backdrop-blur-xl"
+        className="sticky top-0 z-50 w-full border-b border-white/[0.08] bg-[#090908]/92 text-[#f3efe6] shadow-[0_8px_28px_rgba(0,0,0,.12)] backdrop-blur-xl"
       >
         <div className="relative mx-auto flex h-[68px] w-full items-center justify-between px-5 sm:px-8 lg:w-[calc(100%_-_48px)] lg:border-x lg:border-white/[0.05] lg:px-8 xl:px-10 2xl:w-[calc(100%_-_80px)] 2xl:px-12">
           <Link href="/" className="flex items-center gap-4" aria-label="Embedded Systems @ Purdue home">
