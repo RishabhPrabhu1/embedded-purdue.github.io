@@ -1,307 +1,383 @@
-// app/projects/[slug]/page.tsx
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { Navigation } from "@/components/navigation";
-import { Footer } from "@/components/footer";
-import Markdown from "@/components/Markdown";
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import { ArrowLeft, ArrowUpRight, Cpu, Layers3, UserRound } from "lucide-react"
+
+import Markdown from "@/components/Markdown"
+import { SiteFooter } from "@/components/site/site-footer"
+import { SiteNavigation } from "@/components/site/site-navigation"
 import {
-  loadMeta,
-  loadMarkdown,
-  getAllProjectSlugs,
-  getProjectPosts,
-  loadPost,
-  getProjectMedia,
   getAdditionalMarkdown,
-} from "@/lib/projects";
-import { projects as DATA } from "../_data";
+  getAllProjectSlugs,
+  getProjectMedia,
+  getProjectPosts,
+  loadMarkdown,
+  loadMeta,
+  loadPost,
+} from "@/lib/projects"
+import { projects as DATA } from "../_data"
 
-export const dynamic = "error";
-export const dynamicParams = false;
+export const dynamic = "error"
+export const dynamicParams = false
 
-// Build all project slugs from both content and UI data
+const WIDE_RAIL = "mx-auto w-full lg:w-[calc(100%_-_48px)] 2xl:w-[calc(100%_-_80px)]"
+
 export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
-  const contentSlugs = await getAllProjectSlugs();
-  const dataSlugs = DATA.map((p) => p.slug);
-  const unique = Array.from(new Set([...contentSlugs, ...dataSlugs]));
-  return unique.map((slug) => ({ slug }));
+  const contentSlugs = await getAllProjectSlugs()
+  const dataSlugs = DATA.map((project) => project.slug)
+  const unique = Array.from(new Set([...contentSlugs, ...dataSlugs]))
+  return unique.map((slug) => ({ slug }))
 }
 
-type RouteParams = { slug: string };
+type RouteParams = { slug: string }
 
-// NOTE: `searchParams` is a Promise to satisfy your global PageProps,
-// but we do NOT await or use it (static export cannot await searchParams).
 export default async function ProjectDetailPage({
   params,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   searchParams,
 }: {
-  params: Promise<RouteParams>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  params: Promise<RouteParams>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
-  const { slug } = await params;
+  void searchParams
+  const { slug } = await params
 
-  const meta = await loadMeta(slug);
-  const fallback = DATA.find((p) => p.slug === slug);
-  if (!meta && !fallback) return notFound();
+  const meta = await loadMeta(slug)
+  const fallback = DATA.find((project) => project.slug === slug)
+  if (!meta && !fallback) return notFound()
 
-  const title = meta?.title ?? fallback!.title ?? slug;
-  const summary = (meta?.summary ?? fallback?.description) || undefined;
+  const title = meta?.title ?? fallback?.title ?? slug
+  const summary = (meta?.summary ?? fallback?.description) || undefined
+  const content = await loadMarkdown(slug)
+  const extraPages = await getAdditionalMarkdown(slug)
 
-  // README (may be null)
-  const content = await loadMarkdown(slug);
-  const extraPages = await getAdditionalMarkdown(slug);
-
-  // Posts list + content (all inline; no query strings, no extra routes)
-  const postsMeta = await getProjectPosts(slug);
+  const postsMeta = await getProjectPosts(slug)
   const posts = await Promise.all(
-    postsMeta.map(async (pm) => {
-      const data = await loadPost(slug, pm.slug);
+    postsMeta.map(async (postMeta) => {
+      const data = await loadPost(slug, postMeta.slug)
       return data
         ? {
-            slug: pm.slug,
+            slug: postMeta.slug,
             title:
               (typeof data.meta.title === "string" && data.meta.title.trim()) ||
-              pm.title ||
-              pm.slug.replace(/[-_]/g, " "),
+              postMeta.title ||
+              postMeta.slug.replace(/[-_]/g, " "),
             date:
               (typeof data.meta.date === "string" && data.meta.date.trim()) ||
-              pm.date ||
+              postMeta.date ||
               undefined,
             content: data.content,
           }
-        : null;
+        : null
     })
-  );
+  )
 
   const postsClean = posts.filter(Boolean) as Array<{
-    slug: string;
-    title: string;
-    date?: string;
-    content: string;
-  }>;
+    slug: string
+    title: string
+    date?: string
+    content: string
+  }>
 
-  // Media (images, videos, docs) from /public/projects/<slug>
-  const media = await getProjectMedia(slug);
+  const media = await getProjectMedia(slug)
+  const mediaCount = media.images.length + media.videos.length + media.docs.length + media.files.length
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <main className="mx-auto max-w-4xl px-4 py-12">
-        <Link href="/projects" className="underline text-sm hover:text-primary">
-          ← Back to projects
-        </Link>
+    <div className="min-h-screen bg-[#0c0c0b] text-[#f3efe6]">
+      <SiteNavigation />
 
-        <header className="mt-6 space-y-2">
-          <h1 className="text-4xl font-bold">{title}</h1>
-          {summary && <p className="text-lg text-muted-foreground">{summary}</p>}
-        </header>
+      <main>
+        <section className="border-b border-white/[0.08] bg-black">
+          <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
+            <div className="grid lg:grid-cols-12">
+              <div className="border-b border-white/[0.08] px-5 py-9 sm:px-8 lg:col-span-8 lg:min-h-[470px] lg:border-b-0 lg:border-r lg:px-12 lg:py-12 xl:px-16">
+                <div className="flex h-full flex-col justify-between gap-14">
+                  <Link
+                    href="/projects"
+                    className="inline-flex w-fit items-center gap-2 font-mono text-[0.58rem] uppercase tracking-[0.16em] text-[#888279] transition-colors hover:text-[#f2c34f]"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+                    Project archive
+                  </Link>
 
-        {/* README */}
-        {content ? (
-          <article className="mt-8">
-            {/* Prefix relative images to /public/projects/<slug>/... */}
-            <Markdown imageBase={`/projects/${slug}`}>{content}</Markdown>
-          </article>
-        ) : (
-          <article className="mt-8 rounded-lg border bg-card p-6">
-            <p className="text-muted-foreground">
-              This page is currently being worked on. 
-            </p>
-          </article>
-        )}
-
-        {/* Additional pages */}
-        {!!extraPages.length && (
-          <section className="mt-12 space-y-10">
-            {extraPages.map((pg, i) => (
-              <article key={`${pg.file}-${i}`}>
-                <h2 className="text-2xl font-semibold mb-2">{pg.title}</h2>
-                <div className="prose prose-neutral dark:prose-invert max-w-none">
-                  <Markdown imageBase={`/projects/${slug}`}>{pg.content}</Markdown>
-                </div>
-              </article>
-            ))}
-          </section>
-        )}
-
-        {/* Posts (inline, same page) */}
-        {!!postsClean.length && (
-          <section className="mt-12">
-            <h2 className="text-2xl font-semibold">Posts</h2>
-            <div className="mt-6 space-y-10">
-              {postsClean.map((p) => (
-                <article key={p.slug} id={`post-${p.slug}`}>
-                  <h3 className="text-xl font-semibold">{p.title}</h3>
-                  {p.date && (
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(p.date).toLocaleDateString()}
-                    </p>
-                  )}
-                  <div className="mt-3 prose prose-neutral dark:prose-invert max-w-none">
-                    <Markdown imageBase={`/projects/${slug}`}>{p.content}</Markdown>
+                  <div>
+                    <p className="font-mono text-[0.6rem] uppercase tracking-[0.18em] text-[#625e57]">Project / {slug}</p>
+                    <h1 className="mt-5 max-w-5xl text-[clamp(3.7rem,7.4vw,7.6rem)] font-medium leading-[0.84] tracking-[-0.07em] text-[#f2eee5]">
+                      {title}
+                    </h1>
+                    {summary && (
+                      <p className="mt-7 max-w-3xl text-[clamp(1rem,1.35vw,1.2rem)] leading-8 text-[#918b82]">{summary}</p>
+                    )}
                   </div>
-                </article>
-              ))}
+                </div>
+              </div>
+
+              <div className="grid min-h-[280px] grid-cols-2 lg:col-span-4 lg:min-h-[470px] lg:grid-cols-1">
+                <div className="flex flex-col justify-between border-r border-white/[0.08] px-5 py-7 sm:px-8 lg:border-b lg:border-r-0 lg:px-10">
+                  <span className="font-mono text-[0.54rem] uppercase tracking-[0.16em] text-[#5f5b55]">Project state</span>
+                  <div>
+                    <Cpu className="h-6 w-6 text-[#927421]" aria-hidden="true" />
+                    <p className="mt-3 text-2xl font-medium tracking-[-0.04em] text-[#e3ddd2]">{fallback?.status ?? "Documented"}</p>
+                    {fallback?.semester && (
+                      <p className="mt-1 font-mono text-[0.52rem] uppercase tracking-[0.13em] text-[#6e6962]">{fallback.semester}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col justify-between px-5 py-7 sm:px-8 lg:px-10">
+                  <span className="font-mono text-[0.54rem] uppercase tracking-[0.16em] text-[#5f5b55]">Project record</span>
+                  <div className="space-y-4">
+                    {fallback?.pm && (
+                      <div className="flex items-center gap-3 text-sm text-[#8d887f]">
+                        <UserRound className="h-4 w-4 text-[#927421]" aria-hidden="true" />
+                        <span>{fallback.pm}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3 text-sm text-[#8d887f]">
+                      <Layers3 className="h-4 w-4 text-[#927421]" aria-hidden="true" />
+                      <span>{mediaCount} media item{mediaCount === 1 ? "" : "s"}</span>
+                    </div>
+                    {!!fallback?.technologies.length && (
+                      <div className="flex flex-wrap gap-x-3 gap-y-2 border-t border-white/[0.07] pt-4">
+                        {fallback.technologies.slice(0, 5).map((technology) => (
+                          <span key={technology} className="font-mono text-[0.51rem] uppercase tracking-[0.12em] text-[#716c65]">
+                            {technology}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-b border-white/[0.08] bg-[#0c0c0b]">
+          <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
+            <div className="grid lg:grid-cols-12">
+              <aside className="border-b border-white/[0.08] px-5 py-8 sm:px-8 lg:col-span-3 lg:border-b-0 lg:border-r lg:px-10 lg:py-12">
+                <div className="lg:sticky lg:top-[108px]">
+                  <p className="font-mono text-[0.57rem] uppercase tracking-[0.17em] text-[#796f59]">01 / Project notes</p>
+                  <p className="mt-4 max-w-xs text-sm leading-6 text-[#6f6a63]">
+                    Design notes, implementation details, build logs, and technical context from the project team.
+                  </p>
+                </div>
+              </aside>
+
+              <div className="px-5 py-10 sm:px-8 lg:col-span-9 lg:px-12 lg:py-14 xl:px-16">
+                {content ? (
+                  <article data-site-markdown>
+                    <Markdown className="prose prose-invert max-w-none break-words" imageBase={`/projects/${slug}`}>
+                      {content}
+                    </Markdown>
+                  </article>
+                ) : (
+                  <article className="border border-white/[0.08] bg-[#11110f] px-6 py-8">
+                    <p className="font-mono text-[0.56rem] uppercase tracking-[0.15em] text-[#6f6a62]">Documentation pending</p>
+                    <p className="mt-3 text-lg text-[#9b958c]">This project page is currently being worked on.</p>
+                  </article>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {!!extraPages.length && (
+          <section className="border-b border-white/[0.08] bg-[#090908]">
+            <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
+              <div className="border-b border-white/[0.08] px-5 py-8 sm:px-8 lg:px-12 xl:px-16">
+                <p className="font-mono text-[0.57rem] uppercase tracking-[0.17em] text-[#796f59]">02 / Additional documentation</p>
+              </div>
+              <div className="divide-y divide-white/[0.08]">
+                {extraPages.map((page, index) => (
+                  <article key={`${page.file}-${index}`} className="grid lg:grid-cols-12">
+                    <div className="border-b border-white/[0.08] px-5 py-8 sm:px-8 lg:col-span-3 lg:border-b-0 lg:border-r lg:px-10">
+                      <span className="font-mono text-[0.54rem] uppercase tracking-[0.15em] text-[#625e58]">D-{String(index + 1).padStart(2, "0")}</span>
+                      <h2 className="mt-3 text-2xl font-medium tracking-[-0.04em] text-[#e5dfd5]">{page.title}</h2>
+                    </div>
+                    <div data-site-markdown className="px-5 py-9 sm:px-8 lg:col-span-9 lg:px-12 xl:px-16">
+                      <Markdown className="prose prose-invert max-w-none break-words" imageBase={`/projects/${slug}`}>
+                        {page.content}
+                      </Markdown>
+                    </div>
+                  </article>
+                ))}
+              </div>
             </div>
           </section>
         )}
 
-        {/* Media gallery */}
-        {(media.images.length || media.videos.length || media.docs.length || media.files.length) && (
-          <section className="mt-12">
-            <h2 className="text-2xl font-semibold">Media</h2>
-
-            {/* Images */}
-            {!!media.images.length && (
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {media.images.map((src) => (
-                  <a
-                    key={src}
-                    href={src}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block overflow-hidden rounded-lg border bg-muted/10"
-                  >
-                    {/* Using img to avoid next/image config for public assets */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={src} alt="Project image" className="h-56 w-full object-cover" />
-                  </a>
+        {!!postsClean.length && (
+          <section className="border-b border-white/[0.08] bg-[#0c0c0b]">
+            <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
+              <div className="border-b border-white/[0.08] px-5 py-8 sm:px-8 lg:px-12 xl:px-16">
+                <p className="font-mono text-[0.57rem] uppercase tracking-[0.17em] text-[#796f59]">03 / Build log</p>
+              </div>
+              <div className="divide-y divide-white/[0.08]">
+                {postsClean.map((post, index) => (
+                  <article key={post.slug} id={`post-${post.slug}`} className="grid lg:grid-cols-12">
+                    <div className="px-5 py-8 sm:px-8 lg:col-span-3 lg:border-r lg:border-white/[0.08] lg:px-10">
+                      <span className="font-mono text-[0.54rem] uppercase tracking-[0.15em] text-[#625e58]">L-{String(index + 1).padStart(2, "0")}</span>
+                      <h3 className="mt-3 text-2xl font-medium tracking-[-0.04em] text-[#e5dfd5]">{post.title}</h3>
+                      {post.date && (
+                        <p className="mt-3 font-mono text-[0.52rem] uppercase tracking-[0.13em] text-[#67625b]">
+                          {new Date(post.date).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                    <div data-site-markdown className="px-5 py-9 sm:px-8 lg:col-span-9 lg:px-12 xl:px-16">
+                      <Markdown className="prose prose-invert max-w-none break-words" imageBase={`/projects/${slug}`}>
+                        {post.content}
+                      </Markdown>
+                    </div>
+                  </article>
                 ))}
               </div>
-            )}
+            </div>
+          </section>
+        )}
 
-            {/* Videos and embeds */}
-            {!!media.videos.length && (
-              <div className="mt-8 space-y-6">
-                {media.videos.map((src, i) => {
-                  const lower = src.toLowerCase();
-                  const isFile = lower.endsWith(".mp4") || lower.endsWith(".webm");
-                  return (
-                    <div key={`${src}-${i}`} className="overflow-hidden rounded-lg border bg-muted/10">
-                      {isFile ? (
-                        // Local video file
-                        // eslint-disable-next-line jsx-a11y/media-has-caption
-                        <video src={src} controls className="w-full" preload="metadata" />
-                      ) : (
-                        // External embed
-                        <iframe
-                          src={src}
-                          title={`Video ${i + 1}`}
-                          className="w-full"
-                          height={480}
-                          loading="lazy"
-                          referrerPolicy="no-referrer"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                        />
-                      )}
-                    </div>
-                  );
-                })}
+        {mediaCount > 0 && (
+          <section className="bg-[#090908]">
+            <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
+              <div className="flex items-end justify-between gap-6 border-b border-white/[0.08] px-5 py-8 sm:px-8 lg:px-12 xl:px-16">
+                <div>
+                  <p className="font-mono text-[0.57rem] uppercase tracking-[0.17em] text-[#796f59]">04 / Media</p>
+                  <h2 className="mt-3 text-[clamp(2.5rem,4vw,4.3rem)] font-medium tracking-[-0.055em] text-[#e8e2d8]">Project artifacts</h2>
+                </div>
+                <span className="font-mono text-[0.54rem] uppercase tracking-[0.14em] text-[#5f5a53]">{mediaCount} items</span>
               </div>
-            )}
 
-            {/* Documents (PDF) */}
-            {!!media.docs.length && (
-              <div className="mt-8 space-y-8">
-                {media.docs.map((src, i) => {
-                  const lower = src.toLowerCase();
-                  const isPdf = lower.endsWith(".pdf");
-                  return (
-                    <div key={`${src}-${i}`} className="overflow-hidden rounded-lg border bg-muted/10">
-                      {isPdf ? (
-                        <iframe
-                          src={`${src}#view=FitH`}
-                          title={`Document ${i + 1}`}
-                          className="w-full"
-                          height={800}
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="p-4 flex items-center justify-between gap-4">
-                          <span className="truncate text-sm">{src}</span>
-                          <a
-                            href={src}
-                            className="underline text-sm"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            Open
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+              {!!media.images.length && (
+                <div className="grid gap-px bg-white/[0.08] sm:grid-cols-2 lg:grid-cols-3">
+                  {media.images.map((src) => (
+                    <a
+                      key={src}
+                      href={src}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-site-lift="card"
+                      className="group relative block h-64 overflow-hidden bg-black"
+                    >
+                      <img src={src} alt="Project image" className="h-full w-full object-cover opacity-75 transition duration-700 group-hover:scale-[1.018] group-hover:opacity-100" />
+                      <ArrowUpRight className="absolute bottom-4 right-4 h-5 w-5 text-[#d8d2c7] transition-transform group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-[#f2c34f]" aria-hidden="true" />
+                    </a>
+                  ))}
+                </div>
+              )}
 
-            {/* Other files: code, html, data */}
-            {!!media.files.length && (
-              <div className="mt-8 space-y-8">
-                {media.files.map((f, i) => {
-                  const key = `${f.url}-${i}`;
-                  // CSV quick preview: small table from first ~20 lines
-                  const renderCsv = () => {
-                    if (!f.content) return null;
-                    const rows = f.content.split(/\r?\n/).slice(0, 20).map((r) => r.split(","));
-                    if (!rows.length) return null;
-                    const header = rows[0];
-                    const body = rows.slice(1);
+              {!!media.videos.length && (
+                <div className="grid gap-px border-t border-white/[0.08] bg-white/[0.08] lg:grid-cols-2">
+                  {media.videos.map((src, index) => {
+                    const lower = src.toLowerCase()
+                    const isFile = lower.endsWith(".mp4") || lower.endsWith(".webm")
                     return (
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full text-sm">
-                          <thead>
-                            <tr>
-                              {header.map((h, j) => (
-                                <th key={j} className="border px-2 py-1 text-left font-semibold">
-                                  {h}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {body.map((r, ri) => (
-                              <tr key={ri}>
-                                {r.map((c, cj) => (
-                                  <td key={cj} className="border px-2 py-1">
-                                    {c}
-                                  </td>
+                      <div key={`${src}-${index}`} className="bg-[#11110f]">
+                        {isFile ? (
+                          <video src={src} controls className="aspect-video w-full bg-black" preload="metadata" />
+                        ) : (
+                          <iframe
+                            src={src}
+                            title={`Video ${index + 1}`}
+                            className="aspect-video w-full bg-black"
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                          />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {!!media.docs.length && (
+                <div className="divide-y divide-white/[0.08] border-t border-white/[0.08]">
+                  {media.docs.map((src, index) => {
+                    const isPdf = src.toLowerCase().endsWith(".pdf")
+                    return (
+                      <div key={`${src}-${index}`} className="bg-[#10100e]">
+                        {isPdf ? (
+                          <iframe src={`${src}#view=FitH`} title={`Document ${index + 1}`} className="h-[720px] w-full" loading="lazy" />
+                        ) : (
+                          <div className="flex items-center justify-between gap-4 px-5 py-5 sm:px-8 lg:px-12">
+                            <span className="truncate text-sm text-[#8d887f]">{src}</span>
+                            <a href={src} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-mono text-[0.56rem] uppercase tracking-[0.14em] text-[#b18b25] hover:text-[#f2c34f]">
+                              Open <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {!!media.files.length && (
+                <div className="divide-y divide-white/[0.08] border-t border-white/[0.08]">
+                  {media.files.map((file, index) => {
+                    const renderCsv = () => {
+                      if (!file.content) return null
+                      const rows = file.content
+                        .split(/\r?\n/)
+                        .slice(0, 20)
+                        .map((row) => row.split(","))
+                      if (!rows.length) return null
+                      const header = rows[0]
+                      const body = rows.slice(1)
+                      return (
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full text-sm text-[#9a958c]">
+                            <thead className="bg-white/[0.025]">
+                              <tr>
+                                {header.map((heading, headingIndex) => (
+                                  <th key={headingIndex} className="border border-white/[0.08] px-3 py-2 text-left font-medium text-[#d1cbc0]">
+                                    {heading}
+                                  </th>
                                 ))}
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    );
-                  };
+                            </thead>
+                            <tbody>
+                              {body.map((row, rowIndex) => (
+                                <tr key={rowIndex}>
+                                  {row.map((cell, cellIndex) => (
+                                    <td key={cellIndex} className="border border-white/[0.08] px-3 py-2">
+                                      {cell}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )
+                    }
 
-                  return (
-                    <div key={key} className="overflow-hidden rounded-lg border bg-muted/10">
-                      <div className="flex items-center justify-between gap-3 px-4 py-2 border-b">
-                        <div className="truncate text-sm">{f.name}</div>
-                        <a href={f.url} target="_blank" rel="noopener noreferrer" className="underline text-sm">
-                          Open
-                        </a>
-                      </div>
+                    return (
+                      <div key={`${file.url}-${index}`} className="bg-[#10100e]">
+                        <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] px-5 py-4 sm:px-8 lg:px-12">
+                          <div className="truncate font-mono text-[0.56rem] uppercase tracking-[0.13em] text-[#837d74]">{file.name}</div>
+                          <a href={file.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-mono text-[0.54rem] uppercase tracking-[0.13em] text-[#b18b25] hover:text-[#f2c34f]">
+                            Open <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
+                          </a>
+                        </div>
 
-                      {f.kind === "html" ? (
-                        <iframe src={f.url} title={f.name} className="w-full" height={600} loading="lazy" />
-                      ) : f.kind === "code" && f.content ? (
-                        <pre className="p-4 overflow-x-auto text-xs leading-relaxed">
-{f.content}
-                        </pre>
-                      ) : f.kind === "data" && f.ext === ".csv" ? (
-                        <div className="p-4">{renderCsv()}</div>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                        {file.kind === "html" ? (
+                          <iframe src={file.url} title={file.name} className="h-[600px] w-full bg-white" loading="lazy" />
+                        ) : file.kind === "code" && file.content ? (
+                          <pre className="overflow-x-auto bg-[#090908] p-5 text-xs leading-relaxed text-[#aaa49a] sm:p-8">{file.content}</pre>
+                        ) : file.kind === "data" && file.ext === ".csv" ? (
+                          <div className="p-5 sm:p-8">{renderCsv()}</div>
+                        ) : null}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           </section>
         )}
       </main>
-      <Footer />
+
+      <SiteFooter />
     </div>
-  );
+  )
 }
