@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, ArrowUpRight } from "lucide-react"
@@ -80,9 +81,11 @@ export default async function ProjectDetailPage({
 
   const media = await getProjectMedia(slug)
   const mediaCount = media.images.length + media.videos.length + media.docs.length + media.files.length
+  const listedImage = fallback?.image && fallback.image !== "/projects/logo.png" ? fallback.image : null
+  const heroImage = listedImage ?? media.images[0] ?? null
   const telemetry = [
     { label: "State", value: fallback?.status ?? "Documented", detail: fallback?.semester ?? "project record", accent: true },
-    { label: "Lead", value: fallback?.pm ?? "TBD", detail: "project manager" },
+    { label: "Lead", value: fallback?.pm?.replace(/^PMs?:\s*/i, "") ?? "TBD", detail: "project manager" },
     { label: "Media", value: mediaCount, detail: "artifacts indexed" },
     { label: "Stack", value: fallback?.technologies.length ?? 0, detail: "technologies" },
   ] as const
@@ -95,19 +98,24 @@ export default async function ProjectDetailPage({
         <section className="border-b border-white/[0.08] bg-black">
           <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
             <div className="grid lg:grid-cols-12">
-              <div className="border-b border-white/[0.08] px-5 py-8 sm:px-8 lg:col-span-8 lg:min-h-[390px] lg:border-b-0 lg:border-r lg:px-12 lg:py-10 xl:px-16">
+              <div className="border-b border-white/[0.08] px-5 py-8 sm:px-8 lg:col-span-7 lg:min-h-[430px] lg:border-b-0 lg:border-r lg:px-12 lg:py-10 xl:px-16">
                 <div className="flex h-full flex-col justify-between gap-10">
-                  <Link
-                    href="/projects"
-                    className="inline-flex w-fit items-center gap-2 font-mono text-[0.58rem] uppercase tracking-[0.16em] text-[#888279] transition-colors hover:text-[#f2c34f]"
-                  >
-                    <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-                    Project archive
-                  </Link>
+                  <div className="flex items-center justify-between gap-5">
+                    <Link
+                      href="/projects"
+                      className="inline-flex w-fit items-center gap-2 font-mono text-[0.58rem] uppercase tracking-[0.16em] text-[#888279] transition-colors hover:text-[#f2c34f]"
+                    >
+                      <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+                      Project archive
+                    </Link>
+                    <span className="hidden font-mono text-[0.5rem] uppercase tracking-[0.15em] text-[#4f4b45] sm:block">
+                      Project record / {slug}
+                    </span>
+                  </div>
 
                   <div>
                     <p className="font-mono text-[0.6rem] uppercase tracking-[0.18em] text-[#625e57]">Project / {slug}</p>
-                    <h1 className="mt-4 max-w-5xl text-[clamp(3.4rem,6.7vw,6.9rem)] font-medium leading-[0.84] tracking-[-0.07em] text-[#f2eee5]">
+                    <h1 className="mt-4 max-w-5xl text-[clamp(3.35rem,6.4vw,6.7rem)] font-medium leading-[0.84] tracking-[-0.07em] text-[#f2eee5]">
                       {title}
                     </h1>
                     {summary && (
@@ -115,7 +123,7 @@ export default async function ProjectDetailPage({
                     )}
                     {!!fallback?.technologies.length && (
                       <div className="mt-5 flex flex-wrap gap-x-3 gap-y-2 border-t border-white/[0.07] pt-4">
-                        {fallback.technologies.slice(0, 6).map((technology) => (
+                        {fallback.technologies.slice(0, 7).map((technology) => (
                           <span key={technology} className="font-mono text-[0.51rem] uppercase tracking-[0.12em] text-[#716c65]">
                             {technology}
                           </span>
@@ -126,8 +134,47 @@ export default async function ProjectDetailPage({
                 </div>
               </div>
 
-              <SiteTelemetry items={telemetry} />
+              <div className="relative min-h-[320px] overflow-hidden bg-[#080807] lg:col-span-5 lg:min-h-[430px]">
+                {heroImage ? (
+                  heroImage.startsWith("/") ? (
+                    <Image
+                      src={heroImage}
+                      alt={`${title} project`}
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 42vw"
+                      className="object-cover opacity-[0.74] grayscale-[13%] saturate-[0.84]"
+                      priority
+                    />
+                  ) : (
+                    <img src={heroImage} alt={`${title} project`} className="h-full w-full object-cover opacity-[0.74] grayscale-[13%]" />
+                  )
+                ) : (
+                  <div className="absolute inset-0 bg-[linear-gradient(rgba(218,160,0,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(218,160,0,.045)_1px,transparent_1px)] bg-[size:36px_36px]">
+                    <div className="absolute left-[12%] top-[22%] h-px w-[58%] bg-[#8b6a13]/55" />
+                    <div className="absolute left-[31%] top-[22%] h-[46%] w-px bg-[#8b6a13]/40" />
+                    <div className="absolute bottom-[31%] left-[31%] h-px w-[51%] bg-[#8b6a13]/45" />
+                    <span className="absolute bottom-[30%] left-[80%] h-2 w-2 -translate-y-[3px] rounded-full border border-[#c79821]/65" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/86 via-transparent to-black/22" />
+                <div className="absolute left-0 top-0 border-b border-r border-white/[0.09] bg-black/60 px-4 py-3 backdrop-blur-sm">
+                  <p className="font-mono text-[0.5rem] uppercase tracking-[0.16em] text-[#8d887f]">System / {fallback?.status ?? "documented"}</p>
+                </div>
+                <div className="absolute inset-x-0 bottom-0 border-t border-white/[0.1] bg-black/68 px-5 py-4 backdrop-blur-sm sm:px-7">
+                  <div className="flex items-end justify-between gap-5">
+                    <div>
+                      <p className="font-mono text-[0.49rem] uppercase tracking-[0.15em] text-[#756f67]">Project surface</p>
+                      <p className="mt-1 max-w-sm text-lg font-medium tracking-[-0.035em] text-[#dfd9cf]">
+                        Build notes, artifacts, and the system behind the result.
+                      </p>
+                    </div>
+                    <span className="font-mono text-[0.49rem] uppercase tracking-[0.14em] text-[#8d7328]">SYS / {slug.slice(0, 3)}</span>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            <SiteTelemetry items={telemetry} variant="rail" />
           </div>
         </section>
 
