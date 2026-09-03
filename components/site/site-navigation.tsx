@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -24,13 +24,45 @@ function isActivePath(pathname: string, href: string) {
 export function SiteNavigation() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
+  const navRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+
+    let frame = 0
+
+    const updateProgress = () => {
+      frame = 0
+      const scrollable = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
+      const progress = scrollable > 0 ? Math.min(1, Math.max(0, window.scrollY / scrollable)) : 0
+      nav.style.setProperty("--site-scroll-progress", String(progress))
+    }
+
+    const scheduleUpdate = () => {
+      if (frame) return
+      frame = window.requestAnimationFrame(updateProgress)
+    }
+
+    updateProgress()
+    window.addEventListener("scroll", scheduleUpdate, { passive: true })
+    window.addEventListener("resize", scheduleUpdate)
+
+    return () => {
+      window.removeEventListener("scroll", scheduleUpdate)
+      window.removeEventListener("resize", scheduleUpdate)
+      if (frame) window.cancelAnimationFrame(frame)
+    }
+  }, [pathname])
 
   return (
     <>
       <SiteStyles />
       <nav
+        ref={navRef}
+        id="site-top"
         data-site-navigation
-        className="sticky top-0 z-50 w-full border-b border-white/[0.08] bg-[#090908]/92 text-[#f3efe6] shadow-[0_8px_28px_rgba(0,0,0,.12)] backdrop-blur-xl"
+        className="relative sticky top-0 z-50 w-full border-b border-white/[0.08] bg-[#090908]/92 text-[#f3efe6] shadow-[0_8px_28px_rgba(0,0,0,.12)] backdrop-blur-xl"
       >
         <div className="relative mx-auto flex h-[68px] w-full items-center justify-between px-5 sm:px-8 lg:w-[calc(100%_-_48px)] lg:border-x lg:border-white/[0.05] lg:px-8 xl:px-10 2xl:w-[calc(100%_-_80px)] 2xl:px-12">
           <Link href="/" className="flex items-center gap-4" aria-label="Embedded Systems @ Purdue home">
@@ -134,6 +166,12 @@ export function SiteNavigation() {
             </Sheet>
           </div>
         </div>
+
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-[-1px] h-px origin-left bg-[linear-gradient(90deg,#8b6a13,#f2c34f_68%,rgba(242,195,79,.25))] shadow-[0_0_8px_rgba(218,160,0,.18)]"
+          style={{ transform: "scaleX(var(--site-scroll-progress, 0))" }}
+        />
       </nav>
     </>
   )
