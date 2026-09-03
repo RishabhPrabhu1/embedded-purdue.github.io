@@ -269,7 +269,7 @@ export default function ProjectsGridClient({ projects }: { projects: Project[] }
   }
 
   function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
-    navigate(selectedStatus, selectedTechs, selectedSemester, event.target.value)
+    router.replace(hrefWith(selectedStatus, selectedTechs, selectedSemester, event.target.value), { scroll: false })
   }
 
   const hasFilters =
@@ -284,6 +284,9 @@ export default function ProjectsGridClient({ projects }: { projects: Project[] }
             <input
               value={query}
               onChange={handleSearchChange}
+              aria-label="Search projects"
+              autoComplete="off"
+              spellCheck={false}
               placeholder="Search projects, systems, technologies…"
               className="h-11 w-full border border-white/[0.1] bg-[#10100e] py-2 pl-10 pr-4 text-sm text-[#e5dfd4] outline-none transition-colors placeholder:text-[#5f5a53] focus:border-[#daa000]/55"
             />
@@ -391,11 +394,18 @@ export default function ProjectsGridClient({ projects }: { projects: Project[] }
             )
 
             return external ? (
-              <a key={project.slug} href={href} target="_blank" rel="noopener noreferrer" className="block h-full no-underline">
+              <a
+                key={project.slug}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-site-lift="card"
+                className="block h-full no-underline"
+              >
                 {inner}
               </a>
             ) : (
-              <Link key={project.slug} href={href} className="block h-full no-underline">
+              <Link key={project.slug} href={href} data-site-lift="card" className="block h-full no-underline">
                 {inner}
               </Link>
             )
