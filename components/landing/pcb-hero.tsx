@@ -162,6 +162,20 @@ function smoothstep(value: number) {
   return x * x * (3 - 2 * x)
 }
 
+function inverseSmoothstep(value: number) {
+  const target = clamp01(value)
+  let low = 0
+  let high = 1
+
+  for (let index = 0; index < 10; index++) {
+    const middle = (low + high) / 2
+    if (smoothstep(middle) < target) low = middle
+    else high = middle
+  }
+
+  return (low + high) / 2
+}
+
 function easeOutCubic(value: number) {
   const x = clamp01(value)
   return 1 - Math.pow(1 - x, 3)
@@ -185,6 +199,26 @@ function prepareRoute(points: Route): PreparedRoute {
   }
 
   return { points, segments, total, path }
+}
+
+function pointAtDistance(route: PreparedRoute, distance: number): Point {
+  const clampedDistance = Math.max(0, Math.min(route.total, distance))
+  let remaining = clampedDistance
+
+  for (let index = 1; index < route.points.length; index++) {
+    const segment = route.segments[index - 1]
+    const [x0, y0] = route.points[index - 1]
+    const [x1, y1] = route.points[index]
+
+    if (remaining <= segment) {
+      const ratio = segment === 0 ? 0 : remaining / segment
+      return [x0 + (x1 - x0) * ratio, y0 + (y1 - y0) * ratio]
+    }
+
+    remaining -= segment
+  }
+
+  return route.points[route.points.length - 1]
 }
 
 function tracePrepared(route: PreparedRoute, progress: number): PreparedTrace {
@@ -227,6 +261,43 @@ function tracePrepared(route: PreparedRoute, progress: number): PreparedTrace {
   }
 
   return { path, head }
+}
+
+function tracePreparedRange(
+  route: PreparedRoute,
+  startProgress: number,
+  endProgress: number
+): PreparedTrace {
+  const startDistance = route.total * clamp01(startProgress)
+  const endDistance = route.total * clamp01(endProgress)
+  const start = pointAtDistance(route, startDistance)
+  const path = new Path2D()
+  path.moveTo(start[0], start[1])
+
+  if (endDistance <= startDistance) return { path, head: start }
+
+  let traversed = 0
+  for (let index = 1; index < route.points.length; index++) {
+    const segment = route.segments[index - 1]
+    const segmentStart = traversed
+    const segmentEnd = traversed + segment
+
+    if (segmentEnd <= startDistance) {
+      traversed = segmentEnd
+      continue
+    }
+
+    if (segmentStart >= endDistance) break
+
+    const drawTo = Math.min(segmentEnd, endDistance)
+    const point = pointAtDistance(route, drawTo)
+    path.lineTo(point[0], point[1])
+
+    if (drawTo >= endDistance) break
+    traversed = segmentEnd
+  }
+
+  return { path, head: pointAtDistance(route, endDistance) }
 }
 
 function strokePrepared(
@@ -486,11 +557,12 @@ function railTapTime(groups: readonly GroupRuntime[], point: Point) {
   const dx = end[0] - start[0]
   const dy = end[1] - start[1]
   const lengthSquared = dx * dx + dy * dy
-  const progress = lengthSquared
+  const visualProgress = lengthSquared
     ? clamp01(((point[0] - start[0]) * dx + (point[1] - start[1]) * dy) / lengthSquared)
     : 0
+  const timelineProgress = inverseSmoothstep(visualProgress)
 
-  return closestGroup.railStart + closestGroup.railDuration * progress + .035
+  return closestGroup.railStart + closestGroup.railDuration * timelineProgress + .025
 }
 
 function buildAuxiliary(
@@ -525,8 +597,11 @@ function buildAuxiliary(
   }
 
   const route = prepareRoute(routePoints)
-  const availableDuration = Math.max(.42, targetArrival - startTime)
-  const duration = availableDuration / speedScale
+  const availableDuration = Math.max(.40, targetArrival - startTime)
+  const requiredSpeed = route.total / availableDuration
+  const naturalSpeed = 620 * speedScale
+  const speed = Math.max(500, Math.min(820, naturalSpeed * .58 + requiredSpeed * .42))
+  const duration = route.total / speed
 
   return {
     route,
@@ -560,7 +635,7 @@ function buildAuxiliaryNetwork(
     })
   })
 
-  const speedPattern = [.98, 1.02, 1, 1.03, .97]
+  const speedPattern = [.97, 1.02, .99, 1.035, .985]
 
   return pending
     .map(({ spec, anchor }, index) => {
@@ -873,30 +948,37 @@ export function PcbHero() {
       if (progress <= 0) return
 
       const trace = tracePrepared(route, progress)
+      const pulseLength = Math.min(.24, 96 / Math.max(route.total, 1))
+      const pulseTrace = tracePreparedRange(route, Math.max(0, progress - pulseLength), progress)
+      const activation = smoothstep(Math.min(1, progress * route.total / 42))
+
+      context.save()
+      context.globalAlpha = active ? Math.max(settledAlpha, .38) : settledAlpha
+      strokePrepared(context, trace, GOLD, active ? 1.9 : 1.85)
+      context.restore()
 
       if (active) {
         context.save()
         context.globalCompositeOperation = "lighter"
-        context.globalAlpha = .018
-        strokePrepared(context, trace, GOLD, 34)
-        context.globalAlpha = .06
-        strokePrepared(context, trace, GOLD, 14)
-        context.globalAlpha = .17
-        strokePrepared(context, trace, BRIGHT, 5)
+        context.globalAlpha = .024 * activation
+        strokePrepared(context, pulseTrace, GOLD, 30)
+        context.globalAlpha = .085 * activation
+        strokePrepared(context, pulseTrace, GOLD, 13)
+        context.globalAlpha = .31 * activation
+        strokePrepared(context, pulseTrace, BRIGHT, 4.4)
+        context.globalAlpha = .95 * activation
+        strokePrepared(context, pulseTrace, BRIGHT, 2.25)
         context.restore()
-      }
 
-      context.save()
-      context.globalAlpha = active ? .92 : settledAlpha
-      strokePrepared(context, trace, active ? BRIGHT : GOLD, active ? 2.35 : 1.85)
-      context.restore()
-
-      if (active) {
-        drawLightPool(context, lightPoolSprite, trace.head, headRadius, .88)
+        drawLightPool(context, lightPoolSprite, trace.head, headRadius, .82 * activation)
+        context.save()
+        context.globalCompositeOperation = "lighter"
+        context.globalAlpha = activation
         context.beginPath()
-        context.arc(trace.head[0], trace.head[1], 3.4, 0, Math.PI * 2)
+        context.arc(trace.head[0], trace.head[1], 3.1, 0, Math.PI * 2)
         context.fillStyle = BRIGHT
         context.fill()
+        context.restore()
       }
     }
 
@@ -907,42 +989,54 @@ export function PcbHero() {
         if (progress <= 0) return
 
         const active = raw > 0 && raw < 1
-        const activation = smoothstep(progress / .10)
         const trace = tracePrepared(wire.route, progress)
-        const completionPulse = raw >= 1 ? 1 - smoothstep((raw - 1) / .28) : 0
+        const pulseLength = Math.min(.22, 82 / Math.max(wire.route.total, 1))
+        const pulseTrace = tracePreparedRange(
+          wire.route,
+          Math.max(0, progress - pulseLength),
+          progress
+        )
+        const activation = smoothstep(Math.min(1, progress * wire.route.total / 34))
+        const completionPulse = raw >= 1 ? 1 - smoothstep((raw - 1) / .18) : 0
+        const launchPulse = raw > 0 && raw < .14 ? 1 - smoothstep(raw / .14) : 0
+
+        context.save()
+        context.globalAlpha = active ? .42 : .34
+        strokePrepared(context, trace, GOLD, active ? 1.55 : 1.42)
+        context.restore()
 
         if (active) {
           context.save()
           context.globalCompositeOperation = "lighter"
-          context.globalAlpha = .055 * activation
-          strokePrepared(context, trace, GOLD, 16)
-          context.globalAlpha = .15 * activation
-          strokePrepared(context, trace, GOLD, 7)
-          context.globalAlpha = .30 * activation
-          strokePrepared(context, trace, BRIGHT, 3.8)
+          context.globalAlpha = .06 * activation
+          strokePrepared(context, pulseTrace, GOLD, 17)
+          context.globalAlpha = .18 * activation
+          strokePrepared(context, pulseTrace, GOLD, 7.5)
+          context.globalAlpha = .38 * activation
+          strokePrepared(context, pulseTrace, BRIGHT, 3.4)
+          context.globalAlpha = .92 * activation
+          strokePrepared(context, pulseTrace, BRIGHT, 1.8)
           context.restore()
-        }
 
-        context.save()
-        context.globalAlpha = active ? .34 + .52 * activation : .34
-        strokePrepared(context, trace, active ? BRIGHT : GOLD, active ? 1.95 : 1.42)
-        context.restore()
-
-        if (active) {
-          drawLightPool(context, lightPoolSprite, trace.head, 54, .40 * activation)
+          drawLightPool(context, lightPoolSprite, trace.head, 50, .42 * activation)
           context.save()
           context.globalCompositeOperation = "lighter"
           context.globalAlpha = activation
           context.beginPath()
-          context.arc(trace.head[0], trace.head[1], 2.4, 0, Math.PI * 2)
+          context.arc(trace.head[0], trace.head[1], 2.25, 0, Math.PI * 2)
           context.fillStyle = BRIGHT
           context.fill()
           context.restore()
         }
 
+        if (launchPulse > 0) {
+          const source = wire.route.points[0]
+          drawLightPool(context, lightPoolSprite, source, 31, .16 * launchPulse)
+        }
+
         if (completionPulse > 0) {
           const end = wire.route.points[wire.route.points.length - 1]
-          drawLightPool(context, lightPoolSprite, end, 48, .26 * completionPulse)
+          drawLightPool(context, lightPoolSprite, end, 43, .20 * completionPulse)
         }
       })
     }
@@ -951,7 +1045,7 @@ export function PcbHero() {
       groups.forEach((group) => {
         group.branches.forEach((branch) => {
           const raw = (time - branch.start) / branch.duration
-          const progress = easeOutCubic(raw)
+          const progress = smoothstep(raw)
           drawPoweredRoute(branch.route, progress, raw > 0 && raw < 1, .25, 70)
         })
 
@@ -1133,7 +1227,7 @@ export function PcbHero() {
         const logoAnchors = logoPaths.flatMap(sampleLogoPath)
         groups = groupSpecs.map((spec) => buildGroup(spec, logoPaths))
         const lastLogoEnd = Math.max(...groups.map((group) => group.end))
-        const auxiliaryArrivalTime = lastLogoEnd - .30
+        const auxiliaryArrivalTime = lastLogoEnd - .32
         auxiliaryWires = buildAuxiliaryNetwork(
           auxiliarySpecs,
           logoAnchors,
