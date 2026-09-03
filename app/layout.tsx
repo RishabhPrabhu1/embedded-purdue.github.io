@@ -76,6 +76,9 @@ const landingFrameScript = `
   } catch (e) {}
 
   if (isRestoredLandingTab) {
+    // Undo-close-tab/session restoration carries sessionStorage forward. Treat
+    // that as a fresh viewing session so the cinematic runs again instead of
+    // immediately showing the cached settled poster.
     try {
       sessionStorage.removeItem(posterKey);
       sessionStorage.removeItem(seenKey);
@@ -85,6 +88,9 @@ const landingFrameScript = `
   }
 
   if (isLandingReload) {
+    // Safari can briefly paint a restored scroll position before the landing page
+    // is reset to its intended reload position. Disable restoration before body
+    // paint, pin the reload to the top, then hand control back after pageshow.
     try { history.scrollRestoration = "manual"; } catch (e) {}
     try { window.scrollTo(0, 0); } catch (e) {}
 
@@ -113,6 +119,8 @@ const landingFrameScript = `
   if (bootPoster) {
     activatePoster(bootPoster);
   } else {
+    // A "seen" flag without the current poster cannot provide a stable first paint.
+    // Replay the animation once and create the current poster instead.
     try {
       sessionStorage.removeItem(seenKey);
       sessionStorage.removeItem("esap-landing-final-frame");
@@ -141,6 +149,8 @@ const landingFrameScript = `
       }
 
       try {
+        // Capture the real finished canvas once. Return visits keep this exact visual
+        // for the whole visit; there is no cached-image -> live-canvas handoff.
         var poster = document.createElement("canvas");
         poster.width = Math.min(1280, canvas.width);
         poster.height = Math.max(1, Math.round(canvas.height * poster.width / canvas.width));
@@ -156,6 +166,7 @@ const landingFrameScript = `
 
         sessionStorage.setItem(posterKey, frame);
         sessionStorage.setItem(seenKey, "1");
+        // First visit remains the live canvas. This image is only for later visits.
       } catch (e) {}
     }
 
@@ -200,6 +211,7 @@ const landingFrameScript = `
 `;
 
 const landingFrameStyle = `
+/* Cached returns are a single static final state. No image -> canvas handoff. */
 html[data-esap-return-poster="1"] [data-landing-shell] {
   --landing-nav-opacity: 1 !important;
   --landing-content-opacity: 1 !important;
