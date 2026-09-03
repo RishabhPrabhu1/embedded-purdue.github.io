@@ -187,7 +187,7 @@ export default function TeamPage() {
                     Executive Board
                   </h2>
                   <p className="mt-5 max-w-sm text-sm leading-6 text-[#817c74]">
-                    The hero establishes the people visually. This directory keeps the operational record compact and usable.
+                    Leadership roles, responsibilities, and public contact channels for the current operating cycle.
                   </p>
                 </div>
               </div>
