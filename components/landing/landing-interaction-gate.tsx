@@ -198,24 +198,57 @@ export function LandingInteractionGate() {
     })
 
     let revealObserver: IntersectionObserver | null = null
+    let removeScrollDirectionListener: (() => void) | null = null
 
     if (reducedMotion || !("IntersectionObserver" in window)) {
       revealElements.forEach((element) => {
         element.dataset.landingVisible = "true"
       })
     } else {
+      let lastScrollY = window.scrollY
+      let scrollDirection: "up" | "down" = "down"
+
+      const onScroll = () => {
+        const nextScrollY = window.scrollY
+        const delta = nextScrollY - lastScrollY
+
+        if (Math.abs(delta) > 2) {
+          scrollDirection = delta < 0 ? "up" : "down"
+          lastScrollY = nextScrollY
+        }
+      }
+
+      window.addEventListener("scroll", onScroll, { passive: true })
+      removeScrollDirectionListener = () => window.removeEventListener("scroll", onScroll)
+
       revealObserver = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
-            if (!entry.isIntersecting) return
-
             const element = entry.target as HTMLElement
-            element.dataset.landingVisible = "true"
-            revealObserver?.unobserve(element)
+
+            if (entry.isIntersecting) {
+              const retreatingBelowViewport =
+                scrollDirection === "up" &&
+                entry.boundingClientRect.top > 0 &&
+                entry.intersectionRatio < 0.16 &&
+                element.dataset.landingVisible === "true"
+
+              if (retreatingBelowViewport) {
+                delete element.dataset.landingVisible
+                return
+              }
+
+              element.dataset.landingVisible = "true"
+              return
+            }
+
+            if (entry.boundingClientRect.top >= window.innerHeight) {
+              delete element.dataset.landingVisible
+            }
           })
         },
         {
-          threshold: 0.01,
+          threshold: [0.01, 0.16],
           rootMargin: "0px 0px 4% 0px",
         }
       )
@@ -286,6 +319,7 @@ export function LandingInteractionGate() {
     return () => {
       shellObserver.disconnect()
       revealObserver?.disconnect()
+      removeScrollDirectionListener?.()
       pointerCleanups.forEach((cleanup) => cleanup())
       revealElements.forEach((element) => {
         delete element.dataset.landingReveal
