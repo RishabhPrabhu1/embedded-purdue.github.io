@@ -392,12 +392,33 @@ function buildGroup(spec: GroupSpec, logoPaths: readonly string[]): GroupRuntime
   }
 }
 
-function buildAuxiliary(spec: AuxiliarySpec): AuxiliaryRuntime {
-  const route = prepareRoute(spec.route)
+function nearestPoint(from: Point, candidates: readonly Point[]): Point {
+  let closest = candidates[0] ?? from
+  let bestDistance = Number.POSITIVE_INFINITY
+
+  candidates.forEach((point) => {
+    const distance = Math.hypot(point[0] - from[0], point[1] - from[1])
+    if (distance < bestDistance) {
+      bestDistance = distance
+      closest = point
+    }
+  })
+
+  return closest
+}
+
+function buildAuxiliary(spec: AuxiliarySpec, logoAnchors: readonly Point[]): AuxiliaryRuntime {
+  const routePoints: Point[] = [...spec.route]
+  const end = routePoints[routePoints.length - 1]
+  const anchor = nearestPoint(end, logoAnchors)
+  const horizontalFirst = Math.abs(anchor[0] - end[0]) >= Math.abs(anchor[1] - end[1])
+  routePoints.push(...orthogonalJoin(end, anchor, horizontalFirst))
+
+  const route = prepareRoute(routePoints)
   return {
     route,
     start: spec.start,
-    duration: Math.max(.24, Math.min(.52, route.total / 720)),
+    duration: Math.max(.32, Math.min(.82, route.total / 760)),
   }
 }
 
@@ -979,8 +1000,9 @@ export function PcbHero() {
         const logoPaths = await loadLogoPaths()
         if (cancelled) return
 
+        const logoAnchors = logoPaths.flatMap(sampleLogoPath)
         groups = groupSpecs.map((spec) => buildGroup(spec, logoPaths))
-        auxiliaryWires = auxiliarySpecs.map(buildAuxiliary)
+        auxiliaryWires = auxiliarySpecs.map((spec) => buildAuxiliary(spec, logoAnchors))
         const lastLogoEnd = Math.max(...groups.map((group) => group.end))
 
         lockStart = lastLogoEnd + .055
