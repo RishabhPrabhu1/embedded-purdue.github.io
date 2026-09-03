@@ -455,7 +455,8 @@ function buildAuxiliary(
   spec: AuxiliarySpec,
   anchor: Point,
   arrivalTime: number,
-  arrivalOffset: number
+  arrivalOffset: number,
+  durationScale: number
 ): AuxiliaryRuntime {
   const routePoints: Point[] = [...spec.route]
   const end = routePoints[routePoints.length - 1]
@@ -482,7 +483,8 @@ function buildAuxiliary(
   }
 
   const route = prepareRoute(routePoints)
-  const duration = Math.max(.42, Math.min(.96, route.total / 760))
+  const baseDuration = Math.max(.36, Math.min(.84, route.total / 845))
+  const duration = baseDuration * durationScale
 
   return {
     route,
@@ -517,8 +519,9 @@ function buildAuxiliaryNetwork(
 
   return pending
     .map(({ spec, anchor }, index) => {
-      const arrivalOffset = ((index % 7) - 3) * .012
-      return buildAuxiliary(spec, anchor, arrivalTime, arrivalOffset)
+      const arrivalOffset = ((index % 7) - 3) * .009
+      const durationScale = .94 + (index % 5) * .025
+      return buildAuxiliary(spec, anchor, arrivalTime, arrivalOffset, durationScale)
     })
     .sort((a, b) => a.start - b.start)
 }
@@ -1080,7 +1083,7 @@ export function PcbHero() {
         const logoAnchors = logoPaths.flatMap(sampleLogoPath)
         groups = groupSpecs.map((spec) => buildGroup(spec, logoPaths))
         const lastLogoEnd = Math.max(...groups.map((group) => group.end))
-        const auxiliaryArrivalTime = lastLogoEnd - .04
+        const auxiliaryArrivalTime = lastLogoEnd - .14
         auxiliaryWires = buildAuxiliaryNetwork(auxiliarySpecs, logoAnchors, auxiliaryArrivalTime)
         const lastAuxiliaryEnd = Math.max(
           ...auxiliaryWires.map((wire) => wire.start + wire.duration)
