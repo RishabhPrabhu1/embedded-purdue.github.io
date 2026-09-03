@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import {
   ArrowUpRight,
@@ -140,10 +141,13 @@ export default function SponsorsPage() {
               </div>
 
               <div className="relative min-h-[330px] overflow-hidden bg-[#080807] lg:col-span-5 lg:min-h-[430px]">
-                <img
+                <Image
                   src="/industry_ins.jpg"
                   alt="ES@P industry engagement"
-                  className="h-full w-full object-cover opacity-[0.7] grayscale-[18%] saturate-[0.78]"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 42vw"
+                  className="object-cover opacity-[0.7] grayscale-[18%] saturate-[0.78]"
+                  priority
                 />
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.2),transparent_34%,rgba(0,0,0,.86))]" />
                 <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,.18),transparent_52%)]" />
