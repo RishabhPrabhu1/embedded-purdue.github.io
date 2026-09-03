@@ -17,10 +17,10 @@ type Project = Omit<DataProject, "description" | "image" | "icon"> & {
 const STATUS_ORDER: Record<string, number> = { Active: 0, Planned: 1, Completed: 2 }
 
 const TRIGGER_CLS =
-  "flex h-10 w-full items-center gap-2 border border-white/[0.1] bg-black/20 px-3.5 font-mono text-[0.6rem] uppercase tracking-[0.11em] text-[#aaa49a] outline-none transition-colors hover:border-[#daa000]/35 hover:text-[#e6e0d5] focus-visible:border-[#daa000]/60 sm:w-44"
+  "flex h-10 w-full items-center gap-2 border-0 border-b border-white/[0.12] bg-transparent px-0 font-mono text-[0.6rem] uppercase tracking-[0.11em] text-[#aaa49a] outline-none transition-colors hover:border-[#daa000]/45 hover:text-[#e6e0d5] focus-visible:border-[#daa000]/70 sm:w-44"
 const TRIGGER_LABEL_CLS = "min-w-0 flex-1 truncate text-left"
 const MENU_CLS =
-  "absolute left-0 top-full z-50 mt-1 min-w-full border border-white/[0.1] bg-[#0b0b0a] text-[#c7c1b7] shadow-[0_20px_50px_rgba(0,0,0,.38)]"
+  "absolute left-0 top-full z-50 mt-1 min-w-full border border-white/[0.1] bg-[#090908]/98 text-[#c7c1b7] shadow-[0_20px_50px_rgba(0,0,0,.46)] backdrop-blur-xl"
 const MENU_ITEM_CLS =
   "w-full px-3.5 py-2.5 text-left text-sm transition-colors hover:bg-[#daa000]/[0.07] hover:text-[#f2c34f]"
 
@@ -52,9 +52,9 @@ function decodeTechs(raw: string) {
 }
 
 function statusClass(status: string) {
-  if (status === "Active") return "border-[#daa000]/40 bg-[#daa000]/[0.11] text-[#e1b947]"
-  if (status === "Planned") return "border-[#7b87a3]/35 bg-[#7b87a3]/[0.08] text-[#aab3c7]"
-  return "border-white/[0.1] bg-black/30 text-[#817c74]"
+  if (status === "Active") return "border-[#daa000]/45 bg-[#daa000]/[0.1] text-[#e1b947]"
+  if (status === "Planned") return "border-[#7b87a3]/35 bg-black/35 text-[#aab3c7]"
+  return "border-white/[0.12] bg-black/40 text-[#817c74]"
 }
 
 function TechCheckboxDropdown({
@@ -278,9 +278,9 @@ export default function ProjectsGridClient({ projects }: { projects: Project[] }
   return (
     <>
       <div className="border-b border-white/[0.08] px-5 py-6 sm:px-8 lg:px-12 lg:py-7 xl:px-16">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end">
           <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6e6961]" aria-hidden="true" />
+            <Search className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6e6961]" aria-hidden="true" />
             <input
               value={query}
               onChange={handleSearchChange}
@@ -288,11 +288,11 @@ export default function ProjectsGridClient({ projects }: { projects: Project[] }
               autoComplete="off"
               spellCheck={false}
               placeholder="Search projects, systems, technologies…"
-              className="h-10 w-full border border-white/[0.1] bg-black/20 py-2 pl-10 pr-4 text-sm text-[#e5dfd4] outline-none transition-colors placeholder:text-[#5f5a53] focus:border-[#daa000]/55"
+              className="h-10 w-full border-0 border-b border-white/[0.12] bg-transparent py-2 pl-7 pr-4 text-sm text-[#e5dfd4] outline-none transition-colors placeholder:text-[#5f5a53] focus:border-[#daa000]/70"
             />
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-3 xl:flex">
+          <div className="grid gap-4 sm:grid-cols-3 xl:flex xl:gap-6">
             <SelectDropdown
               value={selectedStatus}
               options={[...allStatuses]}
