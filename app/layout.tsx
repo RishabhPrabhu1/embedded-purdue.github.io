@@ -223,7 +223,7 @@ html[data-esap-return-poster="1"] [data-landing-shell] {
 }
 
 html[data-esap-return-poster="1"] [data-landing-shell] > section:first-of-type {
-  height: min(66svh,600px) !important;
+  height: min(66svh, 600px) !important;
   min-height: 500px !important;
   transition: none !important;
 }
