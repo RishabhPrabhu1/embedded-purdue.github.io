@@ -492,7 +492,7 @@ export function PcbHero() {
       return { feederProgress, logoProgress }
     }
 
-    const getNetworkOpacity = (time: number) => 1 - smoothstep((time - lockStart) / .72)
+    const getNetworkOpacity = (time: number) => .30 + .70 * (1 - smoothstep((time - lockStart) / .72))
 
     const drawAmbientLight = (time: number) => {
       const settle = smoothstep((time - lockStart) / .72)
