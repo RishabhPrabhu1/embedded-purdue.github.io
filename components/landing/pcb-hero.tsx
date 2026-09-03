@@ -451,7 +451,12 @@ function buildLogoAnchorBank(side: Side, candidates: readonly Point[], count: nu
   return chosen.sort((a, b) => sideAxis(side, a) - sideAxis(side, b))
 }
 
-function buildAuxiliary(spec: AuxiliarySpec, anchor: Point): AuxiliaryRuntime {
+function buildAuxiliary(
+  spec: AuxiliarySpec,
+  anchor: Point,
+  arrivalTime: number,
+  arrivalOffset: number
+): AuxiliaryRuntime {
   const routePoints: Point[] = [...spec.route]
   const end = routePoints[routePoints.length - 1]
   const clearance = 24
@@ -477,19 +482,22 @@ function buildAuxiliary(spec: AuxiliarySpec, anchor: Point): AuxiliaryRuntime {
   }
 
   const route = prepareRoute(routePoints)
+  const duration = Math.max(.42, Math.min(.96, route.total / 760))
+
   return {
     route,
-    start: spec.start,
-    duration: Math.max(.34, Math.min(.90, route.total / 760)),
+    start: arrivalTime + arrivalOffset - duration,
+    duration,
   }
 }
 
 function buildAuxiliaryNetwork(
   specs: readonly AuxiliarySpec[],
-  logoAnchors: readonly Point[]
+  logoAnchors: readonly Point[],
+  arrivalTime: number
 ): AuxiliaryRuntime[] {
   const sides: readonly Side[] = ["left", "top", "right", "bottom"]
-  const wires: AuxiliaryRuntime[] = []
+  const pending: Array<{ spec: AuxiliarySpec; anchor: Point }> = []
 
   sides.forEach((side) => {
     const sideSpecs = specs
@@ -503,11 +511,16 @@ function buildAuxiliaryNetwork(
 
     sideSpecs.forEach((spec, index) => {
       const fallback = spec.route[spec.route.length - 1]
-      wires.push(buildAuxiliary(spec, anchors[index] ?? fallback))
+      pending.push({ spec, anchor: anchors[index] ?? fallback })
     })
   })
 
-  return wires.sort((a, b) => a.start - b.start)
+  return pending
+    .map(({ spec, anchor }, index) => {
+      const arrivalOffset = ((index % 7) - 3) * .012
+      return buildAuxiliary(spec, anchor, arrivalTime, arrivalOffset)
+    })
+    .sort((a, b) => a.start - b.start)
 }
 
 async function loadLogoPaths() {
@@ -839,7 +852,7 @@ export function PcbHero() {
     const drawAuxiliaryNetwork = (time: number) => {
       auxiliaryWires.forEach((wire) => {
         const raw = (time - wire.start) / wire.duration
-        const progress = easeOutCubic(raw)
+        const progress = smoothstep(raw)
         if (progress <= 0) return
 
         const active = raw > 0 && raw < 1
@@ -1066,14 +1079,19 @@ export function PcbHero() {
 
         const logoAnchors = logoPaths.flatMap(sampleLogoPath)
         groups = groupSpecs.map((spec) => buildGroup(spec, logoPaths))
-        auxiliaryWires = buildAuxiliaryNetwork(auxiliarySpecs, logoAnchors)
         const lastLogoEnd = Math.max(...groups.map((group) => group.end))
+        const auxiliaryArrivalTime = lastLogoEnd - .04
+        auxiliaryWires = buildAuxiliaryNetwork(auxiliarySpecs, logoAnchors, auxiliaryArrivalTime)
+        const lastAuxiliaryEnd = Math.max(
+          ...auxiliaryWires.map((wire) => wire.start + wire.duration)
+        )
+        const convergenceEnd = Math.max(lastLogoEnd, lastAuxiliaryEnd)
 
-        lockStart = lastLogoEnd + .055
-        navStart = lockStart + .18
-        copyStart = lockStart + .34
-        pageStart = lockStart + .62
-        animationEnd = lockStart + .98
+        lockStart = convergenceEnd + .025
+        navStart = lockStart + .14
+        copyStart = lockStart + .26
+        pageStart = lockStart + .50
+        animationEnd = lockStart + .82
 
         if (!skipAnimation) {
           try {
