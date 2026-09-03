@@ -96,11 +96,11 @@ export default function Markdown({
             )
           },
 
-          code({ inline, children, ...props }: CodeProps) {
+          code({ inline, className: codeClassName, children, ...props }: CodeProps) {
             if (inline) {
               return (
                 <code
-                  className="inline max-w-full border border-white/[0.08] bg-black/35 px-1.5 py-0.5 font-mono text-[0.86em] text-[#d7d1c6]"
+                  className={`inline max-w-full border border-white/[0.08] bg-black/35 px-1.5 py-0.5 font-mono text-[0.86em] text-[#d7d1c6] ${codeClassName || ""}`}
                   {...props}
                 >
                   {children}
@@ -109,7 +109,10 @@ export default function Markdown({
             }
 
             return (
-              <code className="font-mono text-sm leading-relaxed text-[#b9b3a9]" {...props}>
+              <code
+                className={`font-mono text-sm leading-relaxed text-[#b9b3a9] ${codeClassName || ""}`}
+                {...props}
+              >
                 {children}
               </code>
             )
