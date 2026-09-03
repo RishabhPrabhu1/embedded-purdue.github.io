@@ -735,37 +735,61 @@ export function PcbHero() {
 
         const active = raw > 0 && raw < 1
         const trace = tracePrepared(wire.route, progress)
+        const completionPulse = raw >= 1 ? 1 - smoothstep((raw - 1) / .34) : 0
 
         if (active) {
           context.save()
           context.globalCompositeOperation = "lighter"
-          context.globalAlpha = .035
-          strokePrepared(context, trace, GOLD, 9)
-          context.globalAlpha = .11
-          strokePrepared(context, trace, BRIGHT, 3)
+          context.globalAlpha = .055
+          strokePrepared(context, trace, GOLD, 16)
+          context.globalAlpha = .15
+          strokePrepared(context, trace, GOLD, 7)
+          context.globalAlpha = .30
+          strokePrepared(context, trace, BRIGHT, 3.8)
           context.restore()
         }
 
         context.save()
-        context.globalAlpha = active ? .66 : .20
-        strokePrepared(context, trace, active ? BRIGHT : GOLD, active ? 1.55 : 1.15)
+        context.globalAlpha = active ? .86 : .34
+        strokePrepared(context, trace, active ? BRIGHT : GOLD, active ? 1.95 : 1.42)
         context.restore()
 
         if (active) {
-          drawLightPool(context, lightPoolSprite, trace.head, 38, .22)
+          drawLightPool(context, lightPoolSprite, trace.head, 54, .40)
+          context.save()
+          context.globalCompositeOperation = "lighter"
           context.beginPath()
-          context.arc(trace.head[0], trace.head[1], 1.8, 0, Math.PI * 2)
+          context.arc(trace.head[0], trace.head[1], 2.4, 0, Math.PI * 2)
           context.fillStyle = BRIGHT
           context.fill()
+          context.restore()
         }
 
         if (progress >= .995) {
           const end = wire.route.points[wire.route.points.length - 1]
+
+          if (completionPulse > 0) {
+            drawLightPool(context, lightPoolSprite, end, 64, .42 * completionPulse)
+            context.save()
+            context.globalCompositeOperation = "lighter"
+            context.globalAlpha = .72 * completionPulse
+            context.beginPath()
+            context.arc(end[0], end[1], 4 + (1 - completionPulse) * 9, 0, Math.PI * 2)
+            context.strokeStyle = BRIGHT
+            context.lineWidth = 1.1
+            context.stroke()
+            context.restore()
+          }
+
           context.save()
-          context.globalAlpha = .42
+          context.globalAlpha = .68
           context.beginPath()
-          context.arc(end[0], end[1], 2.2, 0, Math.PI * 2)
+          context.arc(end[0], end[1], 2.8, 0, Math.PI * 2)
           context.fillStyle = GOLD
+          context.fill()
+          context.beginPath()
+          context.arc(end[0], end[1], 1.15, 0, Math.PI * 2)
+          context.fillStyle = BRIGHT
           context.fill()
           context.restore()
         }
