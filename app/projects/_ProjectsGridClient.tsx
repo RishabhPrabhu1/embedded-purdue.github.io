@@ -1,139 +1,125 @@
-// app/projects/_ProjectsGridClient.tsx
-"use client";
+"use client"
 
-import Link from "next/link";
-import { useMemo, useCallback, useState, useRef, useEffect } from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ChevronDown, X } from "lucide-react";
-import { allStatuses, collectTechs, collectSemesters } from "./_data";
-import type { Project as DataProject } from "./_data";
+import type { ChangeEvent } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import Link from "next/link"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { ArrowUpRight, ChevronDown, Search, X } from "lucide-react"
 
-// Locally we allow description/image to be optional since sanitizeProjects()
-// in page.tsx strips non-serializable fields; intersect with Omit to relax those.
+import { allStatuses, collectSemesters, collectTechs } from "./_data"
+import type { Project as DataProject } from "./_data"
+
 type Project = Omit<DataProject, "description" | "image" | "icon"> & {
-  description?: string;  // may be absent after sanitization
-  image?: string;        // may be filename or absolute
-};
-
-/** Normalize project image to a public URL under `/projects/<slug>/...` */
-function resolveProjectImage(p: Project) {
-  const raw = p.image || "";
-  if (!raw) return "/projects/logo.png";
-  if (/^https?:\/\//i.test(raw)) return raw;
-
-  // normalize to /projects/<slug>/<file>
-  let path = raw.replace(/^\/+/, "");
-  if (path.startsWith("projects/")) path = path.slice("projects/".length);
-  if (path.startsWith(`${p.slug}/`)) return `/projects/${path}`;
-  return `/projects/${p.slug}/${path}`;
+  description?: string
+  image?: string
 }
 
-// Status priority: Active first, then Planned, then Completed
-const STATUS_ORDER: Record<string, number> = { Active: 0, Planned: 1, Completed: 2 };
+const STATUS_ORDER: Record<string, number> = { Active: 0, Planned: 1, Completed: 2 }
 
-/** Decide where the card should link */
-function resolveProjectHref(p: Project): { href: string; external: boolean } {
-  const url = p.readmeUrl?.trim();
+const TRIGGER_CLS =
+  "flex h-11 w-full items-center gap-2 border border-white/[0.1] bg-[#10100e] px-3.5 font-mono text-[0.61rem] uppercase tracking-[0.11em] text-[#aaa49a] outline-none transition-colors hover:border-[#daa000]/35 hover:text-[#e6e0d5] focus-visible:border-[#daa000]/60 sm:w-44"
+const TRIGGER_LABEL_CLS = "min-w-0 flex-1 truncate text-left"
+const MENU_CLS =
+  "absolute left-0 top-full z-50 mt-1 min-w-full border border-white/[0.1] bg-[#10100e] text-[#c7c1b7] shadow-[0_20px_50px_rgba(0,0,0,.38)]"
+const MENU_ITEM_CLS =
+  "w-full px-3.5 py-2.5 text-left text-sm transition-colors hover:bg-[#daa000]/[0.09] hover:text-[#f2c34f]"
 
-  // External link
-  if (url && /^https?:\/\//i.test(url)) {
-    return { href: url, external: true };
-  }
+function resolveProjectImage(project: Project) {
+  const raw = project.image || ""
+  if (!raw) return "/projects/logo.png"
+  if (/^https?:\/\//i.test(raw)) return raw
 
-  // Bad internal file path (not served by Next)
-  if (url && url.startsWith("/content/")) {
-    return { href: `/projects/${p.slug}`, external: false };
-  }
-
-  // Valid internal route under /projects/*
-  if (url && url.startsWith("/projects/")) {
-    return { href: url, external: false };
-  }
-
-  // Fallback: route to the rendered project page
-  return { href: `/projects/${p.slug}`, external: false };
+  let path = raw.replace(/^\/+/, "")
+  if (path.startsWith("projects/")) path = path.slice("projects/".length)
+  if (path.startsWith(`${project.slug}/`)) return `/projects/${path}`
+  return `/projects/${project.slug}/${path}`
 }
 
-/** Encode a string[] as a comma-separated URL param value */
-function encodeTechs(techs: string[]): string {
-  return techs.join(",");
+function resolveProjectHref(project: Project): { href: string; external: boolean } {
+  const url = project.readmeUrl?.trim()
+  if (url && /^https?:\/\//i.test(url)) return { href: url, external: true }
+  if (url && url.startsWith("/content/")) return { href: `/projects/${project.slug}`, external: false }
+  if (url && url.startsWith("/projects/")) return { href: url, external: false }
+  return { href: `/projects/${project.slug}`, external: false }
 }
 
-/** Decode a comma-separated URL param value back into a string[] */
-function decodeTechs(raw: string): string[] {
-  return raw ? raw.split(",").filter(Boolean) : [];
+function encodeTechs(techs: string[]) {
+  return techs.join(",")
 }
 
-/** Dropdown that renders a list of checkboxes — closes on outside click */
+function decodeTechs(raw: string) {
+  return raw ? raw.split(",").filter(Boolean) : []
+}
+
+function statusClass(status: string) {
+  if (status === "Active") return "border-[#daa000]/40 bg-[#daa000]/[0.11] text-[#e1b947]"
+  if (status === "Planned") return "border-[#7b87a3]/35 bg-[#7b87a3]/[0.08] text-[#aab3c7]"
+  return "border-white/[0.1] bg-black/30 text-[#817c74]"
+}
+
 function TechCheckboxDropdown({
   allTechs,
   selectedTechs,
   onChange,
 }: {
-  allTechs: string[];
-  selectedTechs: string[];
-  onChange: (next: string[]) => void;
+  allTechs: string[]
+  selectedTechs: string[]
+  onChange: (next: string[]) => void
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
 
-  // Close when clicking outside the dropdown
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false)
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   function toggle(tech: string) {
-    const next = selectedTechs.includes(tech)
-      ? selectedTechs.filter((t) => t !== tech)
-      : [...selectedTechs, tech];
-    onChange(next);
+    onChange(
+      selectedTechs.includes(tech)
+        ? selectedTechs.filter((selected) => selected !== tech)
+        : [...selectedTechs, tech]
+    )
   }
 
   const label =
     selectedTechs.length === 0
       ? "All technologies"
       : selectedTechs.length === 1
-      ? selectedTechs[0]
-      : `${selectedTechs.length} technologies`;
+        ? selectedTechs[0]
+        : `${selectedTechs.length} technologies`
 
   return (
     <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className={TRIGGER_CLS}
-      >
+      <button type="button" onClick={() => setOpen((value) => !value)} className={TRIGGER_CLS} aria-expanded={open}>
         <span className={TRIGGER_LABEL_CLS}>{label}</span>
-        <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-md border bg-popover shadow-md">
-          {/* Clear selection */}
+        <div className={`${MENU_CLS} w-64`}>
           {selectedTechs.length > 0 && (
             <button
+              type="button"
               onClick={() => onChange([])}
-              className="flex w-full items-center gap-2 border-b px-3 py-2 text-xs text-muted-foreground hover:bg-primary/15 hover:text-foreground"
+              className="flex w-full items-center gap-2 border-b border-white/[0.08] px-3.5 py-2.5 font-mono text-[0.58rem] uppercase tracking-[0.12em] text-[#777169] transition-colors hover:text-[#f2c34f]"
             >
-              <X className="h-3 w-3" /> Clear selection
+              <X className="h-3 w-3" aria-hidden="true" />
+              Clear selection
             </button>
           )}
-          <ul className="max-h-64 overflow-y-auto py-1">
+          <ul className="max-h-72 overflow-y-auto py-1.5">
             {allTechs.map((tech) => (
               <li key={tech}>
-                <label className="flex cursor-pointer items-center gap-2.5 px-3 py-1.5 text-sm hover:bg-primary/15">
+                <label className="flex cursor-pointer items-center gap-3 px-3.5 py-2 text-sm transition-colors hover:bg-[#daa000]/[0.08] hover:text-[#f2c34f]">
                   <input
                     type="checkbox"
                     checked={selectedTechs.includes(tech)}
                     onChange={() => toggle(tech)}
-                    className="h-3.5 w-3.5 accent-primary"
+                    className="h-3.5 w-3.5 accent-[#daa000]"
                   />
                   {tech}
                 </label>
@@ -143,69 +129,66 @@ function TechCheckboxDropdown({
         </div>
       )}
     </div>
-  );
+  )
 }
 
-// Shared classes for all dropdown trigger buttons — keeps status, tech, and semester visually identical
-const TRIGGER_CLS =
-  "flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring w-full sm:w-40";
-
-// Shared label span inside every trigger — truncates long values with ellipsis
-const TRIGGER_LABEL_CLS = "flex-1 text-left truncate overflow-hidden";
-
-/** Generic single-select dropdown that mirrors the look of TechCheckboxDropdown */
 function SelectDropdown({
   value,
   options,
   placeholder,
   onChange,
 }: {
-  value: string;
-  options: string[];
-  placeholder: string;
-  onChange: (value: string) => void;
+  value: string
+  options: string[]
+  placeholder: string
+  onChange: (value: string) => void
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
 
-  // Close when clicking outside the dropdown
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false)
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
-  const label = value === "all" ? placeholder : value;
+  const label = value === "all" ? placeholder : value
 
   return (
     <div ref={ref} className="relative">
-      <button onClick={() => setOpen((o) => !o)} className={TRIGGER_CLS}>
+      <button type="button" onClick={() => setOpen((state) => !state)} className={TRIGGER_CLS} aria-expanded={open}>
         <span className={TRIGGER_LABEL_CLS}>{label}</span>
-        <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 min-w-full rounded-md border bg-popover shadow-md">
-          <ul className="py-1">
+        <div className={MENU_CLS}>
+          <ul className="py-1.5">
             <li>
               <button
-                onClick={() => { onChange("all"); setOpen(false); }}
-                className={`w-full px-3 py-1.5 text-left text-sm hover:bg-primary/15 ${value === "all" ? "font-medium" : ""}`}
+                type="button"
+                onClick={() => {
+                  onChange("all")
+                  setOpen(false)
+                }}
+                className={`${MENU_ITEM_CLS} ${value === "all" ? "text-[#f2c34f]" : ""}`}
               >
                 {placeholder}
               </button>
             </li>
-            {options.map((opt) => (
-              <li key={opt}>
+            {options.map((option) => (
+              <li key={option}>
                 <button
-                  onClick={() => { onChange(opt); setOpen(false); }}
-                  className={`w-full px-3 py-1.5 text-left text-sm hover:bg-primary/15 ${value === opt ? "font-medium" : ""}`}
+                  type="button"
+                  onClick={() => {
+                    onChange(option)
+                    setOpen(false)
+                  }}
+                  className={`${MENU_ITEM_CLS} ${value === option ? "text-[#f2c34f]" : ""}`}
                 >
-                  {opt}
+                  {option}
                 </button>
               </li>
             ))}
@@ -213,223 +196,212 @@ function SelectDropdown({
         </div>
       )}
     </div>
-  );
+  )
 }
 
 export default function ProjectsGridClient({ projects }: { projects: Project[] }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const sp = useSearchParams();
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
-  const selectedStatus = sp.get("status") ?? "all";
-  // techs is now a string[] decoded from a comma-separated URL param
-  const selectedTechs = useMemo(() => decodeTechs(sp.get("techs") ?? ""), [sp]);
-  const selectedSemester = sp.get("semester") ?? "all";
-  const query = sp.get("q") ?? "";
+  const selectedStatus = searchParams.get("status") ?? "all"
+  const selectedTechs = useMemo(() => decodeTechs(searchParams.get("techs") ?? ""), [searchParams])
+  const selectedSemester = searchParams.get("semester") ?? "all"
+  const query = searchParams.get("q") ?? ""
 
-  // Pull tech and semester options from _data helpers rather than deriving them here
-  const allTechs = useMemo(() => collectTechs(projects), [projects]);
-  const allSemesters = useMemo(() => collectSemesters(projects), [projects]);
+  const allTechs = useMemo(() => collectTechs(projects), [projects])
+  const allSemesters = useMemo(() => collectSemesters(projects), [projects])
 
   const filtered = useMemo(() => {
-    const q = query.toLowerCase();
-    const results = projects.filter((p) => {
-      const sOK = selectedStatus === "all" || p.status === selectedStatus;
-      // Project must include ALL of the selected techs (AND logic)
-      const tOK =
-        selectedTechs.length === 0 ||
-        selectedTechs.every((t) => p.technologies.includes(t));
-      const semOK = selectedSemester === "all" || p.semester === selectedSemester;
-      const qOK =
-        !q ||
-        p.title.toLowerCase().includes(q) ||
-        p.description?.toLowerCase().includes(q) ||
-        p.technologies.some((t) => t.toLowerCase().includes(q));
-      return sOK && tOK && semOK && qOK;
-    });
+    const normalizedQuery = query.toLowerCase()
+    const results = projects.filter((project) => {
+      const statusMatches = selectedStatus === "all" || project.status === selectedStatus
+      const techMatches =
+        selectedTechs.length === 0 || selectedTechs.every((tech) => project.technologies.includes(tech))
+      const semesterMatches = selectedSemester === "all" || project.semester === selectedSemester
+      const queryMatches =
+        !normalizedQuery ||
+        project.title.toLowerCase().includes(normalizedQuery) ||
+        project.description?.toLowerCase().includes(normalizedQuery) ||
+        project.technologies.some((tech) => tech.toLowerCase().includes(normalizedQuery))
 
-    // When no filters are active, sort Active first, then Planned, then Completed,
-    // with alphabetical ordering within each group.
-    // When filters are active, just sort alphabetically.
+      return statusMatches && techMatches && semesterMatches && queryMatches
+    })
+
     const noFilters =
-      selectedStatus === "all" && selectedTechs.length === 0 && selectedSemester === "all" && !q;
+      selectedStatus === "all" &&
+      selectedTechs.length === 0 &&
+      selectedSemester === "all" &&
+      !normalizedQuery
+
     return results.sort((a, b) => {
       if (noFilters) {
-        const statusDiff =
-          (STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99);
-        if (statusDiff !== 0) return statusDiff;
+        const statusDifference = (STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99)
+        if (statusDifference !== 0) return statusDifference
       }
-      return a.title.localeCompare(b.title);
-    });
-  }, [projects, selectedStatus, selectedTechs, selectedSemester, query]);
+      return a.title.localeCompare(b.title)
+    })
+  }, [projects, query, selectedSemester, selectedStatus, selectedTechs])
 
-  /** Build a URL with updated params, leaving others intact */
   const hrefWith = useCallback(
-    (s: string, techs: string[], sem: string, q: string) => {
-      const qs = new URLSearchParams();
-      if (s !== "all") qs.set("status", s);
-      if (techs.length > 0) qs.set("techs", encodeTechs(techs));
-      if (sem !== "all") qs.set("semester", sem);
-      if (q) qs.set("q", q);
-      const str = qs.toString();
-      return str ? `${pathname}?${str}` : pathname;
+    (status: string, techs: string[], semester: string, search: string) => {
+      const params = new URLSearchParams()
+      if (status !== "all") params.set("status", status)
+      if (techs.length) params.set("techs", encodeTechs(techs))
+      if (semester !== "all") params.set("semester", semester)
+      if (search) params.set("q", search)
+      const serialized = params.toString()
+      return serialized ? `${pathname}?${serialized}` : pathname
     },
     [pathname]
-  );
+  )
 
-  /** Soft-navigate: update URL params without a full page reload */
   const navigate = useCallback(
-    (s: string, techs: string[], sem: string, q: string) => {
-      router.push(hrefWith(s, techs, sem, q), { scroll: false });
+    (status: string, techs: string[], semester: string, search: string) => {
+      router.push(hrefWith(status, techs, semester, search), { scroll: false })
     },
-    [router, hrefWith]
-  );
+    [hrefWith, router]
+  )
 
-  // For dropdowns — soft-navigate on change via router.push
   function handleSelect(param: "status" | "semester", value: string) {
-    const next = { status: selectedStatus, semester: selectedSemester };
-    next[param] = value;
-    navigate(next.status, selectedTechs, next.semester, query);
+    if (param === "status") navigate(value, selectedTechs, selectedSemester, query)
+    else navigate(selectedStatus, selectedTechs, value, query)
   }
 
-  // Tech checkboxes — toggle individual techs in the URL param
-  function handleTechChange(next: string[]) {
-    navigate(selectedStatus, next, selectedSemester, query);
+  function handleSearchChange(event: ChangeEvent<HTMLInputElement>) {
+    navigate(selectedStatus, selectedTechs, selectedSemester, event.target.value)
   }
 
-  // Live search — update URL (and therefore results) on every keystroke
-  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
-    navigate(selectedStatus, selectedTechs, selectedSemester, e.target.value);
-  }
-
-  // Derived outside filtered so the UI (results count, Clear all) can use it too
   const hasFilters =
-    selectedStatus !== "all" || selectedTechs.length > 0 || selectedSemester !== "all" || !!query;
+    selectedStatus !== "all" || selectedTechs.length > 0 || selectedSemester !== "all" || Boolean(query)
 
   return (
     <>
-      {/* Search + Filters */}
-      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
-        {/* Search — controlled by URL param, updates on every keystroke */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-          <input
-            value={query}
-            onChange={handleSearchChange}
-            placeholder="Search projects…"
-            className="w-full rounded-md border bg-background py-2 pl-9 pr-4 text-sm shadow-sm outline-none ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 placeholder:text-muted-foreground"
-          />
+      <div className="border-b border-white/[0.08] px-5 py-7 sm:px-8 lg:px-12 lg:py-8 xl:px-16">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6e6961]" aria-hidden="true" />
+            <input
+              value={query}
+              onChange={handleSearchChange}
+              placeholder="Search projects, systems, technologies…"
+              className="h-11 w-full border border-white/[0.1] bg-[#10100e] py-2 pl-10 pr-4 text-sm text-[#e5dfd4] outline-none transition-colors placeholder:text-[#5f5a53] focus:border-[#daa000]/55"
+            />
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-3 xl:flex">
+            <SelectDropdown
+              value={selectedStatus}
+              options={[...allStatuses]}
+              placeholder="All statuses"
+              onChange={(value) => handleSelect("status", value)}
+            />
+            <TechCheckboxDropdown
+              allTechs={allTechs}
+              selectedTechs={selectedTechs}
+              onChange={(techs) => navigate(selectedStatus, techs, selectedSemester, query)}
+            />
+            <SelectDropdown
+              value={selectedSemester}
+              options={allSemesters}
+              placeholder="All semesters"
+              onChange={(value) => handleSelect("semester", value)}
+            />
+          </div>
         </div>
 
-        {/* Status */}
-        <SelectDropdown
-          value={selectedStatus}
-          options={[...allStatuses]}
-          placeholder="All statuses"
-          onChange={(v) => handleSelect("status", v)}
-        />
-
-        {/* Tech — checkbox dropdown for multi-select */}
-        <TechCheckboxDropdown
-          allTechs={allTechs}
-          selectedTechs={selectedTechs}
-          onChange={handleTechChange}
-        />
-
-        {/* Semester */}
-        <SelectDropdown
-          value={selectedSemester}
-          options={allSemesters}
-          placeholder="All semesters"
-          onChange={(v) => handleSelect("semester", v)}
-        />
-
-        {/* Clear */}
-        {hasFilters && (
-          <Link
-            href="/projects"
-            className="whitespace-nowrap text-sm text-muted-foreground underline-offset-4 hover:underline"
-          >
-            Clear all
-          </Link>
-        )}
+        <div className="mt-4 flex min-h-6 flex-wrap items-center justify-between gap-3 font-mono text-[0.57rem] uppercase tracking-[0.15em]">
+          <span className="text-[#69645d]">
+            {filtered.length} project{filtered.length === 1 ? "" : "s"}{hasFilters ? " matching filters" : " in archive"}
+          </span>
+          {hasFilters && (
+            <Link href="/projects" className="inline-flex items-center gap-2 text-[#9b958b] transition-colors hover:text-[#f2c34f]">
+              <X className="h-3 w-3" aria-hidden="true" />
+              Clear all
+            </Link>
+          )}
+        </div>
       </div>
 
-      {/* Results count */}
-      <p className="mb-4 text-sm text-muted-foreground">
-        {filtered.length} project{filtered.length !== 1 ? "s" : ""}
-        {hasFilters ? " match your filters" : ""}
-      </p>
+      {!filtered.length ? (
+        <div className="px-5 py-20 text-center sm:px-8 lg:px-12">
+          <p className="font-mono text-[0.58rem] uppercase tracking-[0.17em] text-[#666159]">No matching systems</p>
+          <h2 className="mt-4 text-3xl font-medium tracking-[-0.05em] text-[#ded8cd]">Nothing fits those filters.</h2>
+          <Link href="/projects" className="mt-6 inline-flex items-center gap-2 text-sm text-[#b28c25] transition-colors hover:text-[#f2c34f]">
+            Reset project archive
+            <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        </div>
+      ) : (
+        <div className="grid gap-px bg-white/[0.08] md:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((project) => {
+            const image = resolveProjectImage(project)
+            const { href, external } = resolveProjectHref(project)
 
-      {/* Grid */}
-      <section>
-        {!filtered.length && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>No projects match</CardTitle>
-              <CardDescription>
-                Try different filters or{" "}
-                <Link href="/projects" className="underline">clear all filters</Link>.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        )}
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((p) => {
-            const img = resolveProjectImage(p);
-            const { href, external } = resolveProjectHref(p);
-
-            const CardInner = (
-              <Card className="h-full overflow-hidden transition-all hover:shadow-md">
-                <img
-                  src={img || "/images/fallback.jpg"}
-                  alt={`${p.title} cover`}
-                  className="h-40 w-full object-cover"
-                  loading="lazy"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null; // prevents infinite loop
-                    e.currentTarget.src = "/projects/logo.png";
-                  }}
-                />
-                <CardHeader>
-                  <div className="mb-2 flex items-center justify-between">
-                    <Badge variant={p.status === "Active" ? "default" : p.status === "Completed" ? "secondary" : "outline"}>
-                      {p.status}
-                    </Badge>
-                    {p.semester && <span className="rounded-full border px-2 py-0.5 text-xs">{p.semester}</span>}
+            const inner = (
+              <article className="group flex h-full min-h-[470px] flex-col bg-[#11110f] transition-colors hover:bg-[#151512]">
+                <div className="relative h-[225px] overflow-hidden border-b border-white/[0.08] bg-black">
+                  <img
+                    src={image}
+                    alt={`${project.title} cover`}
+                    className="h-full w-full object-cover opacity-[0.7] grayscale-[18%] transition duration-700 ease-out group-hover:scale-[1.018] group-hover:opacity-[0.86] group-hover:grayscale-0"
+                    loading="lazy"
+                    onError={(event) => {
+                      event.currentTarget.onerror = null
+                      event.currentTarget.src = "/projects/logo.png"
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-transparent to-black/18" />
+                  <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-3 p-4">
+                    <span className={`border px-2.5 py-1 font-mono text-[0.53rem] uppercase tracking-[0.14em] backdrop-blur-sm ${statusClass(project.status)}`}>
+                      {project.status}
+                    </span>
+                    {project.semester && (
+                      <span className="bg-black/64 px-2.5 py-1 font-mono text-[0.52rem] uppercase tracking-[0.13em] text-[#989289] backdrop-blur-sm">
+                        {project.semester}
+                      </span>
+                    )}
                   </div>
-                  <CardTitle className="leading-tight">{p.title}</CardTitle>
-                  {p.description && (
-                    <CardDescription className="text-base">{p.description}</CardDescription>
+                  <ArrowUpRight className="absolute bottom-4 right-4 h-5 w-5 text-[#c4bfb5] transition-transform group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-[#f2c34f]" aria-hidden="true" />
+                </div>
+
+                <div className="flex flex-1 flex-col px-5 py-6 sm:px-6">
+                  <p className="font-mono text-[0.54rem] uppercase tracking-[0.16em] text-[#5e5a54]">Project / {project.slug}</p>
+                  <h2 className="mt-3 text-[1.7rem] font-medium leading-[1.02] tracking-[-0.05em] text-[#e9e4da]">{project.title}</h2>
+                  {project.description && (
+                    <p className="mt-4 line-clamp-3 text-sm leading-6 text-[#817c74]">{project.description}</p>
                   )}
-                </CardHeader>
-                {!!p.technologies.length && (
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {p.technologies.map((t) => (
-                        <Badge key={`${p.slug}-${t}`} variant="outline" className="text-xs">
-                          {t}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                )}
-              </Card>
-            );
+
+                  <div className="mt-auto pt-7">
+                    {!!project.technologies.length && (
+                      <div className="flex flex-wrap gap-x-3 gap-y-2 border-t border-white/[0.07] pt-4">
+                        {project.technologies.slice(0, 5).map((technology) => (
+                          <span key={`${project.slug}-${technology}`} className="font-mono text-[0.53rem] uppercase tracking-[0.13em] text-[#77726a]">
+                            {technology}
+                          </span>
+                        ))}
+                        {project.technologies.length > 5 && (
+                          <span className="font-mono text-[0.53rem] uppercase tracking-[0.13em] text-[#5c5852]">+{project.technologies.length - 5}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </article>
+            )
 
             return external ? (
-              <a key={p.slug} href={href} className="no-underline" target="_blank" rel="noopener noreferrer">
-                {CardInner}
+              <a key={project.slug} href={href} target="_blank" rel="noopener noreferrer" className="block h-full no-underline">
+                {inner}
               </a>
             ) : (
-              <Link key={p.slug} href={href} className="no-underline">
-                {CardInner}
+              <Link key={project.slug} href={href} className="block h-full no-underline">
+                {inner}
               </Link>
-            );
+            )
           })}
         </div>
-      </section>
+      )}
     </>
-  );
+  )
 }
