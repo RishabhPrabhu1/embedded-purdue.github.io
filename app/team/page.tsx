@@ -109,12 +109,34 @@ function MemberCard({ member, index }: { member: Member; index: number }) {
   )
 }
 
+function HeroPortrait({ member, className }: { member: Member; className?: string }) {
+  return (
+    <div className={`group relative min-h-0 overflow-hidden bg-[#090908] ${className ?? ""}`}>
+      {member.image && (
+        <Image
+          src={member.image}
+          alt={member.name}
+          fill
+          sizes="(max-width: 1024px) 50vw, 22vw"
+          className="object-cover object-top opacity-[0.78] grayscale-[22%] transition duration-700 ease-out group-hover:scale-[1.02] group-hover:opacity-[0.94] group-hover:grayscale-0"
+          placeholder="blur"
+        />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/86 via-transparent to-black/20" />
+      <div className="absolute inset-x-0 bottom-0 px-3 py-3 sm:px-4">
+        <p className="font-mono text-[0.46rem] uppercase tracking-[0.14em] text-[#8d7328]">{member.role}</p>
+        <p className="mt-1 text-sm font-medium tracking-[-0.03em] text-[#e4ded4]">{member.name}</p>
+      </div>
+    </div>
+  )
+}
+
 export default function TeamPage() {
   const telemetry = [
     { label: "Executives", value: executives.length, detail: "current board", accent: true },
     { label: "Cycle", value: "2026", detail: "leadership year" },
-    { label: "Chairs", value: "TBD", detail: "appointments pending" },
-    { label: "Project leads", value: "TBD", detail: "next cycle" },
+    { label: "Operating", value: "Student-led", detail: "club structure" },
+    { label: "Next", value: "Chairs + PMs", detail: "appointments pending" },
   ] as const
 
   return (
@@ -125,28 +147,41 @@ export default function TeamPage() {
         <section className="border-b border-white/[0.08] bg-black">
           <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
             <div className="grid lg:grid-cols-12">
-              <div className="border-b border-white/[0.08] px-5 py-9 sm:px-8 lg:col-span-8 lg:min-h-[370px] lg:border-b-0 lg:border-r lg:px-12 lg:py-11 xl:px-16">
+              <div className="border-b border-white/[0.08] px-5 py-9 sm:px-8 lg:col-span-7 lg:min-h-[430px] lg:border-b-0 lg:border-r lg:px-12 lg:py-11 xl:px-16">
                 <div className="flex h-full flex-col justify-between gap-10">
-                  <div className="flex items-center gap-3 font-mono text-[0.62rem] uppercase tracking-[0.18em] text-[#aaa398]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#f4c64d] shadow-[0_0_8px_rgba(244,198,77,0.38)]" />
-                    Team directory
+                  <div className="flex items-center justify-between gap-5">
+                    <div className="flex items-center gap-3 font-mono text-[0.62rem] uppercase tracking-[0.18em] text-[#aaa398]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#f4c64d] shadow-[0_0_8px_rgba(244,198,77,0.38)]" />
+                      Team directory
+                    </div>
+                    <span className="hidden font-mono text-[0.52rem] uppercase tracking-[0.16em] text-[#4f4b45] sm:block">
+                      Leadership / operations / projects
+                    </span>
                   </div>
 
                   <div>
-                    <p className="font-mono text-[0.6rem] uppercase tracking-[0.18em] text-[#625e57]">Leadership · Operations · Projects</p>
-                    <h1 className="mt-4 text-[clamp(3.7rem,7.2vw,7.5rem)] font-medium leading-[0.82] tracking-[-0.07em]">
+                    <p className="font-mono text-[0.6rem] uppercase tracking-[0.18em] text-[#625e57]">People / technical ownership</p>
+                    <h1 className="mt-4 text-[clamp(3.7rem,7vw,7.3rem)] font-medium leading-[0.82] tracking-[-0.07em]">
                       The people
                       <span className="block text-[#d8aa27]">behind the systems.</span>
                     </h1>
                     <p className="mt-6 max-w-2xl text-base leading-7 text-[#8d887f]">
-                      The students responsible for keeping ES@P organized, technically ambitious, and moving from ideas to working hardware.
+                      Students responsible for keeping ES@P organized, technically ambitious, and moving from ideas to working hardware.
                     </p>
                   </div>
                 </div>
               </div>
 
-              <SiteTelemetry items={telemetry} />
+              <div className="grid min-h-[400px] grid-cols-2 grid-rows-3 gap-px bg-white/[0.08] lg:col-span-5 lg:min-h-[430px]">
+                <HeroPortrait member={executives[0]} className="row-span-2" />
+                <HeroPortrait member={executives[1]} />
+                <HeroPortrait member={executives[2]} />
+                <HeroPortrait member={executives[3]} />
+                <HeroPortrait member={executives[4]} />
+              </div>
             </div>
+
+            <SiteTelemetry items={telemetry} variant="rail" />
           </div>
         </section>
 
