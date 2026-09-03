@@ -16,11 +16,13 @@ export function SiteTelemetry({ items }: { items: readonly TelemetryItem[] }) {
           } ${index < 2 ? "border-b border-white/[0.08]" : ""}`}
         >
           <span className="font-mono text-[0.53rem] uppercase tracking-[0.16em] text-[#625e57]">{item.label}</span>
-          <div className="mt-5">
+          <div className="mt-5 min-w-0">
             <span
-              className={`block text-[clamp(2.35rem,4vw,4rem)] font-medium leading-none tracking-[-0.065em] ${
-                item.accent ? "text-[#d8aa27]" : "text-[#e9e4da]"
-              }`}
+              className={`block break-words font-medium leading-none ${
+                String(item.value).length > 7
+                  ? "text-[clamp(1.45rem,2.6vw,2.5rem)] tracking-[-0.045em]"
+                  : "text-[clamp(2.35rem,4vw,4rem)] tracking-[-0.065em]"
+              } ${item.accent ? "text-[#d8aa27]" : "text-[#e9e4da]"}`}
             >
               {item.value}
             </span>
