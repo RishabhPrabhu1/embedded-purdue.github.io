@@ -88,8 +88,8 @@ export default function WorkshopsClient({ workshops }: { workshops: Workshop[] }
   return (
     <>
       <div className="border-b border-white/[0.08] px-5 py-6 sm:px-8 lg:px-12 lg:py-7 xl:px-16">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-wrap gap-x-6 gap-y-3">
             {(
               [
                 ["all", "All", tagFiltered.length],
@@ -103,10 +103,10 @@ export default function WorkshopsClient({ workshops }: { workshops: Workshop[] }
                   key={value}
                   href={filterHref(value, tag)}
                   aria-current={active ? "page" : undefined}
-                  className={`inline-flex h-9 items-center border px-3.5 font-mono text-[0.57rem] uppercase tracking-[0.14em] transition-colors ${
+                  className={`relative inline-flex h-9 items-center border-b font-mono text-[0.57rem] uppercase tracking-[0.14em] transition-colors ${
                     active
-                      ? "border-[#daa000]/55 bg-[#daa000]/[0.08] text-[#e3b93e]"
-                      : "border-white/[0.09] text-[#7f7a72] hover:border-white/[0.16] hover:text-[#d8d2c7]"
+                      ? "border-[#daa000] text-[#e3b93e]"
+                      : "border-transparent text-[#7f7a72] hover:border-white/[0.16] hover:text-[#d8d2c7]"
                   }`}
                 >
                   {label}
