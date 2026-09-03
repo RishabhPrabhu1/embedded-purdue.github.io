@@ -200,37 +200,38 @@ export default function AboutPage() {
 
         <section className="border-b border-white/[0.08] bg-black">
           <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
-            <div className="grid lg:grid-cols-12">
-              <div className="border-b border-white/[0.08] px-5 py-9 sm:px-8 lg:col-span-4 lg:border-b-0 lg:border-r lg:px-12 lg:py-11 xl:px-16">
-                <div className="lg:sticky lg:top-[108px]">
-                  <SignalLabel>02 / What we do</SignalLabel>
-                  <h2 className="mt-4 text-[clamp(2.6rem,4.2vw,4.5rem)] font-medium leading-[0.9] tracking-[-0.06em]">
-                    Engineering is a team sport.
-                  </h2>
-                  <p className="mt-5 max-w-sm text-sm leading-6 text-[#817c73]">
-                    Learn a system, build a system, explain a system, then help someone else do the same.
-                  </p>
-                </div>
+            <div className="flex flex-col gap-5 border-b border-white/[0.08] px-5 py-8 sm:px-8 lg:flex-row lg:items-end lg:justify-between lg:px-12 lg:py-10 xl:px-16">
+              <div>
+                <SignalLabel>02 / What we do</SignalLabel>
+                <h2 className="mt-3 text-[clamp(2.7rem,4.7vw,5rem)] font-medium leading-[0.9] tracking-[-0.06em]">
+                  Engineering is a team sport.
+                </h2>
               </div>
+              <p className="max-w-lg text-sm leading-6 text-[#817c73]">
+                Learn a system, build a system, explain a system, then help someone else do the same. The cycle repeats across every ES@P program.
+              </p>
+            </div>
 
-              <div className="lg:col-span-8">
-                {activities.map((item) => {
-                  const Icon = item.icon
-                  return (
-                    <article
-                      key={item.index}
-                      className="group grid min-h-[140px] border-b border-white/[0.08] px-5 py-6 transition-colors last:border-b-0 hover:bg-white/[0.018] sm:grid-cols-[82px_1fr_auto] sm:items-center sm:px-8 lg:px-10"
-                    >
-                      <span className="font-mono text-[0.55rem] uppercase tracking-[0.17em] text-[#5f5b55]">{item.index}</span>
-                      <div className="mt-4 sm:mt-0">
-                        <h3 className="text-2xl font-medium tracking-[-0.045em] text-[#e9e4da]">{item.title}</h3>
-                        <p className="mt-2 max-w-2xl text-sm leading-6 text-[#7f7a72]">{item.detail}</p>
-                      </div>
-                      <Icon className="mt-5 h-5 w-5 text-[#766021] transition-colors group-hover:text-[#daa000] sm:mt-0" aria-hidden="true" />
-                    </article>
-                  )
-                })}
-              </div>
+            <div className="grid gap-px bg-white/[0.08] sm:grid-cols-2 xl:grid-cols-5">
+              {activities.map((item) => {
+                const Icon = item.icon
+                return (
+                  <article
+                    key={item.index}
+                    data-site-lift="card"
+                    className="group flex min-h-[215px] flex-col bg-black px-5 py-6 transition-colors hover:bg-[#0c0c0b] sm:px-7"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[0.54rem] uppercase tracking-[0.16em] text-[#5f5b55]">{item.index}</span>
+                      <Icon className="h-4.5 w-4.5 text-[#766021] transition-colors group-hover:text-[#daa000]" aria-hidden="true" />
+                    </div>
+                    <div className="mt-auto pt-10">
+                      <h3 className="text-xl font-medium tracking-[-0.04em] text-[#e9e4da]">{item.title}</h3>
+                      <p className="mt-3 text-sm leading-6 text-[#777169]">{item.detail}</p>
+                    </div>
+                  </article>
+                )
+              })}
             </div>
           </div>
         </section>
@@ -238,16 +239,31 @@ export default function AboutPage() {
         <section className="border-b border-white/[0.08] bg-[#0c0c0b]">
           <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
             <div className="grid lg:grid-cols-12">
-              <div className="border-b border-white/[0.08] px-5 py-9 sm:px-8 lg:col-span-5 lg:border-b-0 lg:border-r lg:px-12 lg:py-11 xl:px-16">
-                <SignalLabel>03 / Why join</SignalLabel>
-                <h2 className="mt-4 max-w-xl text-[clamp(2.8rem,4.8vw,5.2rem)] font-medium leading-[0.88] tracking-[-0.065em]">
-                  Get better by making things real.
-                </h2>
+              <div className="relative min-h-[330px] overflow-hidden border-b border-white/[0.08] bg-black lg:col-span-5 lg:min-h-[430px] lg:border-b-0 lg:border-r">
+                <Image
+                  src="/bb8.jpg"
+                  alt="ES@P project hardware"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 42vw"
+                  className="object-cover opacity-[0.76] grayscale-[14%]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-black/10 to-black/24" />
+                <div className="absolute inset-x-0 bottom-0 px-5 py-6 sm:px-8 lg:px-10">
+                  <p className="font-mono text-[0.54rem] uppercase tracking-[0.16em] text-[#8d7328]">03 / Why join</p>
+                  <p className="mt-2 max-w-sm text-xl font-medium leading-7 tracking-[-0.035em] text-[#e5dfd5]">
+                    The work becomes the proof.
+                  </p>
+                </div>
               </div>
 
               <div className="lg:col-span-7">
+                <div className="border-b border-white/[0.08] px-5 py-8 sm:px-8 lg:px-10">
+                  <h2 className="max-w-3xl text-[clamp(2.8rem,4.8vw,5.2rem)] font-medium leading-[0.88] tracking-[-0.065em]">
+                    Get better by making things real.
+                  </h2>
+                </div>
                 {reasons.map((reason, index) => (
-                  <div key={reason} className="grid min-h-[100px] grid-cols-[50px_1fr] border-b border-white/[0.08] px-5 py-6 last:border-b-0 sm:grid-cols-[76px_1fr] sm:px-8 lg:px-10">
+                  <div key={reason} className="grid min-h-[88px] grid-cols-[50px_1fr] border-b border-white/[0.08] px-5 py-5 last:border-b-0 sm:grid-cols-[76px_1fr] sm:px-8 lg:px-10">
                     <span className="font-mono text-[0.55rem] tracking-[0.17em] text-[#5f5b55]">0{index + 1}</span>
                     <p className="max-w-2xl text-lg leading-7 tracking-[-0.025em] text-[#c4beb4]">{reason}</p>
                   </div>
