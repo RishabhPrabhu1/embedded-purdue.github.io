@@ -38,6 +38,20 @@ body:has([data-site-navigation]) main button {
   transform-origin: center;
 }
 
+body:has([data-site-navigation]) main a[href*="discord.gg"] {
+  border: 1px solid rgba(124, 134, 255, 0.30);
+  background: rgba(88, 101, 242, 0.11);
+  color: #c7ccff;
+  box-shadow: none;
+}
+
+body:has([data-site-navigation]) main a[href*="discord.gg"]:hover {
+  border-color: rgba(139, 150, 255, 0.56);
+  background: rgba(88, 101, 242, 0.22);
+  color: #ffffff;
+  box-shadow: 0 8px 22px rgba(88, 101, 242, 0.11);
+}
+
 body:has([data-site-navigation]) [data-site-lift="card"] {
   position: relative;
   transform-origin: center;
