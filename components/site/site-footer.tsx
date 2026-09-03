@@ -1,6 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowUpRight } from "lucide-react"
+import { ArrowUp, ArrowUpRight } from "lucide-react"
 
 const explore = [
   ["About", "/about"],
@@ -70,6 +70,10 @@ export function SiteFooter() {
             <p className="mt-4 max-w-md text-sm leading-6 text-[#817d75]">
               Hardware, firmware, and systems built by students.
             </p>
+            <div className="mt-5 flex items-center gap-3 font-mono text-[0.54rem] uppercase tracking-[0.15em] text-[#5f5a53]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#8f7325] shadow-[0_0_7px_rgba(218,160,0,.22)]" />
+              Purdue University · West Lafayette
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-x-12 gap-y-10 sm:grid-cols-3 sm:gap-x-16">
@@ -79,9 +83,12 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col gap-2 border-t border-white/[0.07] pt-5 font-mono text-[0.56rem] uppercase tracking-[0.15em] text-[#55524d] sm:flex-row sm:items-center sm:justify-between">
-          <span>Embedded Systems @ Purdue</span>
-          <span>West Lafayette, Indiana · {new Date().getFullYear()}</span>
+        <div className="mt-10 flex flex-col gap-3 border-t border-white/[0.07] pt-5 font-mono text-[0.56rem] uppercase tracking-[0.15em] text-[#55524d] sm:flex-row sm:items-center sm:justify-between">
+          <span>Embedded Systems @ Purdue · {new Date().getFullYear()}</span>
+          <a href="#site-top" className="group inline-flex w-fit items-center gap-2 transition-colors hover:text-[#c6a13e]">
+            Back to top
+            <ArrowUp className="h-3 w-3 transition-transform group-hover:-translate-y-0.5" aria-hidden="true" />
+          </a>
         </div>
       </div>
     </footer>
