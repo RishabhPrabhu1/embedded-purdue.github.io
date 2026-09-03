@@ -171,16 +171,29 @@ export default function WorkshopsClient({ workshops }: { workshops: Workshop[] }
           {list.map((workshop, index) => {
             const cover = workshop.cover ?? workshop.image
             const upcomingSession = isUpcoming(workshop.date)
+            const featured = index === 0 && list.length > 1
 
             return (
               <Link
                 key={workshop.slug}
                 href={`/workshops/${workshop.slug}`}
                 data-site-lift="card"
-                className="group block min-h-[360px] bg-[#0c0c0b] no-underline transition-colors hover:bg-[#11110f]"
+                className={`group block bg-[#0c0c0b] no-underline transition-colors hover:bg-[#11110f] ${
+                  featured ? "min-h-[390px] md:col-span-2" : "min-h-[360px]"
+                }`}
               >
-                <article className="flex h-full flex-col">
-                  <div className="relative h-[180px] overflow-hidden border-b border-white/[0.08] bg-black">
+                <article
+                  className={`h-full ${
+                    featured ? "flex flex-col lg:grid lg:grid-cols-[1.08fr_.92fr]" : "flex flex-col"
+                  }`}
+                >
+                  <div
+                    className={`relative overflow-hidden bg-black ${
+                      featured
+                        ? "min-h-[220px] border-b border-white/[0.08] lg:min-h-full lg:border-b-0 lg:border-r"
+                        : "h-[180px] border-b border-white/[0.08]"
+                    }`}
+                  >
                     {cover ? (
                       <img
                         src={cover}
@@ -212,12 +225,21 @@ export default function WorkshopsClient({ workshops }: { workshops: Workshop[] }
                     />
                   </div>
 
-                  <div className="flex flex-1 flex-col px-5 py-5 sm:px-7">
-                    <h2 className="text-[clamp(1.6rem,2.6vw,2.2rem)] font-medium leading-[0.98] tracking-[-0.05em] text-[#ebe6dc]">
+                  <div className={`flex flex-1 flex-col px-5 py-5 sm:px-7 ${featured ? "lg:px-9 lg:py-8" : ""}`}>
+                    <p className="font-mono text-[0.52rem] uppercase tracking-[0.15em] text-[#625e58]">
+                      {featured ? "Featured session" : "Workshop session"}
+                    </p>
+                    <h2
+                      className={`mt-2 font-medium leading-[0.98] tracking-[-0.05em] text-[#ebe6dc] ${
+                        featured ? "text-[clamp(2rem,3.4vw,3.2rem)]" : "text-[clamp(1.6rem,2.6vw,2.2rem)]"
+                      }`}
+                    >
                       {workshop.title}
                     </h2>
                     {workshop.summary && (
-                      <p className="mt-3 max-w-xl text-sm leading-6 text-[#817c74]">{workshop.summary}</p>
+                      <p className={`mt-3 max-w-xl text-sm leading-6 text-[#817c74] ${featured ? "line-clamp-5" : "line-clamp-3"}`}>
+                        {workshop.summary}
+                      </p>
                     )}
 
                     <div className="mt-auto pt-5">
@@ -238,7 +260,7 @@ export default function WorkshopsClient({ workshops }: { workshops: Workshop[] }
 
                       {!!workshop.tags?.length && (
                         <div className="mt-3 flex flex-wrap gap-x-3 gap-y-2">
-                          {workshop.tags.slice(0, 5).map((topic) => (
+                          {workshop.tags.slice(0, featured ? 7 : 5).map((topic) => (
                             <span key={topic} className="font-mono text-[0.51rem] uppercase tracking-[0.13em] text-[#625e58]">
                               {topic}
                             </span>
