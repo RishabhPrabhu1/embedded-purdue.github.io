@@ -60,8 +60,11 @@ const sections: Section[] = [
 const WIDE_RAIL = "mx-auto w-full lg:w-[calc(100%_-_48px)] 2xl:w-[calc(100%_-_80px)]"
 
 function MemberCard({ member, index }: { member: Member; index: number }) {
+  const socialLinkClass =
+    "grid h-8 w-8 place-items-center border border-white/[0.07] text-[#777169] transition-colors hover:border-[#daa000]/30 hover:bg-[#daa000]/[0.05] hover:text-[#f2c34f]"
+
   return (
-    <article className="group flex h-full flex-col bg-[#11110f] transition-colors hover:bg-[#151512]">
+    <article data-site-lift="card" className="group flex h-full flex-col bg-[#11110f] transition-colors hover:bg-[#151512]">
       <div className="relative aspect-[4/5] overflow-hidden border-b border-white/[0.08] bg-[#090908]">
         {member.image ? (
           <Image
@@ -85,10 +88,10 @@ function MemberCard({ member, index }: { member: Member; index: number }) {
         <p className="font-mono text-[0.54rem] uppercase tracking-[0.15em] text-[#8d7328]">{member.role}</p>
         <h3 className="mt-2 text-[1.65rem] font-medium leading-none tracking-[-0.05em] text-[#ebe6dc]">{member.name}</h3>
 
-        <div className="mt-auto flex items-center gap-3 pt-7 text-[#777169]">
+        <div className="mt-auto flex items-center gap-2 pt-7">
           {member.email && (
-            <a href={member.email} aria-label={`Email ${member.name}`} className="transition-colors hover:text-[#f2c34f]">
-              <Mail className="h-4 w-4" aria-hidden="true" />
+            <a href={member.email} aria-label={`Email ${member.name}`} className={socialLinkClass}>
+              <Mail className="h-3.5 w-3.5" aria-hidden="true" />
             </a>
           )}
           {member.linkedin && (
@@ -97,9 +100,9 @@ function MemberCard({ member, index }: { member: Member; index: number }) {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`${member.name} on LinkedIn`}
-              className="transition-colors hover:text-[#f2c34f]"
+              className={socialLinkClass}
             >
-              <Linkedin className="h-4 w-4" aria-hidden="true" />
+              <Linkedin className="h-3.5 w-3.5" aria-hidden="true" />
             </a>
           )}
           {member.github && (
@@ -108,9 +111,9 @@ function MemberCard({ member, index }: { member: Member; index: number }) {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`${member.name} on GitHub`}
-              className="transition-colors hover:text-[#f2c34f]"
+              className={socialLinkClass}
             >
-              <Github className="h-4 w-4" aria-hidden="true" />
+              <Github className="h-3.5 w-3.5" aria-hidden="true" />
             </a>
           )}
         </div>
