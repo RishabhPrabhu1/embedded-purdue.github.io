@@ -6,25 +6,15 @@ const REVEAL_SELECTOR = ":scope > section"
 const REACTIVE_SELECTOR = '[data-landing-lift="card"]'
 
 const enhancementStyles = `
-@keyframes landing-section-signal-sweep {
-  0% { opacity: 0; transform: translate3d(-125%, 0, 0); }
-  18% { opacity: .78; }
-  72% { opacity: .38; }
-  100% { opacity: 0; transform: translate3d(290%, 0, 0); }
-}
-
 #landing-content > section[data-landing-reveal="section"] {
+  --landing-reveal-progress: 0;
+  --landing-reveal-opacity: 0;
+  --landing-reveal-offset: 16px;
+  --landing-reveal-line-opacity: 0;
   position: relative;
-  opacity: 0;
-  transform: translate3d(0, 12px, 0);
-  transition:
-    opacity 540ms cubic-bezier(.2, .65, .25, 1) var(--landing-reveal-delay, 0ms),
-    transform 620ms cubic-bezier(.22, 1, .36, 1) var(--landing-reveal-delay, 0ms);
-}
-
-#landing-content > section[data-landing-reveal="section"][data-landing-visible="true"] {
-  opacity: 1;
-  transform: translate3d(0, 0, 0);
+  opacity: var(--landing-reveal-opacity);
+  transform: translate3d(0, var(--landing-reveal-offset), 0);
+  will-change: opacity, transform;
 }
 
 #landing-content > section[data-landing-reveal="section"]::before {
@@ -36,13 +26,11 @@ const enhancementStyles = `
   width: min(460px, 42vw);
   height: 1px;
   pointer-events: none;
-  opacity: 0;
+  opacity: var(--landing-reveal-line-opacity);
+  transform: scaleX(var(--landing-reveal-progress));
+  transform-origin: left center;
   background: linear-gradient(90deg, transparent, rgba(218,160,0,.18), rgba(244,198,77,.92), rgba(218,160,0,.16), transparent);
   box-shadow: 0 0 12px rgba(218,160,0,.14);
-}
-
-#landing-content > section[data-landing-reveal="section"][data-landing-visible="true"]::before {
-  animation: landing-section-signal-sweep 800ms cubic-bezier(.22,1,.36,1) calc(var(--landing-reveal-delay, 0ms) + 40ms) both;
 }
 
 [data-landing-shell] [data-landing-reactive="true"] {
@@ -145,9 +133,9 @@ const enhancementStyles = `
 
 @media (prefers-reduced-motion: reduce) {
   #landing-content > section[data-landing-reveal="section"] {
-    opacity: 1;
+    opacity: 1 !important;
     transform: none !important;
-    transition-duration: 0ms !important;
+    will-change: auto;
   }
 
   #landing-content > section[data-landing-reveal="section"]::before,
@@ -163,6 +151,10 @@ const enhancementStyles = `
   }
 }
 `
+
+function smoothstep(value: number) {
+  return value * value * (3 - 2 * value)
+}
 
 export function LandingInteractionGate() {
   useEffect(() => {
@@ -192,68 +184,53 @@ export function LandingInteractionGate() {
       ? Array.from(content.querySelectorAll<HTMLElement>(REVEAL_SELECTOR))
       : []
 
-    revealElements.forEach((element, index) => {
+    revealElements.forEach((element) => {
       element.dataset.landingReveal = "section"
-      element.style.setProperty("--landing-reveal-delay", `${Math.min(index, 2) * 10}ms`)
     })
 
-    let revealObserver: IntersectionObserver | null = null
-    let removeScrollDirectionListener: (() => void) | null = null
+    let revealFrame = 0
+    let removeRevealListeners: (() => void) | null = null
 
-    if (reducedMotion || !("IntersectionObserver" in window)) {
+    const setRevealProgress = (element: HTMLElement, progress: number) => {
+      const eased = smoothstep(progress)
+      const offset = (1 - eased) * 16
+      const lineOpacity = Math.max(0, 1 - Math.abs(eased - 0.52) / 0.52) * 0.62
+
+      element.style.setProperty("--landing-reveal-progress", eased.toFixed(4))
+      element.style.setProperty("--landing-reveal-opacity", eased.toFixed(4))
+      element.style.setProperty("--landing-reveal-offset", `${offset.toFixed(2)}px`)
+      element.style.setProperty("--landing-reveal-line-opacity", lineOpacity.toFixed(4))
+    }
+
+    const updateRevealProgress = () => {
+      revealFrame = 0
+      const viewportHeight = window.innerHeight
+      const fadeStart = viewportHeight * 0.96
+      const fadeEnd = viewportHeight * 0.72
+      const fadeDistance = Math.max(1, fadeStart - fadeEnd)
+
       revealElements.forEach((element) => {
-        element.dataset.landingVisible = "true"
+        const top = element.getBoundingClientRect().top
+        const rawProgress = (fadeStart - top) / fadeDistance
+        const progress = Math.max(0, Math.min(1, rawProgress))
+        setRevealProgress(element, progress)
       })
+    }
+
+    const scheduleRevealUpdate = () => {
+      if (!revealFrame) revealFrame = requestAnimationFrame(updateRevealProgress)
+    }
+
+    if (reducedMotion) {
+      revealElements.forEach((element) => setRevealProgress(element, 1))
     } else {
-      let lastScrollY = window.scrollY
-      let scrollDirection: "up" | "down" = "down"
-
-      const onScroll = () => {
-        const nextScrollY = window.scrollY
-        const delta = nextScrollY - lastScrollY
-
-        if (Math.abs(delta) > 2) {
-          scrollDirection = delta < 0 ? "up" : "down"
-          lastScrollY = nextScrollY
-        }
+      updateRevealProgress()
+      window.addEventListener("scroll", scheduleRevealUpdate, { passive: true })
+      window.addEventListener("resize", scheduleRevealUpdate, { passive: true })
+      removeRevealListeners = () => {
+        window.removeEventListener("scroll", scheduleRevealUpdate)
+        window.removeEventListener("resize", scheduleRevealUpdate)
       }
-
-      window.addEventListener("scroll", onScroll, { passive: true })
-      removeScrollDirectionListener = () => window.removeEventListener("scroll", onScroll)
-
-      revealObserver = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            const element = entry.target as HTMLElement
-
-            if (entry.isIntersecting) {
-              const retreatingBelowViewport =
-                scrollDirection === "up" &&
-                entry.boundingClientRect.top > 0 &&
-                entry.intersectionRatio < 0.16 &&
-                element.dataset.landingVisible === "true"
-
-              if (retreatingBelowViewport) {
-                delete element.dataset.landingVisible
-                return
-              }
-
-              element.dataset.landingVisible = "true"
-              return
-            }
-
-            if (entry.boundingClientRect.top >= window.innerHeight) {
-              delete element.dataset.landingVisible
-            }
-          })
-        },
-        {
-          threshold: [0.01, 0.16],
-          rootMargin: "0px 0px -12% 0px",
-        }
-      )
-
-      revealElements.forEach((element) => revealObserver?.observe(element))
     }
 
     const reactiveElements = Array.from(
@@ -318,13 +295,15 @@ export function LandingInteractionGate() {
 
     return () => {
       shellObserver.disconnect()
-      revealObserver?.disconnect()
-      removeScrollDirectionListener?.()
+      if (revealFrame) cancelAnimationFrame(revealFrame)
+      removeRevealListeners?.()
       pointerCleanups.forEach((cleanup) => cleanup())
       revealElements.forEach((element) => {
         delete element.dataset.landingReveal
-        delete element.dataset.landingVisible
-        element.style.removeProperty("--landing-reveal-delay")
+        element.style.removeProperty("--landing-reveal-progress")
+        element.style.removeProperty("--landing-reveal-opacity")
+        element.style.removeProperty("--landing-reveal-offset")
+        element.style.removeProperty("--landing-reveal-line-opacity")
       })
     }
   }, [])
