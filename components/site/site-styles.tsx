@@ -60,6 +60,82 @@ body:has([data-site-navigation]) [data-site-lift="card"] {
   transition-timing-function: cubic-bezier(.22, 1, .36, 1);
 }
 
+body:has([data-site-navigation]) [data-site-markdown] .prose {
+  --tw-prose-body: #9a958c;
+  --tw-prose-headings: #ece7dc;
+  --tw-prose-lead: #9a958c;
+  --tw-prose-links: #d8aa27;
+  --tw-prose-bold: #e8e2d8;
+  --tw-prose-counters: #7d776f;
+  --tw-prose-bullets: #8f7325;
+  --tw-prose-hr: rgba(255, 255, 255, 0.10);
+  --tw-prose-quotes: #b7b0a6;
+  --tw-prose-quote-borders: #daa000;
+  --tw-prose-captions: #777169;
+  --tw-prose-code: #e0dacf;
+  --tw-prose-pre-code: #bdb7ad;
+  --tw-prose-pre-bg: #090908;
+  --tw-prose-th-borders: rgba(255, 255, 255, 0.12);
+  --tw-prose-td-borders: rgba(255, 255, 255, 0.08);
+}
+
+body:has([data-site-navigation]) [data-site-markdown] h1,
+body:has([data-site-navigation]) [data-site-markdown] h2,
+body:has([data-site-navigation]) [data-site-markdown] h3,
+body:has([data-site-navigation]) [data-site-markdown] h4 {
+  color: #ece7dc !important;
+  border-color: rgba(255, 255, 255, 0.09) !important;
+  background: none !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+body:has([data-site-navigation]) [data-site-markdown] p,
+body:has([data-site-navigation]) [data-site-markdown] li,
+body:has([data-site-navigation]) [data-site-markdown] td {
+  color: #9a958c;
+}
+
+body:has([data-site-navigation]) [data-site-markdown] strong {
+  color: #e6e0d5;
+}
+
+body:has([data-site-navigation]) [data-site-markdown] a {
+  color: #d8aa27 !important;
+  text-decoration-color: rgba(216, 170, 39, 0.42) !important;
+}
+
+body:has([data-site-navigation]) [data-site-markdown] a:hover {
+  color: #f2c34f !important;
+  text-decoration-color: rgba(242, 195, 79, 0.75) !important;
+}
+
+body:has([data-site-navigation]) [data-site-markdown] img,
+body:has([data-site-navigation]) [data-site-markdown] iframe,
+body:has([data-site-navigation]) [data-site-markdown] pre,
+body:has([data-site-navigation]) [data-site-markdown] table {
+  border-radius: 0 !important;
+  border-color: rgba(255, 255, 255, 0.10) !important;
+}
+
+body:has([data-site-navigation]) [data-site-markdown] blockquote {
+  border-radius: 0 !important;
+  border-left-color: #daa000 !important;
+  background: rgba(218, 160, 0, 0.045) !important;
+  color: #aaa49a !important;
+  box-shadow: none !important;
+}
+
+body:has([data-site-navigation]) [data-site-markdown] code {
+  border-color: rgba(255, 255, 255, 0.10) !important;
+  background: #11110f !important;
+  color: #d7d1c6 !important;
+}
+
+body:has([data-site-navigation]) [data-site-markdown] pre {
+  background: #090908 !important;
+  box-shadow: none !important;
+}
+
 body:has([data-site-navigation]) main > section:first-child {
   animation: site-page-enter 480ms cubic-bezier(.22, 1, .36, 1) both;
 }
