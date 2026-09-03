@@ -105,8 +105,8 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<R
         <section className="border-b border-white/[0.08] bg-black">
           <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
             <div className={`grid ${cover ? "lg:grid-cols-12" : ""}`}>
-              <div className={`${cover ? "lg:col-span-7 lg:border-r" : ""} border-white/[0.08] px-5 py-9 sm:px-8 lg:min-h-[520px] lg:px-12 lg:py-12 xl:px-16`}>
-                <div className="flex h-full flex-col justify-between gap-14">
+              <div className={`${cover ? "lg:col-span-7 lg:border-r" : ""} border-white/[0.08] px-5 py-8 sm:px-8 lg:min-h-[440px] lg:px-12 lg:py-10 xl:px-16`}>
+                <div className="flex h-full flex-col justify-between gap-10">
                   <Link
                     href="/workshops"
                     className="inline-flex w-fit items-center gap-2 font-mono text-[0.58rem] uppercase tracking-[0.16em] text-[#888279] transition-colors hover:text-[#f2c34f]"
@@ -117,15 +117,15 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<R
 
                   <div>
                     <p className="font-mono text-[0.6rem] uppercase tracking-[0.18em] text-[#625e57]">Workshop / {slug}</p>
-                    <h1 className="mt-5 max-w-5xl text-[clamp(3.6rem,7vw,7rem)] font-medium leading-[0.84] tracking-[-0.07em] text-[#f2eee5]">
+                    <h1 className="mt-4 max-w-5xl text-[clamp(3.4rem,6.5vw,6.5rem)] font-medium leading-[0.84] tracking-[-0.07em] text-[#f2eee5]">
                       {meta.title}
                     </h1>
                     {meta.summary && (
-                      <p className="mt-7 max-w-3xl text-[clamp(1rem,1.35vw,1.2rem)] leading-8 text-[#918b82]">{meta.summary}</p>
+                      <p className="mt-5 max-w-3xl text-[clamp(1rem,1.3vw,1.18rem)] leading-8 text-[#918b82]">{meta.summary}</p>
                     )}
                   </div>
 
-                  <div className="flex flex-wrap gap-x-6 gap-y-3 border-t border-white/[0.08] pt-5 font-mono text-[0.55rem] uppercase tracking-[0.14em] text-[#7d776f]">
+                  <div className="flex flex-wrap gap-x-6 gap-y-3 border-t border-white/[0.08] pt-4 font-mono text-[0.54rem] uppercase tracking-[0.14em] text-[#7d776f]">
                     <span className="inline-flex items-center gap-2">
                       <CalendarDays className="h-3.5 w-3.5 text-[#8d7328]" aria-hidden="true" />
                       {formatDate(meta.date)}
@@ -147,11 +147,11 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<R
               </div>
 
               {cover && (
-                <div className="relative min-h-[360px] overflow-hidden lg:col-span-5 lg:min-h-[520px]">
-                  <img src={cover} alt={`${meta.title} cover`} className="h-full w-full object-cover opacity-[0.78] grayscale-[12%]" loading="eager" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-transparent to-black/18" />
-                  <div className="absolute bottom-0 left-0 right-0 border-t border-white/[0.1] bg-black/70 px-5 py-4 backdrop-blur-sm sm:px-7">
-                    <p className="font-mono text-[0.54rem] uppercase tracking-[0.15em] text-[#777169]">Session material</p>
+                <div className="relative min-h-[320px] overflow-hidden lg:col-span-5 lg:min-h-[440px]">
+                  <img src={cover} alt={`${meta.title} cover`} className="h-full w-full object-cover opacity-[0.8] grayscale-[10%]" loading="eager" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/74 via-transparent to-black/16" />
+                  <div className="absolute bottom-0 left-0 right-0 border-t border-white/[0.1] bg-black/72 px-5 py-3.5 backdrop-blur-sm sm:px-7">
+                    <p className="font-mono text-[0.53rem] uppercase tracking-[0.15em] text-[#777169]">Session material</p>
                   </div>
                 </div>
               )}
@@ -162,16 +162,16 @@ export default async function WorkshopDetailPage({ params }: { params: Promise<R
         <section className="bg-[#0c0c0b]">
           <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
             <div className="grid lg:grid-cols-12">
-              <aside className="border-b border-white/[0.08] px-5 py-8 sm:px-8 lg:col-span-3 lg:border-b-0 lg:border-r lg:px-10 lg:py-12">
+              <aside className="border-b border-white/[0.08] px-5 py-7 sm:px-8 lg:col-span-3 lg:border-b-0 lg:border-r lg:px-10 lg:py-10">
                 <div className="lg:sticky lg:top-[108px]">
                   <p className="font-mono text-[0.57rem] uppercase tracking-[0.17em] text-[#796f59]">Workshop notes</p>
-                  <p className="mt-4 max-w-xs text-sm leading-6 text-[#6f6a63]">
+                  <p className="mt-3 max-w-xs text-sm leading-6 text-[#6f6a63]">
                     Session context, setup instructions, examples, references, and follow-up material.
                   </p>
                 </div>
               </aside>
 
-              <article data-site-markdown className="px-5 py-10 sm:px-8 lg:col-span-9 lg:px-12 lg:py-14 xl:px-16">
+              <article data-site-markdown className="px-5 py-9 sm:px-8 lg:col-span-9 lg:px-12 lg:py-11 xl:px-16">
                 <Markdown className="prose prose-invert max-w-none break-words">{entry.content}</Markdown>
               </article>
             </div>
