@@ -102,6 +102,7 @@ export default function WorkshopsClient({ workshops }: { workshops: Workshop[] }
                 <Link
                   key={value}
                   href={filterHref(value, tag)}
+                  aria-current={active ? "page" : undefined}
                   className={`inline-flex h-10 items-center border px-3.5 font-mono text-[0.58rem] uppercase tracking-[0.14em] transition-colors ${
                     active
                       ? "border-[#daa000]/55 bg-[#daa000]/[0.1] text-[#e3b93e]"
@@ -130,6 +131,7 @@ export default function WorkshopsClient({ workshops }: { workshops: Workshop[] }
           <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-white/[0.06] pt-4">
             <Link
               href={filterHref(when, "")}
+              aria-current={!tag ? "page" : undefined}
               className={`font-mono text-[0.55rem] uppercase tracking-[0.14em] transition-colors ${
                 !tag ? "text-[#e2b63a]" : "text-[#69645d] hover:text-[#bdb7ad]"
               }`}
@@ -140,6 +142,7 @@ export default function WorkshopsClient({ workshops }: { workshops: Workshop[] }
               <Link
                 key={topic}
                 href={filterHref(when, topic)}
+                aria-current={tag === topic ? "page" : undefined}
                 className={`font-mono text-[0.55rem] uppercase tracking-[0.14em] transition-colors ${
                   tag === topic ? "text-[#e2b63a]" : "text-[#69645d] hover:text-[#bdb7ad]"
                 }`}
@@ -170,7 +173,12 @@ export default function WorkshopsClient({ workshops }: { workshops: Workshop[] }
             const upcomingSession = isUpcoming(workshop.date)
 
             return (
-              <Link key={workshop.slug} href={`/workshops/${workshop.slug}`} className="group block min-h-[420px] bg-[#11110f] no-underline transition-colors hover:bg-[#151512]">
+              <Link
+                key={workshop.slug}
+                href={`/workshops/${workshop.slug}`}
+                data-site-lift="card"
+                className="group block min-h-[420px] bg-[#11110f] no-underline transition-colors hover:bg-[#151512]"
+              >
                 <article className="flex h-full flex-col">
                   <div className="relative h-[220px] overflow-hidden border-b border-white/[0.08] bg-[#090908]">
                     {cover ? (
@@ -185,18 +193,23 @@ export default function WorkshopsClient({ workshops }: { workshops: Workshop[] }
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-transparent to-black/20" />
                     <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4">
-                      <span className={`border px-2.5 py-1 font-mono text-[0.52rem] uppercase tracking-[0.14em] backdrop-blur-sm ${
-                        upcomingSession
-                          ? "border-[#daa000]/40 bg-[#daa000]/[0.1] text-[#e0b43a]"
-                          : "border-white/[0.1] bg-black/55 text-[#8b857c]"
-                      }`}>
+                      <span
+                        className={`border px-2.5 py-1 font-mono text-[0.52rem] uppercase tracking-[0.14em] backdrop-blur-sm ${
+                          upcomingSession
+                            ? "border-[#daa000]/40 bg-[#daa000]/[0.1] text-[#e0b43a]"
+                            : "border-white/[0.1] bg-black/55 text-[#8b857c]"
+                        }`}
+                      >
                         {upcomingSession ? "Upcoming" : "Archive"}
                       </span>
                       <span className="font-mono text-[0.52rem] uppercase tracking-[0.14em] text-[#777169]">
                         W-{String(index + 1).padStart(2, "0")}
                       </span>
                     </div>
-                    <ArrowUpRight className="absolute bottom-4 right-4 h-5 w-5 text-[#c4bfb5] transition-transform group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-[#f2c34f]" aria-hidden="true" />
+                    <ArrowUpRight
+                      className="absolute bottom-4 right-4 h-5 w-5 text-[#c4bfb5] transition-transform group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-[#f2c34f]"
+                      aria-hidden="true"
+                    />
                   </div>
 
                   <div className="flex flex-1 flex-col px-5 py-6 sm:px-7">
