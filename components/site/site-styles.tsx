@@ -8,6 +8,18 @@ html:has([data-site-navigation]) {
 body:has([data-site-navigation]) {
   background: #0c0c0b;
   color-scheme: dark;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body:has([data-site-navigation]) h1,
+body:has([data-site-navigation]) h2,
+body:has([data-site-navigation]) h3 {
+  text-wrap: balance;
+}
+
+body:has([data-site-navigation]) p,
+body:has([data-site-navigation]) li {
+  text-wrap: pretty;
 }
 
 body:has([data-site-navigation]) ::selection {
@@ -33,6 +45,11 @@ body:has([data-site-navigation]) textarea {
   transition-property: transform, box-shadow, color, background-color, border-color, opacity;
   transition-duration: 220ms;
   transition-timing-function: cubic-bezier(.22, 1, .36, 1);
+}
+
+body:has([data-site-navigation]) a,
+body:has([data-site-navigation]) button {
+  touch-action: manipulation;
 }
 
 body:has([data-site-navigation]) [data-site-navigation] a,
@@ -212,6 +229,7 @@ body:has([data-site-navigation]) [data-site-markdown] pre {
   margin-inline: auto !important;
   padding-top: 46px !important;
   padding-bottom: 64px !important;
+  gap: 1px !important;
 }
 
 [data-site-resource-shell] main > header {
@@ -222,7 +240,7 @@ body:has([data-site-navigation]) [data-site-markdown] pre {
 [data-site-resource-shell] main > section {
   border-radius: 0 !important;
   border-color: rgba(255,255,255,.09) !important;
-  background: #11110f !important;
+  background: transparent !important;
   box-shadow: none !important;
 }
 
@@ -257,8 +275,9 @@ body:has([data-site-navigation]) [data-site-markdown] pre {
 [data-site-resource-shell] .bg-muted\/10,
 [data-site-resource-shell] .bg-muted\/20,
 [data-site-resource-shell] .bg-muted\/30,
-[data-site-resource-shell] .bg-muted\/50 {
-  background: #11110f !important;
+[data-site-resource-shell] .bg-muted\/50,
+[data-site-resource-shell] [class*="bg-muted/"] {
+  background: transparent !important;
 }
 
 [data-site-resource-shell] .border-border,
@@ -300,13 +319,48 @@ body:has([data-site-navigation]) [data-site-markdown] pre {
 
 [data-site-resource-shell] button:not([class*="bg-primary"]) {
   border-color: rgba(255,255,255,.10) !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
+
+[data-site-resource-shell] [class*="bg-green-100"] {
+  background: rgba(69, 139, 91, .10) !important;
+  color: #91c49e !important;
+  box-shadow: inset 0 0 0 1px rgba(91, 166, 111, .22) !important;
+}
+
+[data-site-resource-shell] [class*="bg-red-100"] {
+  background: rgba(177, 72, 66, .10) !important;
+  color: #d99a93 !important;
+  box-shadow: inset 0 0 0 1px rgba(190, 83, 76, .22) !important;
+}
+
+[data-site-resource-shell] [class*="bg-yellow-100"],
+[data-site-resource-shell] [class*="bg-yellow-50"] {
+  background: rgba(218, 160, 0, .075) !important;
+  color: #c9aa56 !important;
+  box-shadow: inset 0 0 0 1px rgba(218, 160, 0, .20) !important;
+}
+
+[data-site-resource-shell] [class*="text-green-700"] { color: #91c49e !important; }
+[data-site-resource-shell] [class*="text-red-700"] { color: #d99a93 !important; }
+[data-site-resource-shell] [class*="text-yellow-700"],
+[data-site-resource-shell] [class*="text-yellow-900"] { color: #c9aa56 !important; }
 
 [data-site-resource-shell] details,
 [data-site-resource-shell] pre,
 [data-site-resource-shell] table {
   border-radius: 0 !important;
   border-color: rgba(255,255,255,.09) !important;
+}
+
+[data-site-resource-shell] details[open] {
+  border-color: rgba(218,160,0,.20) !important;
+}
+
+[data-site-resource-shell] summary {
+  cursor: pointer;
+  color: #928b82;
 }
 
 [data-site-resource-shell] pre {
@@ -380,8 +434,8 @@ body:has([data-site-navigation]) [data-site-markdown] pre {
 
   body:has([data-site-navigation]) [data-site-lift="card"]:hover {
     z-index: 5;
-    transform: translateY(-4px) scale(1.006);
-    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.30), 0 0 0 1px rgba(244, 198, 77, 0.08);
+    transform: translateY(-2px) scale(1.002);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24), 0 0 0 1px rgba(244, 198, 77, 0.07);
   }
 
   body:has([data-site-navigation]) [data-site-lift="card"]:hover::after {
@@ -391,6 +445,15 @@ body:has([data-site-navigation]) [data-site-markdown] pre {
 }
 
 @media (max-width: 767px) {
+  body:has([data-site-navigation]) main > section:first-child::before {
+    opacity: .11;
+  }
+
+  body:has([data-site-navigation]) [data-site-lift="card"],
+  body:has([data-site-navigation]) [data-site-lift="card"] > article {
+    min-height: 0 !important;
+  }
+
   [data-site-resource-shell] main {
     width: calc(100% - 24px) !important;
     padding-top: 32px !important;
