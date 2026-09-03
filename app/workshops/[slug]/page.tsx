@@ -1,66 +1,73 @@
-// app/workshops/[slug]/page.tsx
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import { getAllWorkshops, getWorkshopBySlug } from "@/lib/workshops";
-import { Navigation } from "@/components/navigation";
-import Markdown from "@/components/Markdown";
-import { Footer } from "@/components/footer";
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import { ArrowLeft, CalendarDays, MapPin, Tags } from "lucide-react"
 
-type RouteParams = { slug: string };
+import Markdown from "@/components/Markdown"
+import { SiteFooter } from "@/components/site/site-footer"
+import { SiteNavigation } from "@/components/site/site-navigation"
+import { getAllWorkshops, getWorkshopBySlug } from "@/lib/workshops"
+
+type RouteParams = { slug: string }
 
 type Meta = {
-  title: string;
-  summary?: string;
-  cover?: string;
-  image?: string;
-  date?: string;
-  location?: string;
-  tags?: string[];
-  slug: string;
-};
+  title: string
+  summary?: string
+  cover?: string
+  image?: string
+  date?: string
+  location?: string
+  tags?: string[]
+  slug: string
+}
 
-/** Safely coerce the loose file meta into a strict Meta shape */
+const WIDE_RAIL = "mx-auto w-full lg:w-[calc(100%_-_48px)] 2xl:w-[calc(100%_-_80px)]"
+
 function normalizeMeta(loose: unknown): Meta | null {
-  const m = (loose as Record<string, unknown>) || {};
-  const slug = typeof m.slug === "string" ? m.slug : "";
-  if (!slug) return null;
+  const meta = (loose as Record<string, unknown>) || {}
+  const slug = typeof meta.slug === "string" ? meta.slug : ""
+  if (!slug) return null
 
-  const title =
-    typeof m.title === "string" && m.title.trim().length > 0 ? m.title : slug;
+  const title = typeof meta.title === "string" && meta.title.trim().length > 0 ? meta.title : slug
 
   return {
     slug,
     title,
-    summary: typeof m.summary === "string" ? m.summary : undefined,
-    cover: typeof m.cover === "string" ? m.cover : undefined,
-    image: typeof m.image === "string" ? m.image : undefined,
-    date: typeof m.date === "string" ? m.date : undefined,
-    location: typeof m.location === "string" ? m.location : undefined,
-    tags: Array.isArray(m.tags) ? (m.tags as string[]) : undefined,
-  };
+    summary: typeof meta.summary === "string" ? meta.summary : undefined,
+    cover: typeof meta.cover === "string" ? meta.cover : undefined,
+    image: typeof meta.image === "string" ? meta.image : undefined,
+    date: typeof meta.date === "string" ? meta.date : undefined,
+    location: typeof meta.location === "string" ? meta.location : undefined,
+    tags: Array.isArray(meta.tags) ? (meta.tags as string[]) : undefined,
+  }
 }
 
-export const dynamic = "error";
-export const dynamicParams = false;
+function formatDate(date?: string) {
+  if (!date) return "TBA"
+  const parsed = new Date(date)
+  if (Number.isNaN(parsed.getTime())) return date
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(parsed)
+}
+
+export const dynamic = "error"
+export const dynamicParams = false
 
 export function generateStaticParams(): RouteParams[] {
-  return getAllWorkshops().map((w) => ({ slug: w.slug }));
+  return getAllWorkshops().map((workshop) => ({ slug: workshop.slug }))
 }
 
-// ✅ FIX: params must be Promise<RouteParams>
-export async function generateMetadata({ 
-  params 
-}: { 
-  params: Promise<RouteParams> 
-}) {
-  const { slug } = await params; // ← await it!
-  const entry = getWorkshopBySlug(slug);
-  if (!entry) return {};
+export async function generateMetadata({ params }: { params: Promise<RouteParams> }) {
+  const { slug } = await params
+  const entry = getWorkshopBySlug(slug)
+  if (!entry) return {}
 
-  const meta = normalizeMeta(entry.meta);
-  if (!meta) return {};
+  const meta = normalizeMeta(entry.meta)
+  if (!meta) return {}
 
-  const images = meta.cover ? [meta.cover] : meta.image ? [meta.image] : [];
+  const images = meta.cover ? [meta.cover] : meta.image ? [meta.image] : []
 
   return {
     title: `${meta.title} • Embedded Systems at Purdue`,
@@ -76,65 +83,103 @@ export async function generateMetadata({
       description: meta.summary ?? "",
       images,
     },
-  };
+  }
 }
 
-// ✅ FIX: params must be Promise<RouteParams>
-export default async function WorkshopDetailPage({
-  params,
-}: {
-  params: Promise<RouteParams>; // ← Changed from RouteParams to Promise<RouteParams>
-}) {
-  const { slug } = await params; // ← await it!
-  
-  const entry = getWorkshopBySlug(slug);
-  if (!entry) return notFound();
+export default async function WorkshopDetailPage({ params }: { params: Promise<RouteParams> }) {
+  const { slug } = await params
 
-  const meta = normalizeMeta(entry.meta);
-  if (!meta) return notFound();
+  const entry = getWorkshopBySlug(slug)
+  if (!entry) return notFound()
 
-  const cover = meta.cover ?? meta.image ?? null;
+  const meta = normalizeMeta(entry.meta)
+  if (!meta) return notFound()
+
+  const cover = meta.cover ?? meta.image ?? null
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <header className="mx-auto max-w-4xl px-4 pt-10">
-        <Link href="/workshops" className="text-sm text-muted-foreground hover:underline">
-          ← All workshops
-        </Link>
-        <h1 className="mt-3 text-4xl font-bold tracking-tight">{meta.title}</h1>
-        {meta.summary && <p className="mt-2 text-lg text-muted-foreground">{meta.summary}</p>}
-        <div className="mt-3 text-sm text-muted-foreground">
-          {meta.date
-            ? new Intl.DateTimeFormat(undefined, {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              }).format(new Date(meta.date))
-            : "TBA"}
-          {meta.location ? ` • ${meta.location}` : ""}
-          {!!meta.tags?.length && <span className="ml-2">{meta.tags.slice(0, 3).join(" · ")}</span>}
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#0c0c0b] text-[#f3efe6]">
+      <SiteNavigation />
 
-      {cover && (
-        <div className="mx-auto mt-6 max-w-4xl px-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={cover}
-            alt={`${meta.title} cover`}
-            className="h-64 w-full rounded-xl object-cover"
-            loading="lazy"
-          />
-        </div>
-      )}
+      <main>
+        <section className="border-b border-white/[0.08] bg-black">
+          <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
+            <div className={`grid ${cover ? "lg:grid-cols-12" : ""}`}>
+              <div className={`${cover ? "lg:col-span-7 lg:border-r" : ""} border-white/[0.08] px-5 py-9 sm:px-8 lg:min-h-[520px] lg:px-12 lg:py-12 xl:px-16`}>
+                <div className="flex h-full flex-col justify-between gap-14">
+                  <Link
+                    href="/workshops"
+                    className="inline-flex w-fit items-center gap-2 font-mono text-[0.58rem] uppercase tracking-[0.16em] text-[#888279] transition-colors hover:text-[#f2c34f]"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+                    Workshop archive
+                  </Link>
 
-      <main className="mx-auto max-w-4xl px-4 py-10">
-        <article>
-          <Markdown>{entry.content}</Markdown>
-        </article>
+                  <div>
+                    <p className="font-mono text-[0.6rem] uppercase tracking-[0.18em] text-[#625e57]">Workshop / {slug}</p>
+                    <h1 className="mt-5 max-w-5xl text-[clamp(3.6rem,7vw,7rem)] font-medium leading-[0.84] tracking-[-0.07em] text-[#f2eee5]">
+                      {meta.title}
+                    </h1>
+                    {meta.summary && (
+                      <p className="mt-7 max-w-3xl text-[clamp(1rem,1.35vw,1.2rem)] leading-8 text-[#918b82]">{meta.summary}</p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-x-6 gap-y-3 border-t border-white/[0.08] pt-5 font-mono text-[0.55rem] uppercase tracking-[0.14em] text-[#7d776f]">
+                    <span className="inline-flex items-center gap-2">
+                      <CalendarDays className="h-3.5 w-3.5 text-[#8d7328]" aria-hidden="true" />
+                      {formatDate(meta.date)}
+                    </span>
+                    {meta.location && (
+                      <span className="inline-flex items-center gap-2">
+                        <MapPin className="h-3.5 w-3.5 text-[#8d7328]" aria-hidden="true" />
+                        {meta.location}
+                      </span>
+                    )}
+                    {!!meta.tags?.length && (
+                      <span className="inline-flex items-center gap-2">
+                        <Tags className="h-3.5 w-3.5 text-[#8d7328]" aria-hidden="true" />
+                        {meta.tags.slice(0, 4).join(" · ")}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {cover && (
+                <div className="relative min-h-[360px] overflow-hidden lg:col-span-5 lg:min-h-[520px]">
+                  <img src={cover} alt={`${meta.title} cover`} className="h-full w-full object-cover opacity-[0.78] grayscale-[12%]" loading="eager" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/78 via-transparent to-black/18" />
+                  <div className="absolute bottom-0 left-0 right-0 border-t border-white/[0.1] bg-black/70 px-5 py-4 backdrop-blur-sm sm:px-7">
+                    <p className="font-mono text-[0.54rem] uppercase tracking-[0.15em] text-[#777169]">Session material</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-[#0c0c0b]">
+          <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
+            <div className="grid lg:grid-cols-12">
+              <aside className="border-b border-white/[0.08] px-5 py-8 sm:px-8 lg:col-span-3 lg:border-b-0 lg:border-r lg:px-10 lg:py-12">
+                <div className="lg:sticky lg:top-[108px]">
+                  <p className="font-mono text-[0.57rem] uppercase tracking-[0.17em] text-[#796f59]">Workshop notes</p>
+                  <p className="mt-4 max-w-xs text-sm leading-6 text-[#6f6a63]">
+                    Session context, setup instructions, examples, references, and follow-up material.
+                  </p>
+                </div>
+              </aside>
+
+              <article data-site-markdown className="px-5 py-10 sm:px-8 lg:col-span-9 lg:px-12 lg:py-14 xl:px-16">
+                <Markdown className="prose prose-invert max-w-none break-words">{entry.content}</Markdown>
+              </article>
+            </div>
+          </div>
+        </section>
       </main>
-      <Footer />
+
+      <SiteFooter />
     </div>
-  );
+  )
 }
