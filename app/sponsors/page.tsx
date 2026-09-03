@@ -1,26 +1,34 @@
-// app/sponsors/page.tsx
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Navigation } from "@/components/navigation";
-import { Building2, Heart, Handshake, Mail, ExternalLink } from "lucide-react";
-import { Footer } from "@/components/footer";
+import Link from "next/link"
+import {
+  ArrowUpRight,
+  Building2,
+  Check,
+  CircuitBoard,
+  Cpu,
+  Handshake,
+  Mail,
+  Presentation,
+  Users,
+} from "lucide-react"
+
+import { SiteFooter } from "@/components/site/site-footer"
+import { SiteNavigation } from "@/components/site/site-navigation"
 
 type Sponsor = {
-  name: string;
-  logo?: string;
-  website?: string;
-  description?: string;
-  tier: "Platinum" | "Gold" | "Silver" | "Bronze";
-};
+  name: string
+  logo?: string
+  website?: string
+  description?: string
+  tier: "Platinum" | "Gold" | "Silver" | "Bronze"
+}
 
-const sponsors: Sponsor[] = []; // no sponsors right now
+const sponsors: Sponsor[] = []
 
 const sponsorshipTiers = [
   {
     name: "Platinum",
     amount: "$5,000+",
-    color: "bg-gradient-to-r from-gray-300 to-gray-100",
+    code: "P01",
     benefits: [
       "Logo on all club materials and website",
       "Dedicated recruiting events",
@@ -32,7 +40,7 @@ const sponsorshipTiers = [
   {
     name: "Gold",
     amount: "$2,500+",
-    color: "bg-gradient-to-r from-yellow-400 to-yellow-200",
+    code: "G02",
     benefits: [
       "Logo on website and select materials",
       "Recruiting table at events",
@@ -44,7 +52,7 @@ const sponsorshipTiers = [
   {
     name: "Silver",
     amount: "$1,000+",
-    color: "bg-gradient-to-r from-gray-400 to-gray-200",
+    code: "S03",
     benefits: [
       "Logo on website",
       "Recruiting presence at events",
@@ -55,267 +63,255 @@ const sponsorshipTiers = [
   {
     name: "Bronze",
     amount: "$500+",
-    color: "bg-gradient-to-r from-amber-600 to-amber-400",
+    code: "B04",
     benefits: ["Logo on website", "Newsletter mentions", "Event announcements"],
-    },
-];
+  },
+] as const
+
+const partnershipModes = [
+  {
+    index: "01",
+    title: "Fund the build",
+    detail: "Support components, dev boards, fabrication, travel, and workshop supplies that turn project plans into working systems.",
+    icon: CircuitBoard,
+  },
+  {
+    index: "02",
+    title: "Put tools in students' hands",
+    detail: "Donate MCUs, FPGAs, instruments, dev kits, or other equipment members can learn on and ship projects with.",
+    icon: Cpu,
+  },
+  {
+    index: "03",
+    title: "Teach with us",
+    detail: "Co-host a workshop, technical talk, design review, or challenge around the engineering your team does every day.",
+    icon: Presentation,
+  },
+  {
+    index: "04",
+    title: "Meet builders early",
+    detail: "Share internships, co-ops, and technical roles with students already building hardware and low-level software together.",
+    icon: Users,
+  },
+]
+
+const WIDE_RAIL = "mx-auto w-full lg:w-[calc(100%_-_48px)] 2xl:w-[calc(100%_-_80px)]"
 
 export default function SponsorsPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
+    <div className="min-h-screen bg-[#0c0c0b] text-[#f3efe6]">
+      <SiteNavigation />
 
-      {/* Hero */}
-      <section className="relative bg-gradient-to-br from-primary/10 via-background to-accent/5 py-20 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <Badge variant="secondary" className="w-fit mx-auto mb-6">
-            <Building2 className="w-4 h-4 mr-2" />
-            Sponsors
-          </Badge>
-          <h1 className="text-4xl lg:text-6xl font-bold text-balance leading-tight mb-6">
-            Embedded Systems @ Purdue — <span className="text-primary">Sponsor Us</span>
-          </h1>
-          <p className="text-xl text-muted-foreground text-pretty leading-relaxed max-w-3xl mx-auto">
-            We’re Embedded Systems @ Purdue (ES@P) — a student-led organization building a strong
-            community of innovators passionate about embedded systems, hardware, and software.
-            We believe in hands-on learning, real-world projects, and connecting students with industry.
-          </p>
-        </div>
-      </section>
+      <main>
+        <section className="border-b border-white/[0.08] bg-black">
+          <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
+            <div className="grid lg:grid-cols-12">
+              <div className="border-b border-white/[0.08] px-5 py-11 sm:px-8 lg:col-span-8 lg:min-h-[500px] lg:border-b-0 lg:border-r lg:px-12 lg:py-14 xl:px-16">
+                <div className="flex h-full flex-col justify-between gap-16">
+                  <div className="flex items-center gap-3 font-mono text-[0.62rem] uppercase tracking-[0.18em] text-[#aaa398]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#f4c64d] shadow-[0_0_8px_rgba(244,198,77,0.38)]" />
+                    Industry partnerships
+                  </div>
 
-      {/* Why Sponsor Us + Our Reach */}
-      <section className="py-16 px-4">
-        <div className="max-w-6xl mx-auto grid gap-10 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Why Sponsor Us?</CardTitle>
-              <CardDescription>Real impact, real talent, real projects.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 text-muted-foreground">
-              <ul className="space-y-2">
-                <li>• <b>Top Talent Access:</b> Meet motivated engineers — future firmware, embedded software, and hardware designers.</li>
-                <li>• <b>Brand Visibility:</b> Your logo on projects, workshops, hackathons, and marketing materials.</li>
-                <li>• <b>Impactful Mentorship:</b> Host tech talks, mentor projects, or hang out with us at events.</li>
-                <li>• <b>Recruitment Pipeline:</b> Connect early with students building real embedded systems.</li>
-              </ul>
-            </CardContent>
-          </Card>
+                  <div>
+                    <p className="font-mono text-[0.6rem] uppercase tracking-[0.18em] text-[#625e57]">Sponsor ES@P / Build Purdue engineers</p>
+                    <h1 className="mt-5 text-[clamp(4rem,8vw,8.2rem)] font-medium leading-[0.82] tracking-[-0.07em]">
+                      Back the
+                      <span className="block text-[#d8aa27]">people who build.</span>
+                    </h1>
+                    <p className="mt-7 max-w-2xl text-base leading-7 text-[#8d887f]">
+                      ES@P gives students room to design, break, debug, and ship real embedded systems. Partners help us put better tools, harder problems, and stronger industry connections in front of them.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Our Reach (and Growing!)</CardTitle>
-              <CardDescription>Engaged, hands-on community</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-3 text-muted-foreground">
-              <div className="flex items-center gap-2">🎯 <span><b>50+ active members</b></span></div>
-              <div className="flex items-center gap-2">⚙️ <span><b>10+ ongoing hardware/software projects</b></span></div>
-              <div className="flex items-center gap-2">🎤 <span><b>Frequent workshops and speaker series</b></span></div>
-              <div className="flex items-center gap-2">📬 <span><b>Mailing list, LinkedIn, campus promotions</b></span></div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* How You Can Support + What You’ll Get */}
-      <section className="py-4 px-4">
-        <div className="max-w-6xl mx-auto grid gap-10 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>How You Can Support</CardTitle>
-              <CardDescription>Multiple ways to partner</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 text-muted-foreground">
-              <ul className="space-y-2">
-                <li>• <b>Monetary Sponsorship:</b> Fund components, dev boards, travel, and workshop supplies.</li>
-                <li>• <b>Equipment Donations:</b> MCUs, FPGAs, tools, dev kits — if we can blink an LED with it, we’ll love it.</li>
-                <li>• <b>Event Sponsorship:</b> Co-host a workshop, mini-hackathon, or tech talk night.</li>
-                <li>• <b>Recruitment Opportunities:</b> Share internships, co-ops, or roles with our members.</li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>What You’ll Get</CardTitle>
-              <CardDescription>Visibility & access to talent</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 text-muted-foreground">
-              <ul className="space-y-2">
-                <li>• Featured logo and link on our website, flyers, and banners</li>
-                <li>• Shout-outs at events and on social media</li>
-                <li>• Optional resume books and early access to top students</li>
-                <li>• A direct channel to Purdue’s most passionate builders</li>
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Current Sponsors */}
-      <section className="py-20 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl lg:text-4xl font-bold text-balance mb-4">Current Sponsors</h2>
-            <p className="text-lg text-muted-foreground">
-              We’re actively seeking inaugural partners. Your company could be featured here!
-            </p>
-          </div>
-
-          {sponsors.length === 0 ? (
-            <Card className="max-w-3xl mx-auto border-dashed">
-              <CardHeader className="text-center">
-                <CardTitle>No sponsors yet — be the first!</CardTitle>
-                <CardDescription>
-                  Get prime visibility on our site and at events. Lead the way in supporting hands-on embedded education.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button size="lg" asChild>
-                  <a href="mailto:embedded@purdue.edu?subject=ES@P%20Sponsorship%20Inquiry">
-                    <Mail className="w-5 h-5 mr-2" />
-                    Contact Us
-                  </a>
-                </Button>
-                <Button variant="outline" size="lg" className="bg-transparent" asChild>
-                  <a href="#tiers">
-                    <Heart className="w-5 h-5 mr-2" />
-                    View Tiers
-                  </a>
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {sponsors.map((sponsor, index) => (
-                <Card key={index} className="group hover:shadow-lg transition-all duration-300">
-                  <CardHeader className="text-center">
-                    <div className="w-full h-20 flex items-center justify-center mb-4 bg-muted/30 rounded-lg">
-                      <img
-                        src={sponsor.logo || "/placeholder.svg"}
-                        alt={`${sponsor.name} logo`}
-                        className="max-h-16 max-w-full object-contain"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between mb-2">
-                      <CardTitle className="text-xl">{sponsor.name}</CardTitle>
-                      <Badge
-                        variant="outline"
-                        className={
-                          sponsor.tier === "Platinum"
-                            ? "border-gray-400 text-gray-700"
-                            : sponsor.tier === "Gold"
-                            ? "border-yellow-400 text-yellow-700"
-                            : sponsor.tier === "Silver"
-                            ? "border-gray-300 text-gray-600"
-                            : "border-amber-400 text-amber-700"
-                        }
-                      >
-                        {sponsor.tier}
-                      </Badge>
-                    </div>
-                    <CardDescription className="text-sm">{sponsor.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {sponsor.website ? (
-                      <Button variant="outline" className="w-full bg-transparent" asChild>
-                        <a href={sponsor.website} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          Visit Website
-                        </a>
-                      </Button>
-                    ) : (
-                      <Button variant="outline" className="w-full bg-transparent" disabled>
-                        Website Coming Soon
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+              <div className="grid min-h-[300px] grid-cols-2 lg:col-span-4 lg:min-h-[500px] lg:grid-cols-1">
+                <div className="flex flex-col justify-between border-r border-white/[0.08] px-5 py-7 sm:px-8 lg:border-b lg:border-r-0 lg:px-10">
+                  <span className="font-mono text-[0.56rem] uppercase tracking-[0.17em] text-[#5f5b55]">Active community</span>
+                  <div>
+                    <Users className="h-7 w-7 text-[#967723]" aria-hidden="true" />
+                    <span className="mt-3 block text-[clamp(2.8rem,6vw,5rem)] font-medium tracking-[-0.065em] text-[#e9e4da]">50+</span>
+                    <span className="font-mono text-[0.54rem] uppercase tracking-[0.14em] text-[#6d6861]">members</span>
+                  </div>
+                </div>
+                <div className="flex flex-col justify-between px-5 py-7 sm:px-8 lg:px-10">
+                  <span className="font-mono text-[0.56rem] uppercase tracking-[0.17em] text-[#5f5b55]">Project surface</span>
+                  <div>
+                    <CircuitBoard className="h-7 w-7 text-[#967723]" aria-hidden="true" />
+                    <span className="mt-3 block text-[clamp(2.8rem,6vw,5rem)] font-medium tracking-[-0.065em] text-[#d8aa27]">10+</span>
+                    <span className="font-mono text-[0.54rem] uppercase tracking-[0.14em] text-[#6d6861]">hardware / software builds</span>
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
-      </section>
-
-      {/* Sponsorship Tiers */}
-      <section id="tiers" className="py-20 px-4 bg-muted/30">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-balance mb-4">Sponsorship Opportunities</h2>
-            <p className="text-xl text-muted-foreground">
-              Partner with us to support the next generation of embedded systems engineers.
-            </p>
           </div>
+        </section>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {sponsorshipTiers.map((tier, index) => (
-              <Card key={index} className="relative overflow-hidden">
-                <div className={`h-2 ${tier.color}`} />
-                <CardHeader>
-                  <CardTitle className="text-2xl">{tier.name}</CardTitle>
-                  <CardDescription className="text-lg font-semibold text-primary">
-                    {tier.amount}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {tier.benefits.map((benefit, i) => (
-                      <li key={i} className="text-sm text-muted-foreground flex items-start">
-                        <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 mr-2 flex-shrink-0" />
-                        {benefit}
+        <section className="border-b border-white/[0.08] bg-[#0c0c0b]">
+          <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
+            <div className="grid lg:grid-cols-12">
+              <div className="border-b border-white/[0.08] px-5 py-10 sm:px-8 lg:col-span-4 lg:border-b-0 lg:border-r lg:px-12 lg:py-14 xl:px-16">
+                <div className="lg:sticky lg:top-[108px]">
+                  <div className="flex items-center gap-3 font-mono text-[0.58rem] uppercase tracking-[0.17em] text-[#777169]">
+                    <Handshake className="h-4 w-4 text-[#8f7325]" aria-hidden="true" />
+                    01 / Partnership model
+                  </div>
+                  <h2 className="mt-4 text-[clamp(2.9rem,4.7vw,5rem)] font-medium leading-[0.89] tracking-[-0.06em]">
+                    More useful than a logo on a page.
+                  </h2>
+                  <p className="mt-6 max-w-sm text-sm leading-6 text-[#817c74]">
+                    The strongest partnerships give students resources, technical exposure, and direct contact with people building real products.
+                  </p>
+                </div>
+              </div>
+
+              <div className="lg:col-span-8">
+                {partnershipModes.map((mode) => {
+                  const Icon = mode.icon
+                  return (
+                    <article
+                      key={mode.index}
+                      className="group grid min-h-[180px] border-b border-white/[0.08] px-5 py-7 transition-colors last:border-b-0 hover:bg-white/[0.018] sm:grid-cols-[76px_1fr_auto] sm:items-center sm:px-8 lg:px-10"
+                    >
+                      <span className="font-mono text-[0.56rem] uppercase tracking-[0.17em] text-[#5f5b55]">{mode.index}</span>
+                      <div className="mt-5 sm:mt-0">
+                        <h3 className="text-2xl font-medium tracking-[-0.045em] text-[#e9e4da]">{mode.title}</h3>
+                        <p className="mt-2 max-w-2xl text-sm leading-6 text-[#7f7a72]">{mode.detail}</p>
+                      </div>
+                      <Icon className="mt-6 h-5 w-5 text-[#766021] transition-colors group-hover:text-[#daa000] sm:mt-0" aria-hidden="true" />
+                    </article>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-b border-white/[0.08] bg-[#090908]">
+          <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
+            <div className="flex flex-col gap-5 border-b border-white/[0.08] px-5 py-9 sm:px-8 lg:flex-row lg:items-end lg:justify-between lg:px-12 lg:py-12 xl:px-16">
+              <div>
+                <p className="font-mono text-[0.58rem] uppercase tracking-[0.17em] text-[#777169]">02 / Current partners</p>
+                <h2 className="mt-3 text-[clamp(2.8rem,5vw,5.4rem)] font-medium leading-[0.9] tracking-[-0.06em]">Partner wall.</h2>
+              </div>
+              <p className="max-w-md text-sm leading-6 text-[#817c73]">Companies that support the students, systems, and technical programming behind ES@P.</p>
+            </div>
+
+            {sponsors.length === 0 ? (
+              <div className="grid min-h-[320px] place-items-center px-5 py-12 text-center sm:px-8 lg:px-12">
+                <div className="max-w-2xl">
+                  <Building2 className="mx-auto h-7 w-7 text-[#806821]" aria-hidden="true" />
+                  <p className="mt-5 font-mono text-[0.57rem] uppercase tracking-[0.17em] text-[#625e58]">Opening partner slot</p>
+                  <h3 className="mt-4 text-[clamp(2rem,4vw,3.6rem)] font-medium leading-[0.95] tracking-[-0.055em] text-[#ded8cd]">
+                    Be the first company on the wall.
+                  </h3>
+                  <p className="mx-auto mt-5 max-w-xl text-sm leading-6 text-[#817c74]">
+                    ES@P is actively seeking inaugural partners who want meaningful visibility and a direct relationship with Purdue students building embedded systems.
+                  </p>
+                  <a
+                    href="mailto:embedded@purdue.edu?subject=ES@P%20Sponsorship%20Inquiry"
+                    className="group mt-7 inline-flex h-11 items-center gap-3 bg-[#daa000] px-5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-[#11110f] transition-colors hover:bg-[#f0bd31]"
+                  >
+                    Start a conversation
+                    <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-px bg-white/[0.08] md:grid-cols-2 lg:grid-cols-3">
+                {sponsors.map((sponsor) => (
+                  <article key={sponsor.name} className="min-h-[260px] bg-[#11110f] p-7">
+                    <p className="font-mono text-[0.55rem] uppercase tracking-[0.15em] text-[#8c7125]">{sponsor.tier} partner</p>
+                    <h3 className="mt-8 text-3xl font-medium tracking-[-0.05em] text-[#ebe6dc]">{sponsor.name}</h3>
+                    {sponsor.description && <p className="mt-3 text-sm leading-6 text-[#817c74]">{sponsor.description}</p>}
+                    {sponsor.website && (
+                      <Link
+                        href={sponsor.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-8 inline-flex items-center gap-2 font-mono text-[0.56rem] uppercase tracking-[0.14em] text-[#9d958a] transition-colors hover:text-[#f2c34f]"
+                      >
+                        Visit partner
+                        <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                      </Link>
+                    )}
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section id="tiers" className="border-b border-white/[0.08] bg-[#0c0c0b] scroll-mt-20">
+          <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
+            <div className="flex flex-col gap-5 border-b border-white/[0.08] px-5 py-9 sm:px-8 lg:flex-row lg:items-end lg:justify-between lg:px-12 lg:py-12 xl:px-16">
+              <div>
+                <p className="font-mono text-[0.58rem] uppercase tracking-[0.17em] text-[#777169]">03 / Sponsorship tiers</p>
+                <h2 className="mt-3 text-[clamp(2.8rem,5vw,5.4rem)] font-medium leading-[0.9] tracking-[-0.06em]">Choose the level of access.</h2>
+              </div>
+              <p className="max-w-md text-sm leading-6 text-[#817c73]">Four starting points, from visible support to deeper recruiting and project collaboration.</p>
+            </div>
+
+            <div className="grid gap-px bg-white/[0.08] md:grid-cols-2 xl:grid-cols-4">
+              {sponsorshipTiers.map((tier, index) => (
+                <article key={tier.name} className="group flex min-h-[430px] flex-col bg-[#11110f] p-6 transition-colors hover:bg-[#151512] sm:p-7">
+                  <div className="flex items-center justify-between font-mono text-[0.54rem] uppercase tracking-[0.15em] text-[#625e58]">
+                    <span>{tier.code}</span>
+                    <span>0{index + 1} / 04</span>
+                  </div>
+                  <h3 className="mt-12 text-3xl font-medium tracking-[-0.05em] text-[#ebe6dc]">{tier.name}</h3>
+                  <p className="mt-2 text-2xl font-medium tracking-[-0.04em] text-[#d8aa27]">{tier.amount}</p>
+
+                  <ul className="mt-8 space-y-3 border-t border-white/[0.07] pt-5">
+                    {tier.benefits.map((benefit) => (
+                      <li key={benefit} className="flex gap-3 text-sm leading-5 text-[#817c74]">
+                        <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#9c7b21]" aria-hidden="true" />
+                        <span>{benefit}</span>
                       </li>
                     ))}
                   </ul>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Contact Section */}
-      <section className="py-20 px-4 bg-gradient-to-br from-primary/5 via-background to-accent/5">
-        <div className="max-w-4xl mx-auto text-center space-y-8">
-          <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-              <Handshake className="w-8 h-8 text-primary" />
+                </article>
+              ))}
             </div>
           </div>
-          <h2 className="text-3xl lg:text-4xl font-bold text-balance">Let’s Build Something Together</h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-pretty">
-            Interested? Curious? Got questions? We’d love to hear from you.
-            Reach out and we’ll set up a quick call about partnerships.
-          </p>
+        </section>
 
-          <div className="space-y-2">
-            <p className="text-lg text-muted-foreground">
-              Email us at{" "}
-              <a
-                href="mailto:embedded@purdue.edu"
-                className="text-primary hover:underline font-medium"
-              >
-                embedded@purdue.edu
-              </a>
-            </p>
+        <section className="bg-black">
+          <div className={`${WIDE_RAIL} lg:border-x lg:border-white/[0.06]`}>
+            <div className="grid lg:grid-cols-12">
+              <div className="border-b border-white/[0.08] px-5 py-11 sm:px-8 lg:col-span-8 lg:border-b-0 lg:border-r lg:px-12 lg:py-14 xl:px-16">
+                <p className="font-mono text-[0.58rem] uppercase tracking-[0.17em] text-[#6b665f]">04 / Contact</p>
+                <h2 className="mt-3 max-w-4xl text-[clamp(3rem,6vw,6.5rem)] font-medium leading-[0.86] tracking-[-0.065em]">
+                  Build a partnership around real engineering.
+                </h2>
+                <p className="mt-7 max-w-2xl text-base leading-7 text-[#8d887f]">
+                  Tell us what your team cares about—recruiting, technical education, project collaboration, hardware support—and we’ll find the highest-value way to work together.
+                </p>
+              </div>
+
+              <div className="flex flex-col justify-between px-5 py-9 sm:px-8 lg:col-span-4 lg:px-10 lg:py-12">
+                <Mail className="h-6 w-6 text-[#8c7125]" aria-hidden="true" />
+                <div className="mt-16">
+                  <p className="font-mono text-[0.55rem] uppercase tracking-[0.15em] text-[#5f5b55]">Partnership inbox</p>
+                  <a href="mailto:embedded@purdue.edu" className="mt-3 block text-xl tracking-[-0.03em] text-[#d8d2c7] transition-colors hover:text-[#f2c34f]">
+                    embedded@purdue.edu
+                  </a>
+                  <a
+                    href="mailto:embedded@purdue.edu?subject=ES@P%20Sponsorship%20Inquiry"
+                    className="group mt-7 inline-flex h-11 items-center gap-3 bg-[#daa000] px-5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-[#11110f] transition-colors hover:bg-[#f0bd31]"
+                  >
+                    Contact ES@P
+                    <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
+        </section>
+      </main>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
-            <Button size="lg" className="text-lg px-8" asChild>
-              <a href="mailto:embedded@purdue.edu?subject=ES@P%20Sponsorship%20Inquiry">
-                <Mail className="w-5 h-5 mr-2" />
-                Contact Us
-              </a>
-            </Button>
-            <Button variant="outline" size="lg" className="text-lg px-8 bg-transparent" asChild>
-              <a href="#tiers">
-                <Heart className="w-5 h-5 mr-2" />
-                Learn More
-              </a>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      <Footer />
+      <SiteFooter />
     </div>
-  );
+  )
 }
