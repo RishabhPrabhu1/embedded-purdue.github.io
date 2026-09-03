@@ -72,6 +72,7 @@ type GroupRuntime = {
 }
 
 type AuxiliarySpec = {
+  side: Side
   route: Route
   start: number
 }
@@ -118,38 +119,38 @@ const groupSpecs: readonly GroupSpec[] = [
 ]
 
 const auxiliarySpecs: readonly AuxiliarySpec[] = [
-  { route: [[170, 190], [208, 190], [208, 176], [252, 176]], start: .76 },
-  { route: [[170, 238], [224, 238], [224, 258], [252, 258]], start: .81 },
-  { route: [[170, 342], [206, 342], [206, 320], [252, 320]], start: .86 },
-  { route: [[170, 418], [220, 418], [220, 442], [252, 442]], start: .91 },
-  { route: [[170, 522], [206, 522], [206, 500], [252, 500]], start: .96 },
-  { route: [[170, 570], [224, 570], [224, 584], [252, 584]], start: 1.01 },
+  { side: "left", route: [[170, 190], [208, 190], [208, 176], [252, 176]], start: .76 },
+  { side: "left", route: [[170, 238], [224, 238], [224, 258], [252, 258]], start: .81 },
+  { side: "left", route: [[170, 342], [206, 342], [206, 320], [252, 320]], start: .86 },
+  { side: "left", route: [[170, 418], [220, 418], [220, 442], [252, 442]], start: .91 },
+  { side: "left", route: [[170, 522], [206, 522], [206, 500], [252, 500]], start: .96 },
+  { side: "left", route: [[170, 570], [224, 570], [224, 584], [252, 584]], start: 1.01 },
 
-  { route: [[390, 134], [390, 172], [430, 172], [430, 200]], start: .80 },
-  { route: [[540, 134], [540, 184], [574, 184], [574, 204]], start: .85 },
-  { route: [[700, 134], [700, 170], [742, 170], [742, 202]], start: .90 },
-  { route: [[900, 134], [900, 176], [862, 176], [862, 202]], start: .95 },
-  { route: [[1060, 134], [1060, 184], [1028, 184], [1028, 204]], start: 1.00 },
-  { route: [[1210, 134], [1210, 172], [1172, 172], [1172, 200]], start: 1.05 },
+  { side: "top", route: [[390, 134], [390, 172], [430, 172], [430, 200]], start: .80 },
+  { side: "top", route: [[540, 134], [540, 184], [574, 184], [574, 204]], start: .85 },
+  { side: "top", route: [[700, 134], [700, 170], [742, 170], [742, 202]], start: .90 },
+  { side: "top", route: [[900, 134], [900, 176], [862, 176], [862, 202]], start: .95 },
+  { side: "top", route: [[1060, 134], [1060, 184], [1028, 184], [1028, 204]], start: 1.00 },
+  { side: "top", route: [[1210, 134], [1210, 172], [1172, 172], [1172, 200]], start: 1.05 },
 
-  { route: [[390, 626], [390, 588], [430, 588], [430, 560]], start: .84 },
-  { route: [[540, 626], [540, 576], [574, 576], [574, 556]], start: .89 },
-  { route: [[700, 626], [700, 590], [742, 590], [742, 558]], start: .94 },
-  { route: [[900, 626], [900, 584], [862, 584], [862, 558]], start: .99 },
-  { route: [[1060, 626], [1060, 576], [1028, 576], [1028, 556]], start: 1.04 },
-  { route: [[1210, 626], [1210, 588], [1172, 588], [1172, 560]], start: 1.09 },
+  { side: "bottom", route: [[390, 626], [390, 588], [430, 588], [430, 560]], start: .84 },
+  { side: "bottom", route: [[540, 626], [540, 576], [574, 576], [574, 556]], start: .89 },
+  { side: "bottom", route: [[700, 626], [700, 590], [742, 590], [742, 558]], start: .94 },
+  { side: "bottom", route: [[900, 626], [900, 584], [862, 584], [862, 558]], start: .99 },
+  { side: "bottom", route: [[1060, 626], [1060, 576], [1028, 576], [1028, 556]], start: 1.04 },
+  { side: "bottom", route: [[1210, 626], [1210, 588], [1172, 588], [1172, 560]], start: 1.09 },
 
-  { route: [[1430, 190], [1392, 190], [1392, 176], [1348, 176]], start: .88 },
-  { route: [[1430, 238], [1376, 238], [1376, 258], [1348, 258]], start: .93 },
-  { route: [[1430, 342], [1394, 342], [1394, 320], [1348, 320]], start: .98 },
-  { route: [[1430, 418], [1380, 418], [1380, 442], [1348, 442]], start: 1.03 },
-  { route: [[1430, 522], [1394, 522], [1394, 500], [1348, 500]], start: 1.08 },
-  { route: [[1430, 570], [1376, 570], [1376, 584], [1348, 584]], start: 1.13 },
+  { side: "right", route: [[1430, 190], [1392, 190], [1392, 176], [1348, 176]], start: .88 },
+  { side: "right", route: [[1430, 238], [1376, 238], [1376, 258], [1348, 258]], start: .93 },
+  { side: "right", route: [[1430, 342], [1394, 342], [1394, 320], [1348, 320]], start: .98 },
+  { side: "right", route: [[1430, 418], [1380, 418], [1380, 442], [1348, 442]], start: 1.03 },
+  { side: "right", route: [[1430, 522], [1394, 522], [1394, 500], [1348, 500]], start: 1.08 },
+  { side: "right", route: [[1430, 570], [1376, 570], [1376, 584], [1348, 584]], start: 1.13 },
 
-  { route: [[170, 152], [214, 152], [214, 106], [320, 106], [320, 134]], start: .92 },
-  { route: [[1280, 134], [1280, 106], [1386, 106], [1386, 152], [1430, 152]], start: .97 },
-  { route: [[170, 608], [214, 608], [214, 654], [320, 654], [320, 626]], start: 1.02 },
-  { route: [[1280, 626], [1280, 654], [1386, 654], [1386, 608], [1430, 608]], start: 1.07 },
+  { side: "top", route: [[170, 152], [214, 152], [214, 106], [320, 106], [320, 134]], start: .92 },
+  { side: "top", route: [[1280, 134], [1280, 106], [1386, 106], [1386, 152], [1430, 152]], start: .97 },
+  { side: "bottom", route: [[170, 608], [214, 608], [214, 654], [320, 654], [320, 626]], start: 1.02 },
+  { side: "bottom", route: [[1280, 626], [1280, 654], [1386, 654], [1386, 608], [1430, 608]], start: 1.07 },
 ]
 
 function clamp01(value: number) {
@@ -392,34 +393,121 @@ function buildGroup(spec: GroupSpec, logoPaths: readonly string[]): GroupRuntime
   }
 }
 
-function nearestPoint(from: Point, candidates: readonly Point[]): Point {
-  let closest = candidates[0] ?? from
-  let bestDistance = Number.POSITIVE_INFINITY
-
-  candidates.forEach((point) => {
-    const distance = Math.hypot(point[0] - from[0], point[1] - from[1])
-    if (distance < bestDistance) {
-      bestDistance = distance
-      closest = point
-    }
-  })
-
-  return closest
+function sideAxis(side: Side, point: Point) {
+  return side === "left" || side === "right" ? point[1] : point[0]
 }
 
-function buildAuxiliary(spec: AuxiliarySpec, logoAnchors: readonly Point[]): AuxiliaryRuntime {
+function edgeDistance(side: Side, point: Point) {
+  switch (side) {
+    case "left":
+      return point[0] - LOGO.x
+    case "right":
+      return LOGO.x + LOGO.width - point[0]
+    case "top":
+      return point[1] - LOGO.y
+    case "bottom":
+      return LOGO.y + LOGO.height - point[1]
+  }
+}
+
+function buildLogoAnchorBank(side: Side, candidates: readonly Point[], count: number): Point[] {
+  if (!count || !candidates.length) return []
+
+  const horizontal = side === "top" || side === "bottom"
+  const axisStart = horizontal ? LOGO.x + 60 : LOGO.y + 24
+  const axisEnd = horizontal ? LOGO.x + LOGO.width - 60 : LOGO.y + LOGO.height - 24
+  const windowSize = horizontal ? 105 : 42
+  const chosen: Point[] = []
+
+  for (let index = 0; index < count; index++) {
+    const ratio = count === 1 ? .5 : index / (count - 1)
+    const targetAxis = axisStart + (axisEnd - axisStart) * ratio
+    const nearby = candidates.filter(
+      (point) => Math.abs(sideAxis(side, point) - targetAxis) <= windowSize
+    )
+    const pool = nearby.length ? nearby : candidates
+
+    let best = pool[0]
+    let bestScore = Number.POSITIVE_INFINITY
+
+    pool.forEach((point) => {
+      const axisPenalty = Math.abs(sideAxis(side, point) - targetAxis) * .22
+      const edgePenalty = Math.max(0, edgeDistance(side, point)) * 2.4
+      const reusePenalty = chosen.reduce((penalty, previous) => {
+        const spacing = Math.abs(sideAxis(side, point) - sideAxis(side, previous))
+        return spacing < 22 ? penalty + (22 - spacing) * 5 : penalty
+      }, 0)
+      const score = axisPenalty + edgePenalty + reusePenalty
+
+      if (score < bestScore) {
+        bestScore = score
+        best = point
+      }
+    })
+
+    chosen.push(best)
+  }
+
+  return chosen.sort((a, b) => sideAxis(side, a) - sideAxis(side, b))
+}
+
+function buildAuxiliary(spec: AuxiliarySpec, anchor: Point): AuxiliaryRuntime {
   const routePoints: Point[] = [...spec.route]
   const end = routePoints[routePoints.length - 1]
-  const anchor = nearestPoint(end, logoAnchors)
-  const horizontalFirst = Math.abs(anchor[0] - end[0]) >= Math.abs(anchor[1] - end[1])
-  routePoints.push(...orthogonalJoin(end, anchor, horizontalFirst))
+  const clearance = 24
+  let approach: Point
+
+  switch (spec.side) {
+    case "left":
+      approach = [anchor[0] - clearance, anchor[1]]
+      routePoints.push(...orthogonalJoin(end, approach, true), anchor)
+      break
+    case "right":
+      approach = [anchor[0] + clearance, anchor[1]]
+      routePoints.push(...orthogonalJoin(end, approach, true), anchor)
+      break
+    case "top":
+      approach = [anchor[0], anchor[1] - clearance]
+      routePoints.push(...orthogonalJoin(end, approach, false), anchor)
+      break
+    case "bottom":
+      approach = [anchor[0], anchor[1] + clearance]
+      routePoints.push(...orthogonalJoin(end, approach, false), anchor)
+      break
+  }
 
   const route = prepareRoute(routePoints)
   return {
     route,
     start: spec.start,
-    duration: Math.max(.32, Math.min(.82, route.total / 760)),
+    duration: Math.max(.34, Math.min(.90, route.total / 760)),
   }
+}
+
+function buildAuxiliaryNetwork(
+  specs: readonly AuxiliarySpec[],
+  logoAnchors: readonly Point[]
+): AuxiliaryRuntime[] {
+  const sides: readonly Side[] = ["left", "top", "right", "bottom"]
+  const wires: AuxiliaryRuntime[] = []
+
+  sides.forEach((side) => {
+    const sideSpecs = specs
+      .filter((spec) => spec.side === side)
+      .sort((a, b) => {
+        const aEnd = a.route[a.route.length - 1]
+        const bEnd = b.route[b.route.length - 1]
+        return sideAxis(side, aEnd) - sideAxis(side, bEnd)
+      })
+    const anchors = buildLogoAnchorBank(side, logoAnchors, sideSpecs.length)
+
+    sideSpecs.forEach((spec, index) => {
+      const fallback = spec.route[spec.route.length - 1]
+      wires.push(buildAuxiliary(spec, anchors[index] ?? fallback))
+    })
+  })
+
+  return wires.sort((a, b) => a.start - b.start)
 }
 
 async function loadLogoPaths() {
@@ -756,7 +844,7 @@ export function PcbHero() {
 
         const active = raw > 0 && raw < 1
         const trace = tracePrepared(wire.route, progress)
-        const completionPulse = raw >= 1 ? 1 - smoothstep((raw - 1) / .34) : 0
+        const completionPulse = raw >= 1 ? 1 - smoothstep((raw - 1) / .28) : 0
 
         if (active) {
           context.save()
@@ -786,33 +874,9 @@ export function PcbHero() {
           context.restore()
         }
 
-        if (progress >= .995) {
+        if (completionPulse > 0) {
           const end = wire.route.points[wire.route.points.length - 1]
-
-          if (completionPulse > 0) {
-            drawLightPool(context, lightPoolSprite, end, 64, .42 * completionPulse)
-            context.save()
-            context.globalCompositeOperation = "lighter"
-            context.globalAlpha = .72 * completionPulse
-            context.beginPath()
-            context.arc(end[0], end[1], 4 + (1 - completionPulse) * 9, 0, Math.PI * 2)
-            context.strokeStyle = BRIGHT
-            context.lineWidth = 1.1
-            context.stroke()
-            context.restore()
-          }
-
-          context.save()
-          context.globalAlpha = .68
-          context.beginPath()
-          context.arc(end[0], end[1], 2.8, 0, Math.PI * 2)
-          context.fillStyle = GOLD
-          context.fill()
-          context.beginPath()
-          context.arc(end[0], end[1], 1.15, 0, Math.PI * 2)
-          context.fillStyle = BRIGHT
-          context.fill()
-          context.restore()
+          drawLightPool(context, lightPoolSprite, end, 48, .26 * completionPulse)
         }
       })
     }
@@ -1002,7 +1066,7 @@ export function PcbHero() {
 
         const logoAnchors = logoPaths.flatMap(sampleLogoPath)
         groups = groupSpecs.map((spec) => buildGroup(spec, logoPaths))
-        auxiliaryWires = auxiliarySpecs.map((spec) => buildAuxiliary(spec, logoAnchors))
+        auxiliaryWires = buildAuxiliaryNetwork(auxiliarySpecs, logoAnchors)
         const lastLogoEnd = Math.max(...groups.map((group) => group.end))
 
         lockStart = lastLogoEnd + .055
