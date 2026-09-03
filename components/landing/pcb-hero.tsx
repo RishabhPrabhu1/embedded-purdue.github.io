@@ -71,6 +71,17 @@ type GroupRuntime = {
   end: number
 }
 
+type AuxiliarySpec = {
+  route: Route
+  start: number
+}
+
+type AuxiliaryRuntime = {
+  route: PreparedRoute
+  start: number
+  duration: number
+}
+
 const groupSpecs: readonly GroupSpec[] = [
   {
     pathIndex: 0,
@@ -104,6 +115,41 @@ const groupSpecs: readonly GroupSpec[] = [
     collector: [1430, 380],
     delay: .49,
   },
+]
+
+const auxiliarySpecs: readonly AuxiliarySpec[] = [
+  { route: [[170, 190], [208, 190], [208, 176], [252, 176]], start: .76 },
+  { route: [[170, 238], [224, 238], [224, 258], [252, 258]], start: .81 },
+  { route: [[170, 342], [206, 342], [206, 320], [252, 320]], start: .86 },
+  { route: [[170, 418], [220, 418], [220, 442], [252, 442]], start: .91 },
+  { route: [[170, 522], [206, 522], [206, 500], [252, 500]], start: .96 },
+  { route: [[170, 570], [224, 570], [224, 584], [252, 584]], start: 1.01 },
+
+  { route: [[390, 134], [390, 172], [430, 172], [430, 200]], start: .80 },
+  { route: [[540, 134], [540, 184], [574, 184], [574, 204]], start: .85 },
+  { route: [[700, 134], [700, 170], [742, 170], [742, 202]], start: .90 },
+  { route: [[900, 134], [900, 176], [862, 176], [862, 202]], start: .95 },
+  { route: [[1060, 134], [1060, 184], [1028, 184], [1028, 204]], start: 1.00 },
+  { route: [[1210, 134], [1210, 172], [1172, 172], [1172, 200]], start: 1.05 },
+
+  { route: [[390, 626], [390, 588], [430, 588], [430, 560]], start: .84 },
+  { route: [[540, 626], [540, 576], [574, 576], [574, 556]], start: .89 },
+  { route: [[700, 626], [700, 590], [742, 590], [742, 558]], start: .94 },
+  { route: [[900, 626], [900, 584], [862, 584], [862, 558]], start: .99 },
+  { route: [[1060, 626], [1060, 576], [1028, 576], [1028, 556]], start: 1.04 },
+  { route: [[1210, 626], [1210, 588], [1172, 588], [1172, 560]], start: 1.09 },
+
+  { route: [[1430, 190], [1392, 190], [1392, 176], [1348, 176]], start: .88 },
+  { route: [[1430, 238], [1376, 238], [1376, 258], [1348, 258]], start: .93 },
+  { route: [[1430, 342], [1394, 342], [1394, 320], [1348, 320]], start: .98 },
+  { route: [[1430, 418], [1380, 418], [1380, 442], [1348, 442]], start: 1.03 },
+  { route: [[1430, 522], [1394, 522], [1394, 500], [1348, 500]], start: 1.08 },
+  { route: [[1430, 570], [1376, 570], [1376, 584], [1348, 584]], start: 1.13 },
+
+  { route: [[170, 152], [214, 152], [214, 106], [320, 106], [320, 134]], start: .92 },
+  { route: [[1280, 134], [1280, 106], [1386, 106], [1386, 152], [1430, 152]], start: .97 },
+  { route: [[170, 608], [214, 608], [214, 654], [320, 654], [320, 626]], start: 1.02 },
+  { route: [[1280, 626], [1280, 654], [1386, 654], [1386, 608], [1430, 608]], start: 1.07 },
 ]
 
 function clamp01(value: number) {
@@ -346,6 +392,15 @@ function buildGroup(spec: GroupSpec, logoPaths: readonly string[]): GroupRuntime
   }
 }
 
+function buildAuxiliary(spec: AuxiliarySpec): AuxiliaryRuntime {
+  const route = prepareRoute(spec.route)
+  return {
+    route,
+    start: spec.start,
+    duration: Math.max(.24, Math.min(.52, route.total / 720)),
+  }
+}
+
 async function loadLogoPaths() {
   const response = await fetch("/logo.svg")
   if (!response.ok) throw new Error("Unable to load logo geometry")
@@ -421,6 +476,7 @@ export function PcbHero() {
     let renderOffsetY = 0
     let logoImage: HTMLImageElement | null = null
     let groups: GroupRuntime[] = []
+    let auxiliaryWires: AuxiliaryRuntime[] = []
     let lockStart = 0
     let navStart = 0
     let copyStart = 0
@@ -671,6 +727,51 @@ export function PcbHero() {
       }
     }
 
+    const drawAuxiliaryNetwork = (time: number) => {
+      auxiliaryWires.forEach((wire) => {
+        const raw = (time - wire.start) / wire.duration
+        const progress = easeOutCubic(raw)
+        if (progress <= 0) return
+
+        const active = raw > 0 && raw < 1
+        const trace = tracePrepared(wire.route, progress)
+
+        if (active) {
+          context.save()
+          context.globalCompositeOperation = "lighter"
+          context.globalAlpha = .035
+          strokePrepared(context, trace, GOLD, 9)
+          context.globalAlpha = .11
+          strokePrepared(context, trace, BRIGHT, 3)
+          context.restore()
+        }
+
+        context.save()
+        context.globalAlpha = active ? .66 : .20
+        strokePrepared(context, trace, active ? BRIGHT : GOLD, active ? 1.55 : 1.15)
+        context.restore()
+
+        if (active) {
+          drawLightPool(context, lightPoolSprite, trace.head, 38, .22)
+          context.beginPath()
+          context.arc(trace.head[0], trace.head[1], 1.8, 0, Math.PI * 2)
+          context.fillStyle = BRIGHT
+          context.fill()
+        }
+
+        if (progress >= .995) {
+          const end = wire.route.points[wire.route.points.length - 1]
+          context.save()
+          context.globalAlpha = .42
+          context.beginPath()
+          context.arc(end[0], end[1], 2.2, 0, Math.PI * 2)
+          context.fillStyle = GOLD
+          context.fill()
+          context.restore()
+        }
+      })
+    }
+
     const drawNetwork = (time: number) => {
       groups.forEach((group) => {
         group.branches.forEach((branch) => {
@@ -813,6 +914,7 @@ export function PcbHero() {
       context.translate(-VW / 2, -VH / 2)
 
       drawAmbient(time)
+      drawAuxiliaryNetwork(time)
       drawNetwork(time)
       drawPorts(time)
       drawLogoFormation(time)
@@ -854,6 +956,7 @@ export function PcbHero() {
         if (cancelled) return
 
         groups = groupSpecs.map((spec) => buildGroup(spec, logoPaths))
+        auxiliaryWires = auxiliarySpecs.map(buildAuxiliary)
         const lastLogoEnd = Math.max(...groups.map((group) => group.end))
 
         lockStart = lastLogoEnd + .055
