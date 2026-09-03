@@ -40,7 +40,7 @@ const landingFrameScript = `
   if (window.location.pathname !== "/") return;
 
   var root = document.documentElement;
-  var posterKey = "esap-landing-final-poster-v8";
+  var posterKey = "esap-landing-final-poster-v9";
   var seenKey = "esap-landing-animation-seen";
   var currentShell = null;
   var captureToken = 0;
@@ -131,6 +131,7 @@ const landingFrameScript = `
       sessionStorage.removeItem("esap-landing-final-poster-v5");
       sessionStorage.removeItem("esap-landing-final-poster-v6");
       sessionStorage.removeItem("esap-landing-final-poster-v7");
+      sessionStorage.removeItem("esap-landing-final-poster-v8");
       sessionStorage.removeItem("esap-landing-reload-scroll-y");
     } catch (e) {}
   }
