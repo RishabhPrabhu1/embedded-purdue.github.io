@@ -297,7 +297,6 @@ export function PcbHero() {
     const hero = heroRef.current
     const canvas = canvasRef.current
     if (!hero || !canvas) return
-
     const shell = hero.closest("[data-landing-shell]") as HTMLElement | null
 
     if (document.documentElement.hasAttribute("data-esap-return-poster")) {
@@ -492,7 +491,7 @@ export function PcbHero() {
       return { feederProgress, logoProgress }
     }
 
-    const getNetworkOpacity = (time: number) => .30 + .70 * (1 - smoothstep((time - lockStart) / .72))
+    const getNetworkOpacity = (time: number) => .46 + .54 * (1 - smoothstep((time - lockStart) / .72))
 
     const drawAmbientLight = (time: number) => {
       const settle = smoothstep((time - lockStart) / .72)
