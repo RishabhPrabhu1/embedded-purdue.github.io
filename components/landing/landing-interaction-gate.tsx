@@ -249,7 +249,7 @@ export function LandingInteractionGate() {
         },
         {
           threshold: [0.01, 0.16],
-          rootMargin: "0px 0px 4% 0px",
+          rootMargin: "0px 0px -12% 0px",
         }
       )
 
