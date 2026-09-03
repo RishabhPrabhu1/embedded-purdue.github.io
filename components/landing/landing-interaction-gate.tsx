@@ -16,10 +16,10 @@ const enhancementStyles = `
 #landing-content > section[data-landing-reveal="section"] {
   position: relative;
   opacity: 0;
-  transform: translate3d(0, 10px, 0);
+  transform: translate3d(0, 12px, 0);
   transition:
-    opacity 360ms cubic-bezier(.22, 1, .36, 1) var(--landing-reveal-delay, 0ms),
-    transform 480ms cubic-bezier(.22, 1, .36, 1) var(--landing-reveal-delay, 0ms);
+    opacity 540ms cubic-bezier(.2, .65, .25, 1) var(--landing-reveal-delay, 0ms),
+    transform 620ms cubic-bezier(.22, 1, .36, 1) var(--landing-reveal-delay, 0ms);
 }
 
 #landing-content > section[data-landing-reveal="section"][data-landing-visible="true"] {
@@ -42,7 +42,7 @@ const enhancementStyles = `
 }
 
 #landing-content > section[data-landing-reveal="section"][data-landing-visible="true"]::before {
-  animation: landing-section-signal-sweep 650ms cubic-bezier(.22,1,.36,1) calc(var(--landing-reveal-delay, 0ms) + 30ms) both;
+  animation: landing-section-signal-sweep 800ms cubic-bezier(.22,1,.36,1) calc(var(--landing-reveal-delay, 0ms) + 40ms) both;
 }
 
 [data-landing-shell] [data-landing-reactive="true"] {
@@ -216,7 +216,7 @@ export function LandingInteractionGate() {
         },
         {
           threshold: 0.01,
-          rootMargin: "0px 0px 12% 0px",
+          rootMargin: "0px 0px 4% 0px",
         }
       )
 
