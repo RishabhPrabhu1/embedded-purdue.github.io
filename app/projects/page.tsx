@@ -1,3 +1,5 @@
+import Image from "next/image"
+
 import { SiteFooter } from "@/components/site/site-footer"
 import { SiteNavigation } from "@/components/site/site-navigation"
 import { SiteTelemetry } from "@/components/site/site-telemetry"
@@ -73,10 +75,13 @@ export default function ProjectsPage() {
               </div>
 
               <div className="relative min-h-[330px] overflow-hidden bg-[#080807] lg:col-span-5 lg:min-h-[420px]">
-                <img
+                <Image
                   src="/projects/digital-ops-1.jpg"
                   alt="ES@P embedded systems project work"
-                  className="h-full w-full object-cover opacity-[0.72] grayscale-[12%] saturate-[0.82]"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 42vw"
+                  className="object-cover opacity-[0.72] grayscale-[12%] saturate-[0.82]"
+                  priority
                 />
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.18),transparent_38%,rgba(0,0,0,.82))]" />
                 <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,.24),transparent_40%)]" />
